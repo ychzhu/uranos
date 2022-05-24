@@ -1,5 +1,7 @@
-# URNAOS
+# URANOS
 URANOS - the Ultra Rapid Neutron-Only Simulation is a Monte Carlo toolkit specifically tailored for Environmental Sciences
+
+![splashScreenUranos](https://user-images.githubusercontent.com/106179070/170102368-93e66f49-12ab-44a9-860a-2bd1977f715c.jpg)
 
 # Run Notes
 URANOS v1.00
@@ -9,9 +11,14 @@ It can also run in several instances. The GUI itself is the User Interface which
 
 # Software/Windows Prerequisites:
 
-- Microsoft Visual C++ 2015-2022 redistributional package
-- Windows SDK (With C++ development files)
+- Visual Studio 2019 community. Install with the development option "C++ application". VS2019 is required to run ROOT.
+https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads
 - ROOT (MSI Installer provided on the website, approx. 100 MB) 6.22.08 (a virus scan warning might appear here)
+
+- Possible missing libraries on clean systems:
+- Microsoft Visual C++ 2015-2022 redistributional package
+- Windows 10/11 SDK (With C++ development files)
+
 
 # Usage
 Run Preparation:

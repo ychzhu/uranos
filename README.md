@@ -11,9 +11,10 @@ It can also run in several instances. The GUI itself is the User Interface which
 
 # Software/Windows Prerequisites:
 
-- Visual Studio 2019 community. Install with the development option "C++ application". VS2019 is required to run ROOT.
+- Visual Studio 2019 community version. Install with the development option "C++ application". VS2019 is required to run ROOT 6.
 https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads
-- ROOT (MSI Installer provided on the website, approx. 100 MB) 6.22.08 (a virus scan warning might appear here)
+- ROOT (Installer provided on the website, approx. 100 MB) 6.22.08 (a virus scan warning might appear here)
+https://root.cern/download/root_v6.22.08.win32.vc16.exe
 
 - Possible missing libraries on clean systems:
 - Microsoft Visual C++ 2015-2022 redistributional package

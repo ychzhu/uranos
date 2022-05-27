@@ -4,7 +4,7 @@ URANOS - the Ultra Rapid Neutron-Only Simulation is a Monte Carlo toolkit specif
 ![splashScreenUranos](https://user-images.githubusercontent.com/106179070/170102368-93e66f49-12ab-44a9-860a-2bd1977f715c.jpg)
 
 # Run Notes
-URANOS v1.00
+URANOS v1.0
 
 URANOS runs as a stand-alone executable. No installation is necessary. 
 It can also run in several instances. The GUI itself is the User Interface which allows to prepare the simulation. If the simulation has started, the GUI can be closed, the calculation will be executed in a separate command line window.

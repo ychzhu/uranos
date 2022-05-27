@@ -9,6 +9,8 @@ URANOS v1.00
 URANOS runs as a stand-alone executable. No installation is necessary. 
 It can also run in several instances. The GUI itself is the User Interface which allows to prepare the simulation. If the simulation has started, the GUI can be closed, the calculation will be executed in a separate command line window.
 
+URANOS v1.0 has been released under DOI: 10.5281/zenodo.6578668.
+
 # Software/Windows Prerequisites:
 
 - Visual Studio 2019 community version. Install with the development option "C++ application". VS2019 is required to run ROOT 6.

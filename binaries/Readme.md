@@ -1,0 +1,1 @@
+- This package contains the URANOS Win32 binaries including the Qt DLLs. An installed version of ROOT 6.22+ is required to run the program. 

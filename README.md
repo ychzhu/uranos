@@ -28,19 +28,21 @@ In the **uranos-users mailing list**, users can ask questions, discuss, and cont
 ### Prerequisites
 
 - [Visual Studio 2019 community version](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads) (prerequisite for ROOT6). Install with the development option: `C++ application`
-- [ROOT 6.22.08](https://root.cern/download/root_v6.22.08.win32.vc16.exe) (prerequisite for plotting)
+- [ROOT 6.22.08](https://root.cern/download/root_v6.22.08.win32.vc16.exe) (prerequisite for running URANOS)
 - Basic libraries (possibly missing on some systems):
     - Microsoft Visual C++ 2015-2022 redistributional package
     - Windows 10/11 SDK (With C++ development files)
 
 ### Preparation
 
-1. Unzip the Uranos files into a folder of your choice.
-2. Run `URANOSGUI.exe`.
-3. Copy the `IncomingSpectrum.root` into a folder of your choice and insert its full path and filename into `Input Spectrum Calibration File` under URANOS' *Setup* tab. 
-4. Unzip the `ENDF` files into a folder of your choice and insert its full path into `Cross Section Folder` under URANOS' *Setup* tab. 
-5. Set a `work directory` where the configuration files of your scenario are to be stored. Mind a trailing slash.
-6. Set an `output directory` where the simulation results will be stored.  Mind a trailing slash.
+1. Download the zipped binary package and the ENDF data zip file. 
+2. Unzip the URANOS files into a folder of your choice.
+3. Unzip the ENDF data files, which also contains the `Input Spectrum Calibration File`, into a folder of your choice. 
+4. Run `URANOSGUI.exe`.
+5. Insert the full path and filename of the `IncomingSpectrum.root` into `Input Spectrum Calibration File` under URANOS' *Setup* tab. 
+6. Insert the full path to the ENDF files into `Cross Section Folder` under URANOS' *Setup* tab. 
+7. Set a `work directory` where the configuration files of your scenario are to be stored. Mind a trailing slash.
+8. Set an `output directory` where the simulation results will be stored.  Mind a trailing slash.
 
 ### First Run
 

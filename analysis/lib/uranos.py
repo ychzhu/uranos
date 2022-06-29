@@ -1,8 +1,8 @@
 """
-CoRNy URANOS
+uranos.py Lib for URANOS processing
     Functions specific for data processing of URANOS data
-    based on: https://git.ufz.de/CRNS/cornish_pasdy/-/blob/master/corny/uranos.py
-    version: 0.62
+    Historically based on CoRNy <https://git.ufz.de/CRNS/cornish_pasdy/-/blob/master/corny/uranos.py>
+    version: 1.0
 """
 
 import numpy as np
@@ -15,12 +15,10 @@ import matplotlib.pyplot as plt
 import warnings
 warnings.filterwarnings('ignore')
 
-#from .corn import get_footprint, Wr, Wr_approx, sm2N_Koehli, sm2N, N2SM_Schmidt_single
-#from .Schroen2017hess import get_footprint, Wr, Wr_approx
-#from .Koehli2021fiw import sm2N_Koehli, sm2N, N2SM_Schmidt_single
-
 class URANOS:
-
+    """
+    URANOS class for reading and plotting URANOS output data
+    """
     variable_formats = dict({
         'Materials':'.0f',
         'Regions':'.0f',
@@ -67,7 +65,8 @@ class URANOS:
         'freetext':      'Materials'
     })
     
-    def __init__(self, folder='', scaling=2, default_material=None, hum=5, press=1013, verbose=False):
+    def __init__(self, folder='', scaling=2, default_material=None,
+                 hum=5, press=1013, verbose=False):
         """
         Initialization
         """    
@@ -97,8 +96,10 @@ class URANOS:
         self.center = ((self._idim[0]-1)/2, (self._idim[1]-1)/2)
         if not scaling is None:
             self.scaling = scaling
-        print('Imported map `.Materials` (%d x %d), center at (%.1f, %.1f).' % (self._idim[0], self._idim[1], self.center[0], self.center[1]))
-        print('  One pixel in the data equals %d meters in reality (%d x %d)' % (self.scaling, self._idim[0]*self.scaling, self._idim[1]*self.scaling))
+        print('Imported map `.Materials` (%d x %d), center at (%.1f, %.1f).'
+              % (self._idim[0], self._idim[1], self.center[0], self.center[1]))
+        print('  One pixel in the data equals %d meters in reality (%d x %d)'
+              % (self.scaling, self._idim[0]*self.scaling, self._idim[1]*self.scaling))
         print('  Material codes: %s' % (', '.join(str(x) for x in np.unique(self.Materials))))
         if self.default_material is None:
             self.default_material = self.Materials[0,0]
@@ -126,8 +127,9 @@ class URANOS:
             U = np.pad(U, ((0,1),(0,1)))
         self.Origins = U
         for i in self.region_data.index:
-            self.region_data.loc[i, 'Origins'] = np.nansum(U[self.Regions==i]/np.nansum(U))
-            self.region_data.loc[i, 'Origins_err'] = np.nansum(U[self.Regions==i]/np.nansum(U)) / np.sqrt(np.nansum(U[self.Regions==i]))
+            U_i = U[self.Regions==i]
+            self.region_data.loc[i, 'Origins'] = np.nansum(U_i/np.nansum(U))
+            self.region_data.loc[i, 'Origins_err'] = np.nansum(U_i/np.nansum(U)) / np.sqrt(np.nansum(U_i))
 
         print('Imported URANOS origins as `.Origins` (%d x %d).' % (U.shape[0], U.shape[1]))
         return(self)
@@ -243,7 +245,8 @@ class URANOS:
         self.n_regions = ncomponents
         region_data = pandas.DataFrame(index=pandas.Series(np.arange(ncomponents+1), name='id'),
                                        columns=['Materials', 'center_mass', 'center_geom', 'area', 'SM',
-                                                'Distance_min', 'Distance_com', 'Weights', 'Neutrons', 'Contributions', 'Origins', 'Density'])
+                                                'Distance_min', 'Distance_com', 'Weights', 'Neutrons',
+                                                'Contributions', 'Origins', 'Density'])
         region_data['Regions'] = region_data.index
         for i in region_data.index:
             region_data.loc[i, 'Materials'] = np.median(self.Materials[self.Regions==i])
@@ -536,15 +539,21 @@ class URANOS:
         Calculate different approaches to get average CRNS soil moisture
         """
         print('Average soil moisture seen by the CRNS detector:')
-        print('{0:.1%}             field mean (naive approach)'.format(self.SM.mean()))
-        print('{0:.1%} SM-weighted field mean (lazy approach)'.format((self.Weights*self.SM).sum()))
-        print('{0:.1%}  N-weighted field mean (correct approach)'.format(N2SM_Schmidt_single((self.Weights*self.Neutrons).sum()/N0*0.77, bd=1.43, hum=self.hum)))
+        print('{0:.1%}             field mean (naive approach)'
+              .format(self.SM.mean()))
+        print('{0:.1%} SM-weighted field mean (lazy approach)'
+              .format((self.Weights*self.SM).sum()))
+        print('{0:.1%}  N-weighted field mean (correct approach)'
+              .format(N2SM_Schmidt_single((self.Weights*self.Neutrons).sum()/N0*0.77, bd=1.43, hum=self.hum)))
 
 
     ########
     # Hits #
     ########
     def read_hits(self, file='detectorNeutronHitData.dat', soil_contact=False):
+        """
+        Read detector hits file
+        """
         data = pandas.read_csv(self.folder + file, sep="\t")
         data = data[data.Detector_ID.str.contains('Detector_ID') == False]
         data = data.apply(pandas.to_numeric)
@@ -577,15 +586,24 @@ class URANOS:
         return(self)
 
     def only_soil_contact(self):
+        """
+        Filter only neutrons with soil contact
+        """
         self.Hits = self.Hits[(self.Hits['Soil_Contact']==1) & (self.Hits['z_at_Interface_[m]']>0)]
         return(self)
         
     def drop_multicounts(self):
+        """
+        Drop multiple counts of the same neutron
+        """
         self.Hits = self.Hits.drop_duplicates(subset=['Neutron_Number'], keep='last')
         return(self)
     
     # Design fancy function that can interpolate through log data
     def _log_interp1d(xx, yy, kind='cubic'):
+        """
+        Interpolate over logscale
+        """
         import scipy
         logx = np.log10(xx)
         logy = np.log10(yy)
@@ -627,6 +645,10 @@ class URANOS:
         return(self)
     
     def footprint_by_hits(self, var='r', quantile=0.865, thermal=False, weighted=True):
+        """
+        Calculate the footprint by neutron hits
+        """
+        
         data = self.Hits[self.Hits.thermal==thermal].sort_values(var)
         data['cumsum'] = data[var].cumsum()
         if weighted:
@@ -637,6 +659,9 @@ class URANOS:
         return(footprint)
 
     def plot_xy_hits(self, ax=None, thermal=False, footprint=True, quantile=0.865, weighted=True):
+        """
+        Make xy plot with origins and footprint
+        """
         if ax is None:
             fig, ax = plt.subplots(1,1, layout='tight')
         
@@ -655,6 +680,9 @@ class URANOS:
         return(ax)
     
     def plot_z_hits(self, ax=None, thermal=False, footprint=True, quantile=0.865, weighted=True):
+        """
+        Make z plot with footprint
+        """
         if ax is None:
             fig, ax = plt.subplots(1,1, layout='tight')
         
@@ -675,6 +703,9 @@ class URANOS:
         return(ax)
     
     def depth_distribution(self, ax=None, var='z', weighted=True):
+        """
+        Histogram of z
+        """
         if ax is None:
             fig, ax = plt.subplots(1,1, layout='tight')
             
@@ -709,6 +740,9 @@ class URANOS:
         return(ax)
     
     def distance_distribution(self, ax=None, var='r', weighted=True):
+        """
+        Histogram of r
+        """
         if ax is None:
             fig, ax = plt.subplots(1,1, layout='tight')
             
@@ -743,6 +777,9 @@ class URANOS:
         return(ax)
 
     def plot_angle_of_origin(self, ax=None, thermal=False, polar=False, normalize='all'):
+        """
+        Plot angular origins
+        """
         
         from matplotlib.ticker import FormatStrFormatter
 
@@ -787,7 +824,9 @@ class URANOS:
     
     def _polar_plot(self, ax, data, r_col, a_col, z_col, da=37, r=[0,1],
         title='', normalize='r', colorbar=False, **mesh_kw):
-        
+        """
+        General setup for polar plots
+        """
         # Set domain
         angls = np.linspace(0, 2*np.pi, da)
         radii = np.array(r)
@@ -831,21 +870,23 @@ class URANOS:
 
 
 """
-CoRNy exdata.uranos
-    Get Data from URANOS output
+Additional functions from CoRNy exdata.uranos
 """
 
-#import rasterio
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-#from IPython.display import clear_output
 
 def ReadURANOSmatrix(filename, size):
+    """
+    Read a single Matrix file
+    """
     return(np.loadtxt(filename, dtype="int", delimiter="\t", usecols=range(size-1)))
 
 def ReadURANOS(filename, size=500):
-
+    """
+    Read list of matrix files
+    """
     #clear_output(wait=True)
     print("Reading file: %s" % filename)
 
@@ -878,22 +919,27 @@ def ReadURANOS(filename, size=500):
     #clear_output(wait=True)
     return(A)
 
-# Determine the center coordinates
 
 def icenter(matrix):
+    """
+    Determine the center coordinates
+    """
     return([matrix.shape[1]//2, 1+matrix.shape[0]//2])
 
-# Function to crop inner center matrix with radius rx,ry, from big matrix
-
 def ccrop(matrix, rx=0, ry=0, shift=[0,0], dropx=0, dropy=0):
+    """
+    Function to crop inner center matrix with radius rx,ry, from big matrix
+    """
     c = icenter(matrix)
     startx = c[1] - rx + shift[0]
     starty = c[0] - ry + shift[1]
     return matrix[starty:starty+1+ry*2-dropy,startx:(startx+1+rx*2-dropx)]
 
-# Function to crop inner center matrix with radius rx,ry, from big matrix
 
 def extractgrid(matrix, center=None, shift=[0]):
+    """
+    Function to crop inner center matrix with radius rx,ry, from big matrix
+    """
     if center==None:
         center = icenter(matrix)
     A = []
@@ -902,12 +948,12 @@ def extractgrid(matrix, center=None, shift=[0]):
             A.append(matrix[center[0]+sx, center[1]+sy])
     return(A)
 
-# Sum up the contents of two arrays
 
 def asum(A, B):
+    """
+    Sum up the contents of two arrays
+    """
     return([sum(x) for x in zip(*[A,B])])
-
-# Function to generate heatmap
 
 def neutronmap(matrix,             # input matrix
                zrange=[None,None], # range of the color axis
@@ -919,6 +965,9 @@ def neutronmap(matrix,             # input matrix
                contourdata=None,   # URANOS input image file for contour annotations
                contourlevels=np.arange(0,255,50) # contour levels
               ):
+    """
+    Old function to generate heatmap
+    """
     xdim = matrix.shape[1]
     ydim = matrix.shape[0]
 
@@ -948,9 +997,11 @@ def neutronmap(matrix,             # input matrix
     plt.tight_layout()
     plt.show()
 
-# Load URANOS input image and convert to 2d array
 
 def Image2Array(filename, rx, ry):
+    """
+    Load URANOS input image and convert to 2d array
+    """
     from PIL import Image
     I = Image.open(filename)
     I = I.convert('L')      # Convert to L=greyscale, 1=black&white
@@ -960,9 +1011,11 @@ def Image2Array(filename, rx, ry):
     IA = ccrop(IA, rx, ry)
     return(IA)
 
-# Statistics summary of a matrix
 
 def stats(x, precision=1, raw=False):
+    """
+    Statistics summary of a matrix
+    """
 
     # Convert potential lists to arrays
     if isinstance(x, list):
@@ -976,20 +1029,19 @@ def stats(x, precision=1, raw=False):
         s = s+" +/- "+s
         print(s % (x.mean(), x.std()))
 
-
-"""
-Note:
-    Set norm_id = -1 if no normalization should be done
-Usage:
-    files = [
-        'a.csv',
-        'b.csv',
-        'c.csv']
-    data, cntr = collect_results(files, size=1000, radius=[1,499])
-"""
 def collect_results(files, size=500, norm_id=0,
                     radius=[200,200], dropx=0, dropy=0,
                     repeat_shift=None, repeat_center=[0,0]):
+    """
+    Note:
+        Set norm_id = -1 if no normalization should be done
+    Usage:
+        files = [
+            'a.csv',
+            'b.csv',
+            'c.csv']
+        data, cntr = collect_results(files, size=1000, radius=[1,499])
+    """
 
     # Read files and fill arrays
     data = []
@@ -1117,6 +1169,7 @@ def barplot_results(data, labels=None, width=0.3, x_offset=0, ax=None,
     #                 facecolor='white', edgecolor='white')
     #leg._legend_box.align = "left" # title alignment
 
+    
 def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
     """
     Truncates a cmap between 0 and 1.

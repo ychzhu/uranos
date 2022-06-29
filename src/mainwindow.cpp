@@ -162,7 +162,7 @@ bool doDetectorBatchRun = false;    // batch run for Detector Analysis with para
 bool regionalthermalcutoff = false;  // kills thermal neutrons which scattered more far away from 0,0 than the radius given
 double regionalthermalcutoffradius = 50e3;
 bool useExtraCounter = false;       // activates the counter in the live view to display extra counts of for example absorbed thermal neutrons
-bool recordSubsurfaceScatterings = false;  // records all scatterings inside the ground
+bool recordSubsurfaceScatterings = true;  // records all scatterings inside the ground
 
 bool doFusion = false;              // 14 MeV neutrons
 bool doFission = false;             // Cf Fission spectrum
@@ -5017,6 +5017,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         double previousTheta, previousPhi, previousX, previousY, previousZ0, previousCosPhi, previousSinPhi, previousTanTheta, previousCosTheta, previousSoilX, previousSoilY, previousSoilZ0, thermalizedX, thermalizedY, thermalizedZ0;
         double r1, phi1, x, y, xt, yt, xtEnd, ytEnd, xStart, yStart, xAtInterface, yAtInterface, zAtInterface, xAlt, yAlt, xLastScattered, yLastScattered, zLastScattered, xySqrt, z0, z0Alt, gAlt, z0max, zPlane, yPlane, xPlane, vectorDirFactor, previousTrackEnergy, xIs, yIs;
         double cosPhiTr, sinPhiTr, tanThetaTr, cosPhi, sinPhi, cosTheta, tanTheta, inelasticEnergyLoss, tValue;
+        double subsurfaceScatteringMean;
         float currentlayer, scatterLayer, scatterings = 0;
         bool stillFirstLayer, absorbBreak, continuedThisLayer, hasBeenInSoil, slowedDown, newLayer, hasbeenEvaporized, isEvaporationNeutron, measuredOnce, started, sAbsorbed, thermalized, useCumulativeCalc, hasBeenReorded, hasPassedSurface;
         bool detectorHit, gotIt, intoThermalization, check, reverseDir, reverseDirAlt, scattered, scatteredThisLayer, leaveLayer, scatteredInelastic, scatteredElastic, scatteredEvaporating, materialNotFound;
@@ -6443,7 +6444,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             {
                 detOutputFile.open(outputFolder + "detectorNeutronHitData.dat", ios::out | ios::app);
                 //detOutputFile << "Detector ID" <<"\t"<<"Neutron number"<<"\t"<<"Number of scatterings"<<"\t"<< "previous x [m]" <<"\t"<< "previous y [m]" <<"\t"<< "previous depth [m]" <<"\t"<< "Nadir angle" <<"\t"<< "Azimuth angle" <<"\t"<< "Energy [MeV]" <<"\t"<< "Energy at interface [MeV]" <<"\t"<< "Footprint crow-flight distance [m] (deprecated)" << "\t"<< "x at interface [m]" <<"\t"<< "y at interface [m]" << "\t"<<"z at interface [m]" <<"\t"<< "Maximum depth [m]" <<"\t"<<"Moisture at interface"<<"\t"<<"Counted using Physics Model"<<"\t"<<"Soil contact"<<endl;
-                detOutputFile << "Detector_ID" << "\t" << "Neutron_Number" << "\t" << "Number_of_Scatterings" << "\t" << "previous_x_[m]" << "\t" << "previous_y_[m]" << "\t" << "previous_Depth_[m]" << "\t" << "Nadir_Angle" << "\t" << "Azimuth_Angle" << "\t" << "Energy_[MeV]" << "\t" << "Energy_at_Interface_[MeV]" << "\t" << "Footprint_Crow-Flight_Distance_[m]_(deprecated)" << "\t" << "x_at_interface_[m]" << "\t" << "y_at_Interface_[m]" << "\t" << "z_at_Interface_[m]" << "\t" << "previous_x_in_Soil_[m]" << "\t" << "previous_y_in_Soil_[m]" << "\t" << "previous_Depth_in_Soil_[m]" << "\t" << "previous_x_thermalized_[m]" << "\t" << "previous_y_thermalized_[m]" << "\t" << "previous_Depth_thermalized_[m]" << "\t" << "maximum_Depth_[m]" << "\t" << "Time_[mus]" << "\t" << "Moisture_at_Interface" << "\t" << "Recorded_using_Physics_Model" << "\t" << "Soil_Contact" << endl;
+                detOutputFile << "Detector_ID" << "\t" << "Neutron_Number" << "\t" << "Number_of_Scatterings" << "\t" << "previous_x_[m]" << "\t" << "previous_y_[m]" << "\t" << "previous_Depth_[m]" << "\t" << "Nadir_Angle" << "\t" << "Azimuth_Angle" << "\t" << "Energy_[MeV]" << "\t" << "Energy_at_Interface_[MeV]" << "\t" << "Footprint_Crow-Flight_Distance_[m]_(deprecated)" << "\t" << "x_at_interface_[m]" << "\t" << "y_at_Interface_[m]" << "\t" << "z_at_Interface_[m]" << "\t" << "previous_x_in_Soil_[m]" << "\t" << "previous_y_in_Soil_[m]" << "\t" << "previous_Depth_in_Soil_[m]" << "\t" << "previous_x_thermalized_[m]" << "\t" << "previous_y_thermalized_[m]" << "\t" << "previous_Depth_thermalized_[m]" << "\t" << "maximum_Depth_[m]" << "\t" << "mean_Probe_Depth_[m]"<< "\t" << "Time_[mus]" << "\t" << "moisture_at_Interface" << "\t" << "Recorded_using_Physics_Model" << "\t" << "Soil_Contact" << endl;
                 detOutputFile.close();
             }
 
@@ -6451,7 +6452,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             {
                 detLayerOutputFile.open(outputFolder + "detectorLayerNeutronHitData.dat", ios::out | ios::app);
                 //detLayerOutputFile << "Neutron number"<<"\t"<<"Number of scatterings"<<"\t"<< "x [m]" <<"\t"<<"y [m]" <<"\t"<<"z [m]" <<"\t"<<"previous x [m]" <<"\t"<< "previous y [m]" <<"\t"<< "previous depth [m]" <<"\t"<< "Nadir angle" <<"\t"<< "Azimuth angle" <<"\t"<< "Energy [MeV]" <<"\t"<< "Energy at interface [MeV]" <<"\t"<< "Footprint crow-flight distance [m] (deprecated)" << "\t"<< "x at interface [m]" <<"\t"<< "y at interface [m]" << "\t"<<"z at interface [m]" <<"\t"<< "Maximum depth [m]" <<"\t"<<"Moisture at interface"<<"\t"<<"Counted using Physics Model"<<"\t"<<"Soil contact"<<endl;
-                detLayerOutputFile << "Neutron_Number" << "\t" << "Number_of_Scatterings" << "\t" << "x_[m]" << "\t" << "y_[m]" << "\t" << "z_[m]" << "\t" << "previous_x_[m]" << "\t" << "previous_y_[m]" << "\t" << "previous_Depth_[m]" << "\t" << "Nadir_Angle" << "\t" << "Azimuth_Angle" << "\t" << "Energy_[MeV]" << "\t" << "Energy_at_Interface_[MeV]" << "\t" << "Footprint_Crow-Flight_Distance_[m]_(deprecated)" << "\t" << "x_at_Interface_[m]" << "\t" << "y_at_Interface_[m]" << "\t" << "z_at_Interface_[m]" << "\t" << "previous_x_in_Soil [m]" << "\t" << "previous_y_in_Soil_[m]" << "\t" << "previous_Depth_in_Soil_[m]" << "\t" << "previous_x_thermalized_[m]" << "\t" << "previous_y_thermalized_[m]" << "\t" << "previous_Depth_thermalized_[m]" << "\t" << "Maximum_Depth_[m]" << "\t" << "Time_[mus]" << "\t" << "Moisture_at_Interface" << "\t" << "Recorded_using_Physics_Model" << "\t" << "Soil_contact" << endl;
+                detLayerOutputFile << "Neutron_Number" << "\t" << "Number_of_Scatterings" << "\t" << "x_[m]" << "\t" << "y_[m]" << "\t" << "z_[m]" << "\t" << "previous_x_[m]" << "\t" << "previous_y_[m]" << "\t" << "previous_Depth_[m]" << "\t" << "Nadir_Angle" << "\t" << "Azimuth_Angle" << "\t" << "Energy_[MeV]" << "\t" << "Energy_at_Interface_[MeV]" << "\t" << "Footprint_Crow-Flight_Distance_[m]_(deprecated)" << "\t" << "x_at_Interface_[m]" << "\t" << "y_at_Interface_[m]" << "\t" << "z_at_Interface_[m]" << "\t" << "previous_x_in_Soil [m]" << "\t" << "previous_y_in_Soil_[m]" << "\t" << "previous_Depth_in_Soil_[m]" << "\t" << "previous_x_thermalized_[m]" << "\t" << "previous_y_thermalized_[m]" << "\t" << "previous_Depth_thermalized_[m]" << "\t" << "maximum_Depth_[m]" << "mean_Probe_Depth_[m]"<< "\t" <<  "\t" << "Time_[mus]" << "\t" << "moisture_at_Interface" << "\t" << "Recorded_using_Physics_Model" << "\t" << "Soil_contact" << endl;
                 detLayerOutputFile.close();
             }
 
@@ -6590,6 +6591,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 }
 
                 subsurfaceScatterings.clear();
+                subsurfaceScatteringMean = 0;
 
                 //generate neutron Energy according to cosmic spectrum
 
@@ -7050,6 +7052,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     isEvaporationNeutron = true;
 
                     z0max = z0;
+                    if (z0 >= geometries.at(groundLayer)[4]) { subsurfaceScatterings.push_back(z0); }
 
                     n--;
                 }
@@ -8502,6 +8505,8 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if (((g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride))
                     {
+                        subsurfaceScatteringMean = 0;
+
                         if (((useDetectorSensitiveMaterial) && (material == detectorSensitiveMaterial)) || (!useDetectorSensitiveMaterial))
                         {
                             if ((((energy < energyhighTHL) && (energy > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) && (theta > downwardScotomaAngle) && (theta < downwardAcceptanceAngle))
@@ -8520,6 +8525,24 @@ bool cosmicNSimulator(MainWindow* uiM)
                             detectorLayerDistance->Fill(xySqrt);
                             if (hasPassedSurface)  detectorLayerDistanceBackscattered->Fill(xySqrt);
                             if (hasPassedSurface) { if (recordSubsurfaceScatterings) { for (int sElm = 0; sElm < subsurfaceScatterings.size(); sElm++) { detectorDistanceDepth2->Fill(xySqrt, subsurfaceScatterings.at(sElm)); } } }
+                            //if (hasPassedSurface) { if (recordSubsurfaceScatterings) { subsurfaceScatteringMean = 0; for (int sElm = 0; sElm < subsurfaceScatterings.size(); sElm++) {subsurfaceScatteringMean += subsurfaceScatterings.at(sElm); } if (subsurfaceScatterings.size() > 0) { subsurfaceScatteringMean = subsurfaceScatteringMean/( subsurfaceScatterings.size()*1.);} }}
+                            if ((hasPassedSurface) && (recordSubsurfaceScatterings) && (subsurfaceScatterings.size() > 0))
+                            {
+                                if (subsurfaceScatterings.size() <= 9)
+                                {
+                                    subsurfaceScatteringMean = subsurfaceScatterings.back();
+                                }
+                                else
+                                {
+                                    subsurfaceScatteringMean = 0;
+                                    sort(subsurfaceScatterings.begin(), subsurfaceScatterings.end());
+
+                                    for (int sElm = 0; sElm < subsurfaceScatterings.size(); sElm++)
+                                    {
+                                        if (sElm > 0.864 * subsurfaceScatterings.size()) {subsurfaceScatteringMean = subsurfaceScatterings.at(sElm); break;} else {}
+                                    }
+                                }
+                            }
 
                             if (calcNeutronTime)
                             {
@@ -8754,15 +8777,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                             if (doBatchRun2D) detOutputFile.open(outputFolder + "detectorNeutronHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
                             else detOutputFile.open(outputFolder + "detectorNeutronHitData.dat", ios::out | ios::app);
 
-                            detOutputFile << detectorID << "\t" << n << "\t" << scatterings << "\t" << xLastScattered * 0.001 << "\t" << yLastScattered * 0.001 << "\t" << zLastScattered * 0.001 << "\t" << theta << "\t" << phi << "\t" << energy << "\t" << energyAtInterface << "\t" << xySqrt * 0.001 << "\t" << xAtInterface * 0.001 << "\t" << yAtInterface * 0.001 << "\t" << zAtInterface * 0.001 << "\t" << previousSoilX * 0.001 << "\t" << previousSoilY * 0.001 << "\t" << previousSoilZ0 * 0.001 << "\t" << thermalizedX * 0.001 << "\t" << thermalizedY * 0.001 << "\t" << thermalizedZ0 * 0.001 << "\t" << z0max * 0.001 << "\t" << timeNtr << "\t" << moistureAtInterface << "\t" << detectorRealisticallyHitted << "\t" << hasPassedSurface << "\n";
+                            detOutputFile << detectorID << "\t" << n << "\t" << scatterings << "\t" << xLastScattered * 0.001 << "\t" << yLastScattered * 0.001 << "\t" << zLastScattered * 0.001 << "\t" << theta << "\t" << phi << "\t" << energy << "\t" << energyAtInterface << "\t" << xySqrt * 0.001 << "\t" << xAtInterface * 0.001 << "\t" << yAtInterface * 0.001 << "\t" << zAtInterface * 0.001 << "\t" << previousSoilX * 0.001 << "\t" << previousSoilY * 0.001 << "\t" << previousSoilZ0 * 0.001 << "\t" << thermalizedX * 0.001 << "\t" << thermalizedY * 0.001 << "\t" << thermalizedZ0 * 0.001 << "\t" << z0max * 0.001 << "\t" << subsurfaceScatteringMean * 0.001 << "\t" << timeNtr << "\t" << moistureAtInterface << "\t" << detectorRealisticallyHitted << "\t" << hasPassedSurface << "\n";
 
                             detOutputFile.close();
                         }
 
                         if (detTrackFileOutput)
                         {
-
-
                             if (neutronTrackCoordinatesFullSet.size() > 0)
                             {
                                 if (doBatchRun2D) detTrackOutputFile.open(outputFolder + "detectorNeutronTrackHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
@@ -8810,8 +8831,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                             }
 
                             //detLayerOutputFile << xLastScattered*0.001  <<"\t"<< yLastScattered*0.001  <<"\t"<< zLastScattered*0.001  <<"\t"<< theta <<"\t"<< phi <<"\t"<< energy <<"\t"<< energyAtInterface <<"\t"<< xySqrt*0.001 << "\t"<< xAtInterface*0.001 <<"\t"<< yAtInterface*0.001 <<"\t"<< zAtInterface*0.001 <<"\t"<< z0max*0.001 <<"\t"<<moistureAtInterface<<"\t"<<layerRealisticallyHitted<<"\t"<<hasPassedSurface<<"\n";
-                            detLayerOutputFile << xLastScattered * 0.001 << "\t" << yLastScattered * 0.001 << "\t" << zLastScattered * 0.001 << "\t" << theta << "\t" << phi << "\t" << energy << "\t" << energyAtInterface << "\t" << xySqrt * 0.001 << "\t" << xAtInterface * 0.001 << "\t" << yAtInterface * 0.001 << "\t" << zAtInterface * 0.001 << "\t" << previousSoilX * 0.001 << "\t" << previousSoilY * 0.001 << "\t" << previousSoilZ0 * 0.001 << "\t" << thermalizedX * 0.001 << "\t" << thermalizedY * 0.001 << "\t" << thermalizedZ0 * 0.001 << "\t" << z0max * 0.001 << "\t" << moistureAtInterface << "\t" << layerRealisticallyHitted << "\t" << hasPassedSurface << "\n";
-
+                            detLayerOutputFile << xLastScattered * 0.001 << "\t" << yLastScattered * 0.001 << "\t" << zLastScattered * 0.001 << "\t" << theta << "\t" << phi << "\t" << energy << "\t" << energyAtInterface << "\t" << xySqrt * 0.001 << "\t" << xAtInterface * 0.001 << "\t" << yAtInterface * 0.001 << "\t" << zAtInterface * 0.001 << "\t" << previousSoilX * 0.001 << "\t" << previousSoilY * 0.001 << "\t" << previousSoilZ0 * 0.001 << "\t" << thermalizedX * 0.001 << "\t" << thermalizedY * 0.001 << "\t" << thermalizedZ0 * 0.001 << "\t" << z0max * 0.001 << "\t" << subsurfaceScatteringMean * 0.001 << "\t" << timeNtr << "\t" <<  moistureAtInterface << "\t" << layerRealisticallyHitted << "\t" << hasPassedSurface << "\n";
                             detLayerOutputFile.close();
                         }
                     }
@@ -9110,7 +9130,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                             }
 
                             if (z0max < z0) z0max = z0; //maximum penetration depth
-                            if ((recordSubsurfaceScatterings) && (z0 > 0)) { subsurfaceScatterings.push_back(z0); }
+
 
                             //set new coordiantes for trajectory vector
                             x = cosPhi * fabs(tanTheta * (z0Alt - z0)) + x;
@@ -9817,6 +9837,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 scatDepth->Fill(z0);
                                 scatterLayer = currentlayer;
                                 if (currentlayer > maxlayer) maxlayer = currentlayer;
+                                if ((recordSubsurfaceScatterings) && (g >= groundLayer)) { subsurfaceScatterings.push_back(z0); }
 
                                 if (theta > piHalf)
                                 {
@@ -12406,7 +12427,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.0&alpha;(23.05.2022)<br> ";
+    messageString+=        "v1.0&alpha;(28.06.2022)<br> ";
     messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.0</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 

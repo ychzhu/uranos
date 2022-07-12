@@ -23,6 +23,10 @@ In the **uranos-users mailing list**, users can ask questions, discuss, and cont
 - **A manuscript** on URANOS has been published as a preprint in the journal *Geoscientific Model Development*:
     > Köhli, M., Schrön, M., Zacharias, S., and Schmidt, U.: URANOS v1.0 – the Ultra Rapid Adaptable Neutron-Only Simulation for Environmental Research, Geosci. Model Dev. Discuss. [preprint], [doi:10.5194/gmd-2022-93](https://doi.org/10.5194/gmd-2022-93), *in review*, 2022. 
 
+## Publications using URANOS
+
+- [See the list of publications using URANOS](doc/PUBLICATIONS.md)
+
 ## Usage
 
 ### Prerequisites

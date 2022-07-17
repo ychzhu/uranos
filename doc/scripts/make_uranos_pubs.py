@@ -7,7 +7,7 @@ from publib import PubList
 
 # %%
 P = PubList()
-P.import_csv('publications-uranos.csv').sort('date').update_citations()
+P.import_csv('publications-uranos.csv').update_citations().sort('date')
 
 # %%
 with open('../PUBLICATIONS.md', 'w', encoding="utf-8") as fh:

@@ -29,6 +29,8 @@ In the **uranos-users mailing list**, users can ask questions, discuss, and cont
 
 ## Usage
 
+Explanations and instructions can be found in the [URANOS Wiki](https://github.com/mkoehli/uranos/wiki).
+
 ### Prerequisites
 
 - [Visual Studio 2019 community version](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads) (prerequisite for ROOT6). Install with the development option: `C++ application`

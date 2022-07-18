@@ -112,7 +112,7 @@ class PubList:
         return(self)
         
     def make_list(self,
-        format_str = '- ({year}) {author}  \n"{title}"  \n— *{journal}*, [doi:{doi}]({url}), Citations: **{cited}**  \n',
+        format_str = '- ({year}) {author}  \n"{title}"  \n— *{journal}*, doi:[{doi}]({url}), Citations: **{cited}**  \n',
         authors_kw = dict(max_authors=10, highlight_me='bold')):
         
         r = ''

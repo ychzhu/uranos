@@ -1,5 +1,7 @@
 # Publications using URANOS (21)
 
+Citations: **386** (based on [CrossRef.org](https://www.crossref.org/))
+
 - (2022) Köhli, Schrön, Zacharias, Schmidt  
 "URANOS v1.0 – the Ultra Rapid Adaptable Neutron-Only Simulation for Environmental Research"  
 — *[preprint]*, doi:[10.5194/gmd-2022-93](http://dx.doi.org/10.5194/gmd-2022-93), Citations: **0**  
@@ -63,3 +65,4 @@
 - (2015) Köhli\*, Schrön\*, Zreda, Schmidt, Dietrich, Zacharias *(\*shared 1st authorship)*  
 "Footprint characteristics revised for field‐scale soil moisture monitoring with cosmic‐ray neutrons"  
 — *Water Resour. Res.*, doi:[10.1002/2015wr017169](http://dx.doi.org/10.1002/2015wr017169), Citations: **139**  
+

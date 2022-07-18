@@ -10,8 +10,20 @@ P = PubList()
 P.import_csv('publications-uranos.csv').update_citations().sort('date')
 
 # %%
+content = """
+# Publications using URANOS ({num:.0f})
+
+Citations: **{cites:.0f}** (based on [CrossRef.org](https://www.crossref.org/))
+
+{publist}
+""".format(
+    num     = P.total_pubs,
+    cites   = P.total_cites,
+    publist = P.make_list()
+)[1:]
+
+# %%
 with open('../PUBLICATIONS.md', 'w', encoding="utf-8") as fh:
-    fh.write('# Publications using URANOS ({num:.0f})\n\n'.format(
-        num   = P.total_pubs ))
-    fh.write(P.make_list())
+    fh.write(content)
+    
     

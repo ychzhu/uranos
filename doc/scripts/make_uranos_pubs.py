@@ -19,7 +19,8 @@ Citations: **{cites:.0f}** (based on [CrossRef.org](https://www.crossref.org/))
 """.format(
     num     = P.total_pubs,
     cites   = P.total_cites,
-    publist = P.make_list()
+    publist = P.make_list(
+        format_str = '- ({year}) {author}  \n**"{title}"**  \n— *{journal}*, doi:[{doi}]({url}), Citations: **{cited}**  \n')
 )[1:]
 
 # %%

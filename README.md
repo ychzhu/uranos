@@ -33,7 +33,7 @@ Explanations and instructions can be found in the [URANOS Wiki](https://github.c
 
 ### Prerequisites
 
-- [Visual Studio 2019 community version](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads) (prerequisite for ROOT6). Install with the development option: `C++ application`
+- [Visual Studio 2019 community version](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads) (prerequisite for ROOT6). Install with the development option: ` desktop development with C++ application` (Microsoft-account required, > 8 GB disk space)
 - [ROOT 6.22.08](https://root.cern/download/root_v6.22.08.win32.vc16.exe) (prerequisite for running URANOS)
 - Basic libraries (possibly missing on some systems):
     - Microsoft Visual C++ 2015-2022 redistributional package
@@ -41,7 +41,7 @@ Explanations and instructions can be found in the [URANOS Wiki](https://github.c
 
 ### Preparation
 
-1. Download the zipped binary package and the ENDF data zip file. 
+1. Download the zipped binary package and the ENDF data zip file. The binaries can also be found in this repository.
 2. Unzip the URANOS files into a folder of your choice.
 3. Unzip the ENDF data files, which also contains the `Input Spectrum Calibration File`, into a folder of your choice. 
 4. Run `URANOSGUI.exe`.
@@ -63,5 +63,3 @@ In order to configure your own simulation:
  By pressing `Use Layer Maps` URANOS will search for these PNG files in the work folder.
  
  *Note:* The PNG files are a convenient way to define your input material composition at the horizontal scale. They have to be in grayscale (or similar RGB colors) and in an aspact ratio of 1:1 (quadratic). Predefined Materials are encoded by these grayscale values, see the file `Material Codes.txt` in the URANOS folder. The PNG will be stretched to the full domain size and each pixel will be extruded in the layer to a 3D pixel (voxel) of the given material.
-
- 

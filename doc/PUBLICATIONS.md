@@ -2,10 +2,10 @@
 
 Citations: **397** (based on [CrossRef.org](https://www.crossref.org/))
 
+*Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
 ![Publications and citations per year](pubplot.png)
-Figure. Left: Publications and their total citations (bar width).
-Right: Cumulative publications over the years.
 
+## Details 
 - (2022) Köhli, Schrön, Zacharias, Schmidt  
 **"URANOS v1.0 – the Ultra Rapid Adaptable Neutron-Only Simulation for Environmental Research"**  
 — *[preprint]*, doi:[10.5194/gmd-2022-93](http://dx.doi.org/10.5194/gmd-2022-93), Citations: **0**  

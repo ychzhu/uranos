@@ -71,8 +71,8 @@ plotdata
 """
 Make a plot and save it as png
 """
-# Corny package from: https://git.ufz.de/CRNS/cornish_pasdy
-from corny.figures import Figure
+# Corny.figures package from: https://git.ufz.de/CRNS/cornish_pasdy
+from figures import Figure
 # Sprial package from: https://github.com/skokg/Spiral-strip
 from spiral_strip_library_v04 import *
 
@@ -108,7 +108,9 @@ with Figure(layout=(1,2), size=(8,4),
     ax = axes[1]
     ax.set_title('Publications (total)', fontsize=7, color=color_labels)
     ax.plot(plotdata.t, plotdata.num, color=color_data, drawstyle='steps-post')
-    ax.set_xlim(date(2015,1,1), date(2022,12,31))
+    ax.set_xlim(
+        date( plotdata.t[len(plotdata)-1].year, 1, 1),
+        date( plotdata.t[0].year,              12,31))
     ax.set_yticks(np.arange(0,len(plotdata),5))
     ax.xaxis.set_tick_params(labelsize=6)
     ax.yaxis.set_tick_params(labelsize=6)

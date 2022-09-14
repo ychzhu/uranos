@@ -11,13 +11,21 @@ P = PubList()
 P.import_csv('publications-uranos.csv').update_citations().sort('date')
 
 # %%
+import compress_pickle as pickle
+with open('pubdata-cache.bz2', 'wb') as file:
+    pickle.dump(P, file)
+with open('pubdata-cache.bz2', 'rb') as file:
+    P = pickle.load(file)
+
+# %%
 content = """
 # Publications using URANOS ({num:.0f})
 
 Citations: **{cites:.0f}** (based on [CrossRef.org](https://www.crossref.org/))
 
 *Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
-![Publications and citations per year](pubplot.png)
+![Publications and citations per year](pubplot-light.png#gh-light-mode-only)
+![Publications and citations per year](pubplot-dark.png#gh-dark-mode-only)
 
 ## Details 
 {publist}
@@ -25,7 +33,7 @@ Citations: **{cites:.0f}** (based on [CrossRef.org](https://www.crossref.org/))
     num     = P.total_pubs,
     cites   = P.total_cites,
     publist = P.make_list(
-        format_str = '- ({year}) {author}  \n**"{title}"**  \n— *{journal}*, doi:[{doi}]({url}), Citations: **{cited}**  \n')
+        format_str = '- `{year}` {author}  \n**"{title}"**  \n— *{journal}*, doi:[{doi}]({url}), Citations: **{cited}**  \n')
 )[1:]
 
 # %%
@@ -33,6 +41,7 @@ with open('../PUBLICATIONS.md', 'w', encoding="utf-8") as fh:
     fh.write(content)
     
 # %%
+import numpy as np
 from pandas import DataFrame, to_datetime
 plotdata = P.data[['year','date','authors','cites']]
 plotdata['firstauthor'] = [x[0] for x in plotdata.authors]
@@ -49,13 +58,16 @@ from spiral_strip_library_v04 import *
 segment_color = 'C0'
 segment_length = 130
 
-with Figure(layout=(1,2), size=(8,4), save='../pubplot.png') as axes:
+import matplotlib.pyplot as plt
+#plt.style.use('default')
+plt.style.use('dark_background')
+with Figure(layout=(1,2), size=(8,4), save='../pubplot-dark.png') as axes:
     ax = axes[0]
-    draw_spiral_strip(image_filename="example06.pdf", r0=0, space=0, fi0_deg=110,
+    draw_spiral_strip(r0=0, space=0, fi0_deg=110,
         number_of_segments = len(plotdata), width=plotdata.cites.values+1, segment_length=segment_length,
         maximum_length_of_subsegment=10, segment_color = segment_color,
-        values=None, colormap_name=None,
-        labels1_text=plotdata.label.values, labels1_fontsize=5, labels1_color="dimgray", labels1_pad=25,
+        values=None, colormap_name=None, labels1_color='C7',
+        labels1_text=plotdata.label.values, labels1_fontsize=5, labels1_pad=25,
         antialiased = True, gap_between_consecutive_segments = 10,
         ax=ax)
     ax.autoscale(enable=True, axis='x', tight=True)

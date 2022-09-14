@@ -20,8 +20,14 @@ def polar_to_cartesian(fi, r, x0, y0, fi0):
 	y=y0+r*np.sin(fi+fi0)
 	return([x,y])
 
-def draw_spiral_strip(image_filename, dpi=300, r0=10, space=15, fi0_deg=45, number_of_segments = 0, width=20, segment_length=40, maximum_length_of_subsegment=10, segment_color="random", values=None, colormap_name='coolwarm', segment_edge_linecolor="same_as_segment", segment_edge_linewidth=0.3, labels1_text=None, labels1_fontsize=4, labels1_color="same_as_segment", labels1_pad=3, antialiased = True, gap_between_consecutive_segments = 0,
-ax=None):
+def draw_spiral_strip(image_filename=None, dpi=300, r0=10, space=15,
+	fi0_deg=45, number_of_segments = 0, width=20, segment_length=40,
+	maximum_length_of_subsegment=10, segment_color="random", values=None,
+	colormap_name='coolwarm', segment_edge_linecolor="same_as_segment",
+	segment_edge_linewidth=0.3, labels1_text=None, labels1_fontsize=4,
+	labels1_color="same_as_segment", labels1_pad=3, antialiased = True,
+	gap_between_consecutive_segments = 0,
+	ax=None):
 	
 	if type(number_of_segments) is not int:
 		print("ERROR: number_of_segments needs to be of type int")

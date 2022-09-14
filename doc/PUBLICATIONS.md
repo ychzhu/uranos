@@ -3,7 +3,8 @@
 Citations: **397** (based on [CrossRef.org](https://www.crossref.org/))
 
 *Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
-![Publications and citations per year](pubplot.png)
+![Publications and citations per year](pubplot-light.png#gh-light-mode-only)
+![Publications and citations per year](pubplot-dark.png#gh-dark-mode-only)
 
 ## Details 
 - `2022` Köhli, Schrön, Zacharias, Schmidt  
@@ -69,3 +70,4 @@ Citations: **397** (based on [CrossRef.org](https://www.crossref.org/))
 - `2015` Köhli\*, Schrön\*, Zreda, Schmidt, Dietrich, Zacharias *(\*shared 1st authorship)*  
 **"Footprint characteristics revised for field‐scale soil moisture monitoring with cosmic‐ray neutrons"**  
 — *Water Resour. Res.*, doi:[10.1002/2015wr017169](http://dx.doi.org/10.1002/2015wr017169), Citations: **143**  
+

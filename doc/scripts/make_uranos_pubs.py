@@ -24,8 +24,7 @@ content = """
 Citations: **{cites:.0f}** (based on [CrossRef.org](https://www.crossref.org/))
 
 *Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
-![Publications and citations per year](pubplot-light.png#gh-light-mode-only)
-![Publications and citations per year](pubplot-dark.png#gh-dark-mode-only)
+![Publications and citations per year](pubplot.png)
 
 ## Details 
 {publist}
@@ -68,37 +67,43 @@ segment_gap     = 10
 label_padding   = 25
 label_fontsize  = 5
 
-themes = dict(
-    dark  = dict(style='default',         nametag='-light', fgcolor='black'),
-    light = dict(style='dark_background', nametag='-dark',  fgcolor='white'))
+color_data   = '#1f77b4'
+color_labels = '#BBBBBB'
 
-for theme in themes:
-    plt.style.use(themes[theme]['style'])
-    with Figure(layout=(1,2), size=(8,4),
-        save='../pubplot%s.png' % themes[theme]['nametag']) as axes:
-        
-        ax = axes[0]
-        draw_spiral_strip(r0=radius, space=space, fi0_deg=rotation,
-            number_of_segments=len(plotdata), width=plotdata.cites.values+1,
-            segment_length=segment_len, maximum_length_of_subsegment=segment_len_max,
-            segment_color='C0', values=None, colormap_name=None, labels1_color='#BBBBBB',
-            labels1_text=plotdata.label.values, labels1_fontsize=label_fontsize,
-            labels1_pad=label_padding, antialiased=True,
-            gap_between_consecutive_segments = segment_gap,
-            ax=ax)
-        ax.autoscale(enable=True, axis='x', tight=True)
-        
-        ax = axes[1]
-        ax.set_title('Publications (total)', fontsize=7)
-        ax.plot(plotdata.t, plotdata.num, drawstyle='steps-post')
-        ax.set_xlim(date(2015,1,1), date(2022,12,31))
-        ax.set_yticks(np.arange(0,len(plotdata),5))
-        ax.xaxis.set_tick_params(labelsize=6)
-        ax.yaxis.set_tick_params(labelsize=6)
-        ax.grid(color='#BBBBBB', ls=':', axis='y', alpha=1)
-        ax.spines.top.set(visible=False)
-        ax.spines.left.set(visible=False)
-        ax.spines.right.set(visible=False)
-        ax.tick_params(colors='#BBBBBB', which='both', axis='y', tick1On=False)
-        ax.spines["bottom"].set_position(("data", 0))
-        ax.plot(1, 0, ">", color=themes[theme]['fgcolor'], transform=ax.get_yaxis_transform(), markersize=3, clip_on=False)
+#themes = dict(#
+#    dark  = dict(style='default',         nametag='-light', fgcolor='black', datacolor='#1f77b4'),
+#    light = dict(style='dark_background', nametag='-dark',  fgcolor='white', datacolor='#1f77b4'))
+
+#58a6ff
+#for theme in themes:
+#    plt.style.use(themes[theme]['style'])
+with Figure(layout=(1,2), size=(8,4),
+    save='../pubplot.png') as axes:
+    
+    ax = axes[0]
+    draw_spiral_strip(r0=radius, space=space, fi0_deg=rotation,
+        number_of_segments=len(plotdata), width=plotdata.cites.values+1,
+        segment_length=segment_len, maximum_length_of_subsegment=segment_len_max,
+        segment_color=color_data, values=None, colormap_name=None, labels1_color=color_labels,
+        labels1_text=plotdata.label.values, labels1_fontsize=label_fontsize,
+        labels1_pad=label_padding, antialiased=True,
+        gap_between_consecutive_segments = segment_gap,
+        ax=ax)
+    ax.autoscale(enable=True, axis='x', tight=True)
+    
+    ax = axes[1]
+    ax.set_title('Publications (total)', fontsize=7, color=color_labels)
+    ax.plot(plotdata.t, plotdata.num, color=color_data, drawstyle='steps-post')
+    ax.set_xlim(date(2015,1,1), date(2022,12,31))
+    ax.set_yticks(np.arange(0,len(plotdata),5))
+    ax.xaxis.set_tick_params(labelsize=6)
+    ax.yaxis.set_tick_params(labelsize=6)
+    ax.grid(color=color_labels, ls=':', axis='y', alpha=1)
+    ax.spines.top.set(visible=False)
+    ax.spines.left.set(visible=False)
+    ax.spines.right.set(visible=False)
+    ax.tick_params(colors=color_labels, which='both', axis='y', tick1On=False)
+    ax.tick_params(colors=color_labels, which='both', axis='x')
+    ax.spines["bottom"].set_position(("data", 0))
+    ax.spines["bottom"].set_color(color_labels)
+    ax.plot(1, 0, ">", color=color_labels, transform=ax.get_yaxis_transform(), markersize=3, clip_on=False)

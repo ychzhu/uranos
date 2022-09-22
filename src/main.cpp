@@ -90,11 +90,25 @@ int main(int argc, char *argv[])
             disableGUI = true;
         }
 
-        // starts the batch run for n monoenergetic runs with neutron downward
+        // starts the batch run for n monoenergetic runs with neutrons directly downward
         if ((std::string(argv[1])=="detectorBatchRun"))
         {
             w.activateThermalSkyEvaporation();
             w.activateDetectorBatchRun();
+        }
+
+        // starts the batch run for n monoenergetic runs with neutrons having a random angular distribution
+        if ((std::string(argv[1])=="detectorBatchRun2"))
+        {
+            w.activateThermalSkyEvaporation();
+            w.activateDetectorBatchRun2();
+        }
+
+        // starts the batch run for n monoenergetic runs with batch run on angles
+        if ((std::string(argv[1])=="detectorAngleBatchRun"))
+        {
+            w.activateThermalSkyEvaporation();
+            w.activateDetectorAngleBatchRun();
         }
     }
 

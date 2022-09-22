@@ -158,7 +158,9 @@ bool noMultipleScatteringRecording = false;
 bool doBatchRun = false;            // batch run with parameters set later
 bool doBatchRunDensity = false;      // batch run for soil moisture and density variation
 bool doBatchRun2D = false;           // batch run for sm and hum
-bool doDetectorBatchRun = false;    // batch run for Detector Analysis with parameters set later
+bool doDetectorBatchRun = false;    // batch run for detector analysis with parameters set later
+bool doDetectorBatchRun2 = false;    // batch run for detector analysis with parameters set later
+bool doDetectorAngleBatchRun = false;    // batch run for detector analysis with parameters set later
 bool regionalthermalcutoff = false;  // kills thermal neutrons which scattered more far away from 0,0 than the radius given
 double regionalthermalcutoffradius = 50e3;
 bool useExtraCounter = false;       // activates the counter in the live view to display extra counts of for example absorbed thermal neutrons
@@ -199,7 +201,7 @@ int rangeM = 1;
 long nTotal = 0;                    // total number of neutrons to be calculated
 float sysTemperature = 293.;        // moderator temperature in K
 
-int maxScatterings = 300;           // maximum number of scatterings of a neutron until killed
+int maxScatterings = 700;           // maximum number of scatterings of a neutron until killed
 
 float xPosSource = 0;               // coordinates and spatial extension for manual positioning of the source
 float yPosSource = 0;
@@ -287,6 +289,7 @@ bool detTrackFileOutput = false;    // activate full neutron track output for de
 bool allTrackFileOutput = false;    // activate full neutron track output
 bool otherAllTrackFileOutput = false; //export as json file
 bool detLayerFileOutput = false;    // activates the neutron coordinate output for the detector layer
+bool detLayerTrackFileOutput = true;    // activates the neutron coordinate output for the detector layer
 bool saveEveryXNeutrons = false;    // exports everything in the given interval
 int saveEveryXNeutronsPower = 5;    // exports all URANOS files every 10^x neutrons
 
@@ -2540,7 +2543,7 @@ void MainWindow::exportToSave()
     }
 
     //if (doBatchRun) {datString+=castDoubleToString(soilWaterFrac,5)+"_"+castDoubleToString(paramDensity,5)+"_"+castIntToString(paramInt);}
-    if ((doBatchRun) || (doDetectorBatchRun) || (doBatchRunDensity) || (doBatchRun2D)) { datString = castIntToString(paramInt); }
+    if ((doBatchRun) || (doDetectorBatchRun) || (doDetectorBatchRun2) || (doDetectorAngleBatchRun) || (doBatchRunDensity) || (doBatchRun2D)) { datString = castIntToString(paramInt); }
     //if (doBatchRunDensity) {datString+=castDoubleToString(soilWaterFrac,5)+"_"+castDoubleToString(paramDensity,5)+"_"+castIntToString(paramInt);}
 
     int rebinLevel = 1;
@@ -4976,8 +4979,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         //float paramMin = 0;
         //float paramMax = 60; //40 for detector energy analysis
 
-        if (doDetectorBatchRun) paramMax = 40;
-        //if (doDetectorBatchRun) paramMax = 20;
+        if ((doDetectorBatchRun) || ((doDetectorBatchRun2))) paramMax = 40;
+        if (doDetectorAngleBatchRun) paramMax = 20;
 
         //float matrixMetricFactor = 0; // pixel conversion factor equals in meter
         bool drawDensityMap = true;
@@ -5148,6 +5151,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         ofstream detOutputFile;
         ofstream detLayerOutputFile;
         ofstream detTrackOutputFile;
+        ofstream detLayerTrackOutputFile;
         ofstream allTrackOutputFile;
 
         TH1F* precalculatedSpectrum = new TH1F("precalculatedSpectrum", "precalculated Spectrum", 10000, 1e-9, 10000);	 	TH1Fashion(precalculatedSpectrum, "n", "Energy [MeV]", true);
@@ -6406,11 +6410,11 @@ bool cosmicNSimulator(MainWindow* uiM)
         for (param = paramMin; param < paramMax; param += 1)
         {
             paramInt = param;
-            //if (doDetectorBatchRun)  paramEnergy = 1e-6;//
+            if (doDetectorAngleBatchRun)  paramEnergy = 1e-4;//
             //if (doBatchRun) paramEnergy = TMath::Power(10,r.Rndm()*10.-8.);
 
-            if (doDetectorBatchRun) paramEnergy = TMath::Power(10, (param / (paramMax - paramMin)) * 10. - 7.99);
-            if ((!doBatchRun) && (!doDetectorBatchRun) && (!doBatchRunDensity) && (!doBatchRun2D)) param = 1e9;
+            if ((doDetectorBatchRun) || ((doDetectorBatchRun2))) paramEnergy = TMath::Power(10, (param / (paramMax - paramMin)) * 10. - 7.99);
+            if ((!doBatchRun) && (!doDetectorBatchRun) && (!doDetectorBatchRun2) && (!doDetectorAngleBatchRun) && (!doBatchRunDensity) && (!doBatchRun2D)) param = 1e9;
 
             if (doBatchRun)
             {
@@ -6463,6 +6467,14 @@ bool cosmicNSimulator(MainWindow* uiM)
                 detTrackOutputFile.close();
             }
 
+            if (detLayerTrackFileOutput)
+            {
+                detLayerTrackOutputFile.open(outputFolder + "detectorNeutronTrackHitData.dat", ios::out | ios::app);
+                detLayerTrackOutputFile << "Detector_ID" << "\t" << "Neutron_Number" << "\t" << "x_[m]" << "\t" << "y_[m]" << "\t" << "z_[m]" << "\t" << "Nadir_Angle" << "\t" << "Azimuth_Angle" << "\t" << "Energy_[MeV]" << "\t" << "Time_[mus]" << "\t" << "Element_ID_[ZZAA]" << "\t" << "Material_ID" << "\t" << "Counted_using_Physics_Model" << endl;
+                detLayerTrackOutputFile.close();
+            }
+
+
             if (allTrackFileOutput)
             {
                 allTrackOutputFile.open(outputFolder + "NeutronTrackData.dat", ios::out | ios::app);
@@ -6475,7 +6487,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             if (uranosRootOutput) { dontFillunecessaryPlots = false; }
             else { dontFillunecessaryPlots = true; }
 
-            if (!noThermalRegime) { maxScatterings = 600; }
+            if (!noThermalRegime) { maxScatterings = 700; }
 
             mapMetricFactor = squareDim / 1000. / 500.;
             started = false;
@@ -6778,7 +6790,8 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                 energyInitial = xRnd;
 
-                if (doDetectorBatchRun) energyInitial = paramEnergy;
+                if ((doDetectorBatchRun) || (doDetectorBatchRun2)) energyInitial = paramEnergy;
+                if ((doDetectorAngleBatchRun) && (doMonoEnergetic)) energyInitial = r.Gaus(sourceEnergy, 0.1 * sourceEnergy);
 
                 if (!(nEvapoVector.size() > 0)) cosmicSpectrum->Fill(energyInitial);
 
@@ -6916,7 +6929,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                         theta = thetaBeam + xRnd;
                         //int thetaInt = theta/pi*180.;
-                            //r.Rndm()*pi/(energyInitial/3.);
+                        //r.Rndm()*pi/(energyInitial/3.);
                     }
                     else theta = thetaBeam + TMath::ACos(r.Rndm());
                 }
@@ -6939,12 +6952,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                     //if (doBatchRun) theta = param/(paramMax-paramMin)*pi/2.;
                     //if (doBatchRun) theta = 0;
                     if (doDetectorBatchRun) { theta = 0; batchVar = paramEnergy; }
-                    //if (doDetectorBatchRun) {theta = param/(paramMax-paramMin)*pi/2.; batchVar = theta;}
+                    if (doDetectorBatchRun2) { theta = TMath::ACos(r.Rndm()); batchVar = paramEnergy; }
+                    if (doDetectorAngleBatchRun) {theta = param/(paramMax-paramMin)*pi/2.; batchVar = theta;}
 
                     //theta = scaleFactor/100. *pi;
                 }
 
-                //set just one direction
+                // set just one direction
                 // phi = 1.5*pi; theta = pi*0.5;
 
                 scattered = false;
@@ -6996,15 +7010,15 @@ bool cosmicNSimulator(MainWindow* uiM)
                         else { if (n % 10000 == 0) cout << ":"; else if (n % 2000 == 0) cout << "."; }
                     }
 
-                    if (doDetectorBatchRun)
+                    if ((doDetectorBatchRun) || (doDetectorBatchRun2) || (doDetectorAngleBatchRun))
                     {
-                        if (n % 10000 == 0) delay(5);
-                        if (n % 50000 == 0) delay(5);
+                        if (n % 10000 == 0) delay(2);
+                        if (n % 50000 == 0) delay(3);
                     }
                     else
                     {
-                        if (n % 2000 == 0) delay(5);
-                        if (n % 10000 == 0) delay(5);
+                        if (n % 2000 == 0) delay(2);
+                        if (n % 10000 == 0) delay(3);
                     }
 
                     if ((clearEveryXNeutronsNumber > 0) || (setAutoRefreshRateClearing))
@@ -8833,6 +8847,33 @@ bool cosmicNSimulator(MainWindow* uiM)
                             //detLayerOutputFile << xLastScattered*0.001  <<"\t"<< yLastScattered*0.001  <<"\t"<< zLastScattered*0.001  <<"\t"<< theta <<"\t"<< phi <<"\t"<< energy <<"\t"<< energyAtInterface <<"\t"<< xySqrt*0.001 << "\t"<< xAtInterface*0.001 <<"\t"<< yAtInterface*0.001 <<"\t"<< zAtInterface*0.001 <<"\t"<< z0max*0.001 <<"\t"<<moistureAtInterface<<"\t"<<layerRealisticallyHitted<<"\t"<<hasPassedSurface<<"\n";
                             detLayerOutputFile << xLastScattered * 0.001 << "\t" << yLastScattered * 0.001 << "\t" << zLastScattered * 0.001 << "\t" << theta << "\t" << phi << "\t" << energy << "\t" << energyAtInterface << "\t" << xySqrt * 0.001 << "\t" << xAtInterface * 0.001 << "\t" << yAtInterface * 0.001 << "\t" << zAtInterface * 0.001 << "\t" << previousSoilX * 0.001 << "\t" << previousSoilY * 0.001 << "\t" << previousSoilZ0 * 0.001 << "\t" << thermalizedX * 0.001 << "\t" << thermalizedY * 0.001 << "\t" << thermalizedZ0 * 0.001 << "\t" << z0max * 0.001 << "\t" << subsurfaceScatteringMean * 0.001 << "\t" << timeNtr << "\t" <<  moistureAtInterface << "\t" << layerRealisticallyHitted << "\t" << hasPassedSurface << "\n";
                             detLayerOutputFile.close();
+                        }
+                    }
+
+                    if (detLayerTrackFileOutput)
+                    {
+                        if (((g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride))
+                        {
+                            if (neutronTrackCoordinatesFullSet.size() > 0)
+                            {
+                                if (doBatchRun2D) detLayerTrackOutputFile.open(outputFolder + "detectorLayerNeutronTrackHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
+                                else detLayerTrackOutputFile.open(outputFolder + "detectorLayerNeutronTrackHitData.dat", ios::out | ios::app);
+
+
+                                for (int nt = 0; nt <= (neutronTrackCoordinatesFullSet.size() - 9); nt += 9)
+                                {
+                                    if ((nt > 0) && ((neutronTrackCoordinatesFullSet[nt + 5] != neutronTrackCoordinatesFullSet[nt - 4]) || (neutronTrackCoordinatesFullSet[nt + 7] == 0) || (neutronTrackCoordinatesFullSet[nt + 7] == 1)))
+                                    {
+                                        detLayerTrackOutputFile << scatterings << "\t" << n << "\t" << neutronTrackCoordinatesFullSet[nt + 0] * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 1) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 2) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 3) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 4) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 5) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 6) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 7) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 8) << "\t" << layerRealisticallyHitted << endl;
+                                    }
+                                    else
+                                    {
+                                        if (nt == 0) detLayerTrackOutputFile << scatterings << "\t" << n << "\t" << neutronTrackCoordinatesFullSet.at(nt + 0) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 1) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 2) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 3) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 4) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 5) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 6) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 7) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 8) << "\t" << layerRealisticallyHitted << endl;
+                                    }
+                                }
+
+                                detLayerTrackOutputFile.close();
+                            }
                         }
                     }
 
@@ -10709,7 +10750,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             }
 
             //end of batch loop
-            if ((doBatchRun) || (doDetectorBatchRun) || (doBatchRunDensity) || (doBatchRun2D))
+            if ((doBatchRun) || (doDetectorBatchRun) || (doDetectorBatchRun2) || (doDetectorAngleBatchRun) || (doBatchRunDensity) || (doBatchRun2D))
             {
                 //TString batchStr = castDoubleToString(xr)+"\t"+castDoubleToString(yr)+"\t"+castDoubleToString(absMaterial->GetBinContent(absMaterial->FindBin(27))+absElement->GetBinContent(absElement->FindBin(10)));
                 //TString batchStr = castDoubleToString(rHe3)+"\t"+castIntToString(neutrons)+"\t"+castDoubleToString(absMaterial->GetBinContent(absMaterial->FindBin(27))+absElement->GetBinContent(absElement->FindBin(10)));
@@ -12427,7 +12468,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.0&alpha;(28.06.2022)<br> ";
+    messageString+=        "v1.0&beta;(22.09.2022)<br> ";
     messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.0</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -12495,6 +12536,20 @@ void MainWindow::activateSkyEvaporation()
 void MainWindow::activateDetectorBatchRun()
 {
     doDetectorBatchRun = true;
+    ui->checkBoxThermal->setHidden(false);
+    ui->checkBoxFileOutputPDF_2->setChecked(true);
+}
+
+void MainWindow::activateDetectorBatchRun2()
+{
+    doDetectorBatchRun2 = true;
+    ui->checkBoxThermal->setHidden(false);
+    ui->checkBoxFileOutputPDF_2->setChecked(true);
+}
+
+void MainWindow::activateDetectorAngleBatchRun()
+{
+    doDetectorAngleBatchRun = true;
     ui->checkBoxThermal->setHidden(false);
     ui->checkBoxFileOutputPDF_2->setChecked(true);
 }

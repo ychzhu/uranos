@@ -72,6 +72,10 @@ public:
 
     void activateDetectorBatchRun();
 
+    void activateDetectorBatchRun2();
+
+    void activateDetectorAngleBatchRun();
+
     void activateBatchRun();
 
     void activateParameterBatchRun(int parMin, int parMax);

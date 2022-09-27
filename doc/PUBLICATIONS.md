@@ -1,6 +1,6 @@
 # Publications using URANOS (21)
 
-Citations: **397** (based on [CrossRef.org](https://www.crossref.org/))
+Citations: **401** (based on [CrossRef.org](https://www.crossref.org/))
 
 *Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
 ![Publications and citations per year](pubplot.png)
@@ -35,13 +35,13 @@ Citations: **397** (based on [CrossRef.org](https://www.crossref.org/))
 — *Water Resources Research*, doi:[10.1029/2020wr028478](http://dx.doi.org/10.1029/2020wr028478), Citations: **2**  
 - `2021` Köhli, Weimar, Schrön, Baatz, Schmidt  
 **"Soil Moisture and Air Humidity Dependence of the Above-Ground Cosmic-Ray Neutron Intensity"**  
-— *Front. Water*, doi:[10.3389/frwa.2020.544847](http://dx.doi.org/10.3389/frwa.2020.544847), Citations: **12**  
+— *Front. Water*, doi:[10.3389/frwa.2020.544847](http://dx.doi.org/10.3389/frwa.2020.544847), Citations: **13**  
 - `2020` Weimar, Köhli, Budach, Schmidt  
 **"Large-Scale Boron-Lined Neutron Detection Systems as a 3He Alternative for Cosmic Ray Neutron Sensing"**  
 — *Front. Water*, doi:[10.3389/frwa.2020.00016](http://dx.doi.org/10.3389/frwa.2020.00016), Citations: **16**  
 - `2019` Schattan, Köhli, Schrön, Baroni, Oswald  
 **"Sensing Area‐Average Snow Water Equivalent with Cosmic‐Ray Neutrons: The Influence of Fractional Snow Cover"**  
-— *Water Resour. Res.*, doi:[10.1029/2019wr025647](http://dx.doi.org/10.1029/2019wr025647), Citations: **15**  
+— *Water Resour. Res.*, doi:[10.1029/2019wr025647](http://dx.doi.org/10.1029/2019wr025647), Citations: **16**  
 - `2019` Li, Schrön, Köhli, Bogena, Weimar, Jiménez Bello, Han, Martínez Gimeno, .., Hendricks Franssen  
 **"Can Drip Irrigation be Scheduled with Cosmic‐Ray Neutron Sensing?"**  
 — *Vadose zone j.*, doi:[10.2136/vzj2019.05.0053](http://dx.doi.org/10.2136/vzj2019.05.0053), Citations: **12**  
@@ -68,5 +68,5 @@ Citations: **397** (based on [CrossRef.org](https://www.crossref.org/))
 — *Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment*, doi:[10.1016/j.nima.2016.05.014](http://dx.doi.org/10.1016/j.nima.2016.05.014), Citations: **30**  
 - `2015` Köhli\*, Schrön\*, Zreda, Schmidt, Dietrich, Zacharias *(\*shared 1st authorship)*  
 **"Footprint characteristics revised for field‐scale soil moisture monitoring with cosmic‐ray neutrons"**  
-— *Water Resour. Res.*, doi:[10.1002/2015wr017169](http://dx.doi.org/10.1002/2015wr017169), Citations: **143**  
+— *Water Resour. Res.*, doi:[10.1002/2015wr017169](http://dx.doi.org/10.1002/2015wr017169), Citations: **145**  
 

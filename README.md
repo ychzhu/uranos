@@ -15,7 +15,9 @@ Key features:
 
 ## Use, discuss, contribute
 
-In the **uranos-users mailing list**, users can ask questions, discuss, and contribute to the development of URANOS user community. [Subscribe now!](https://www.ufz.de/index.php?en=41538)
+In the **uranos-users mailing list**, users can ask questions, discuss, and contribute to the development of URANOS user community.
+
+- [Subscribe now!](https://www.ufz.de/index.php?en=41538)
 
 ## Cite as
 
@@ -27,9 +29,13 @@ In the **uranos-users mailing list**, users can ask questions, discuss, and cont
 
 - [See the list of publications using URANOS](doc/PUBLICATIONS.md)
 
+![URANOS publications statistics](https://github.com/mkoehli/uranos/blob/main/doc/pubplot-shallow.png)
+
 ## Usage
 
 Explanations and instructions can be found in the [URANOS Wiki](https://github.com/mkoehli/uranos/wiki).
+
+<img src="https://user-images.githubusercontent.com/7942719/179392637-f9db7458-2c2b-41e6-8117-d7ad1062a96a.png" alt="URANOS interface" style="width:50%; max-width: 100px">
 
 ### Prerequisites
 
@@ -63,3 +69,8 @@ In order to configure your own simulation:
  By pressing `Use Layer Maps` URANOS will search for these PNG files in the work folder.
  
   *Note:* The PNG files are a convenient way to define your input material composition at the horizontal scale. They have to be in grayscale (or similar RGB colors) and in an aspact ratio of 1:1 (quadratic). Predefined Materials are encoded by these grayscale values, see the file `Material Codes.txt` in the URANOS folder. There is a difference between material numbers (used to fill an entire layer) and material codes, which represent different configurations of materials and are used in the input matrix definitions for the voxels. The PNG will be stretched to the full domain size and each pixel will be extruded in the layer to a 3D pixel (voxel) of the given material.
+  
+### More detailed explanations and instructions
+
+- See the [URANOS Wiki](https://github.com/mkoehli/uranos/wiki).
+

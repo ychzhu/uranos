@@ -77,6 +77,7 @@ from figures import Figure
 from spiral_strip_library_v04 import *
 
 filename_figure = '../pubplot.png'
+filename_figure_shallow = '../pubplot-shallow.png'
 
 color_data   = '#1f77b4'
 color_labels = '#AAAAAA'
@@ -107,6 +108,27 @@ with Figure(layout=(1,2), size=(8,4),
     
     ax = axes[1]
     ax.set_title('Publications (total)', fontsize=7, color=color_labels)
+    ax.plot(plotdata.t, plotdata.num, color=color_data, drawstyle='steps-post')
+    ax.set_xlim(
+        date( plotdata.t[len(plotdata)-1].year, 1, 1),
+        date( plotdata.t[0].year,              12,31))
+    ax.set_yticks(np.arange(0,len(plotdata),5))
+    ax.xaxis.set_tick_params(labelsize=6)
+    ax.yaxis.set_tick_params(labelsize=6)
+    ax.grid(color=color_labels, ls=':', axis='y', alpha=1)
+    ax.spines.top.set(visible=False)
+    ax.spines.left.set(visible=False)
+    ax.spines.right.set(visible=False)
+    ax.tick_params(colors=color_labels, which='both', axis='y', tick1On=False)
+    ax.tick_params(colors=color_labels, which='both', axis='x')
+    ax.spines["bottom"].set_position(("data", 0))
+    ax.spines["bottom"].set_color(color_labels)
+    ax.plot(1, 0, ">", color=color_labels, transform=ax.get_yaxis_transform(), markersize=3, clip_on=False)
+
+# %%
+with Figure(size=(8,1.5),
+    save=filename_figure_shallow) as ax:
+    ax.set_ylabel('Publications (total)', fontsize=7, color=color_labels)
     ax.plot(plotdata.t, plotdata.num, color=color_data, drawstyle='steps-post')
     ax.set_xlim(
         date( plotdata.t[len(plotdata)-1].year, 1, 1),

@@ -2857,7 +2857,7 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
        </rect>
       </property>
       <property name="text">
-       <string>G:/Analyse/Simulation/ENDF</string>
+       <string>G:/Analyse/Simulation/ENDF/</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_16">
@@ -2896,7 +2896,7 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
        </rect>
       </property>
       <property name="text">
-       <string>G:/Analyse/Simulation/Cosmics/results19/allHistos0.99_0.00.root</string>
+       <string>G:/Analyse/Simulation/Cosmics/inputSpectrum.root</string>
       </property>
      </widget>
      <widget class="QLabel" name="label_33">
@@ -2904,12 +2904,12 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
        <rect>
         <x>20</x>
         <y>18</y>
-        <width>511</width>
+        <width>561</width>
         <height>51</height>
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#5a5a5a;&quot;&gt;Enter the paths to your folders&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#5a5a5a;&quot;&gt;End folder paths by a slash \&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#5a5a5a;&quot;&gt;Enter the paths to your folders&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#5a5a5a;&quot;&gt;End folder paths by a slash / or backslash \ according to your system&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>

@@ -1238,7 +1238,7 @@ public:
         lineEdit_InputSpectrumFolder->setGeometry(QRect(20, 160, 561, 22));
         label_33 = new QLabel(tab_5);
         label_33->setObjectName(QString::fromUtf8("label_33"));
-        label_33->setGeometry(QRect(20, 18, 511, 51));
+        label_33->setGeometry(QRect(20, 18, 561, 51));
         label_33->setAlignment(Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop);
         label_33->setWordWrap(true);
         tabWidget->addTab(tab_5, QString());
@@ -2216,11 +2216,11 @@ public:
         lineEdit_OutputFolder->setText(QCoreApplication::translate("MainWindow", "G:/Analyse/Simulation/Cosmics/", nullptr));
         label_25->setText(QCoreApplication::translate("MainWindow", "Detector Energy Calibration File", nullptr));
         label_17->setText(QCoreApplication::translate("MainWindow", "Output Folder", nullptr));
-        lineEdit_CrosssectionFolder->setText(QCoreApplication::translate("MainWindow", "G:/Analyse/Simulation/ENDF", nullptr));
+        lineEdit_CrosssectionFolder->setText(QCoreApplication::translate("MainWindow", "G:/Analyse/Simulation/ENDF/", nullptr));
         label_16->setText(QCoreApplication::translate("MainWindow", "Input Spectrum Calculation File", nullptr));
         label_30->setText(QCoreApplication::translate("MainWindow", "Work Config Directory", nullptr));
-        lineEdit_InputSpectrumFolder->setText(QCoreApplication::translate("MainWindow", "G:/Analyse/Simulation/Cosmics/results19/allHistos0.99_0.00.root", nullptr));
-        label_33->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" color:#5a5a5a;\">Enter the paths to your folders</span></p><p><span style=\" color:#5a5a5a;\">End folder paths by a slash \\</span></p></body></html>", nullptr));
+        lineEdit_InputSpectrumFolder->setText(QCoreApplication::translate("MainWindow", "G:/Analyse/Simulation/Cosmics/inputSpectrum.root", nullptr));
+        label_33->setText(QCoreApplication::translate("MainWindow", "<html><head/><body><p><span style=\" color:#5a5a5a;\">Enter the paths to your folders</span></p><p><span style=\" color:#5a5a5a;\">End folder paths by a slash / or backslash \\ according to your system</span></p></body></html>", nullptr));
         tabWidget->setTabText(tabWidget->indexOf(tab_5), QCoreApplication::translate("MainWindow", "Folders", nullptr));
         groupBox_7->setTitle(QCoreApplication::translate("MainWindow", "Map Export drawing options", nullptr));
         radioButton_expHeat->setText(QCoreApplication::translate("MainWindow", "Heat Map", nullptr));

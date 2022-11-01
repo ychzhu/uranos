@@ -19,6 +19,8 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
+string versionString = "v1.0beta (30.09.2022)";
+
 class I : public QThread
 {
 public:
@@ -109,6 +111,12 @@ int main(int argc, char *argv[])
         {
             w.activateThermalSkyEvaporation();
             w.activateDetectorAngleBatchRun();
+        }
+
+        if ((std::string(argv[1])=="--version"))
+        {
+            cout<<versionString<<endl;
+            return 0;
         }
     }
 
@@ -248,6 +256,11 @@ int main(int argc, char *argv[])
 
     //disableGUI = true;
 
+    if (!silent)
+    {
+        cout<<"Welcome to URANOS "<<versionString<<endl;
+    }
+
     // command line output logos
     if (false)
     {
@@ -289,6 +302,8 @@ int main(int argc, char *argv[])
         cout<<" ,#%#%%#/,     ........//////////////////////////////////////////////////***..."<<endl;
         cout<<"                        ...................................................    "<<endl;
     }
+
+
 
     // Main Window control
     if (disableGUI)

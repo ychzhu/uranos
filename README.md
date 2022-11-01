@@ -41,13 +41,13 @@ Explanations and instructions can be found in the [URANOS Wiki](https://github.c
 
 ### Preparation
 
-1. Download the zipped binary package and the ENDF data zip file. The binaries can also be found in this repository.
+1. Download the zipped binary package as well as the ENDF data and IncomingSpectrum zip files. The binaries can be found in this repository in the /binaries folder and the ENDF data and the Incoming Spectrum files can be found in the /data folder.
 2. Unzip the URANOS files into a folder of your choice.
-3. Unzip the ENDF data files, which also contains the `Input Spectrum Calibration File`, into a folder of your choice. 
-4. Run `URANOSGUI.exe`.
-5. Insert the full path and filename of the `IncomingSpectrum.root` into `Input Spectrum Calibration File` under URANOS' *Setup* tab. 
+3. Unzip the ENDF data files and the `Input Spectrum Calibration File` into a folder of your choice, preferably both into the same folder, preferably called /ENDF. 
+4. Run `URANOSGUI.exe`. When running URANOS for the first time you will see an error message that relevant data files are missing, this can then be corrected in the next step.
+5. Insert the full path and filename of the `IncomingSpectrum.root` into `Input Spectrum Calibration File` under URANOS' *Setup* tab. If the destination path you entered turns red, it is not recognized by the system. Black or grey indicate valid folders or files.
 6. Insert the full path to the ENDF files into `Cross Section Folder` under URANOS' *Setup* tab. 
-7. Set a `work directory` where the configuration files of your scenario are to be stored. Mind a trailing slash.
+7. Set a `work directory` where the configuration files of your scenario are to be stored. Mind a trailing slash. 
 8. Set an `output directory` where the simulation results will be stored.  Mind a trailing slash.
 
 ### First Run
@@ -62,4 +62,4 @@ In order to configure your own simulation:
 3. Put a PNG image file into the `work folder` and name it by the number of the layer you want to define, for example `6.png` for the layer number 6.
  By pressing `Use Layer Maps` URANOS will search for these PNG files in the work folder.
  
- *Note:* The PNG files are a convenient way to define your input material composition at the horizontal scale. They have to be in grayscale (or similar RGB colors) and in an aspact ratio of 1:1 (quadratic). Predefined Materials are encoded by these grayscale values, see the file `Material Codes.txt` in the URANOS folder. The PNG will be stretched to the full domain size and each pixel will be extruded in the layer to a 3D pixel (voxel) of the given material.
+  *Note:* The PNG files are a convenient way to define your input material composition at the horizontal scale. They have to be in grayscale (or similar RGB colors) and in an aspact ratio of 1:1 (quadratic). Predefined Materials are encoded by these grayscale values, see the file `Material Codes.txt` in the URANOS folder. There is a difference between material numbers (used to fill an entire layer) and material codes, which represent different configurations of materials and are used in the input matrix definitions for the voxels. The PNG will be stretched to the full domain size and each pixel will be extruded in the layer to a 3D pixel (voxel) of the given material.

@@ -452,6 +452,7 @@ int column = -1;
 int type = 0;
 QWidget* boxWindowPointer;
 QPushButton* buttonPointer;
+bool inputMatrixDefsShown = false;
 
 // variables used throughout the calculation routine and which are made global
 double oldDiffTime = 0;
@@ -2272,7 +2273,7 @@ bool MainWindow::importSettings()
             if (lineCounter == 51) { stream >> tempInt; if (tempInt == 1) ui->checkBoxTravelDistGraph->setChecked(true); else ui->checkBoxTravelDistGraph->setChecked(false); }
             if (lineCounter == 52) { stream >> tempInt; if (tempInt == 1) { detLayerFileOutput = true; ui->checkBoxFileOutput3->setChecked(true); } else { detLayerFileOutput = false; ui->checkBoxFileOutput3->setChecked(false); } }
             if (lineCounter == 53) { stream >> tempInt; if (tempInt == 1) ui->checkBox_activateThermal->setChecked(true); else ui->checkBox_activateThermal->setChecked(false); }
-            if (lineCounter == 54) { stream >> tempInt; if (tempInt == 1) { ui->checkBox_useImage->setChecked(true); layerMapsImport = true; } else { ui->checkBox_useImage->setChecked(false); layerMapsImport = false; } }
+            if (lineCounter == 54) { stream >> tempInt; if (tempInt == 1) { ui->checkBox_useImage->setChecked(true); layerMapsImport = true; useImage = true;} else { ui->checkBox_useImage->setChecked(false); layerMapsImport = false; useImage = false;} }
             if (lineCounter == 55) { stream >> tempInt; if (tempInt == 1) showDensityTrackMapSide = true; else showDensityTrackMapSide = false; }
             if (lineCounter == 56) stream >> densityTrackMapSideCutOutValue;
         }
@@ -10931,7 +10932,7 @@ string tmpStringSimulate = "";
  */
 void MainWindow::on_pushButton_Simulate_clicked()
 {
-    Int_t tp1 = 1, tp2 = 2;
+    Int_t tp1 = 1, tp2 = 2, mat;
 
     tmpStringSimulate.reserve(200);
 
@@ -11022,6 +11023,18 @@ void MainWindow::on_pushButton_Simulate_clicked()
         }
     }
 
+    for (int i = 0; i < geometries.size() - 1; i++)
+    {
+        mat = (int)geometries.at(i)[6];
+        tp1 = i + 1;
+        if ((mat < 7)||(mat > 41)) // here the materials are hardcoded... could be improved
+        {
+            string error2 = "At Layer "+(string)castIntToString(tp1);
+            setStatus(1, "Error: Wrong Material");
+            return;
+        }
+    }
+
     setStatus(1, "Reading Spectrum Parameter Files");
     delay(5);
 
@@ -11031,7 +11044,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
     {
         simulationRunning = true;
         cosmicNSimulator(this);
-        delay(100);
+        delay(50);
     }
 
     ui->neutronCountView->setText("");
@@ -12468,7 +12481,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.0&beta;(22.09.2022)<br> ";
+    messageString+=        "v1.0&beta;(30.09.2022)<br> ";
     messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.0</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -12618,7 +12631,7 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
         on_pushButton_LoadGeometry_clicked();
         if (layerMapsImport)
         {
-            useImage = false;
+            useImage = true;
             on_checkBox_useImage_clicked();
         }
     }
@@ -12750,6 +12763,10 @@ void MainWindow::on_pushButton_ReadGeometry_clicked()
     ui->spinBox_StartingLayer->setValue(2);
     ui->spinBox_DetectorLayer->setValue(4);
     ui->spinBox_GroundLayer->setValue(6);
+
+    ui->checkBox_useImage->setChecked(false);
+    layerMapsImport = false;
+    useImage = false;
 }
 
 /**
@@ -12840,9 +12857,9 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     {
         if (!silentMode)
         {
-            //if (noGUIMode) cout<<"No Config File"<<endl;
+            if (noGUIMode) cout<<"No Config File"<<endl;
         }
-        setStatus(1,"No Geometry Config File");
+        setStatus(1,"No Geometry Config File"); delay(1);
         return;
     }
     int  modelRows = model->rowCount();
@@ -12851,6 +12868,8 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     {
         model->removeRow(0, QModelIndex());
     }
+
+    setStatus(1,"Loading Geometry File"); delay(1);
 
     int a, b, c, i;
     float posInput, heightInput, materialInput;
@@ -12906,6 +12925,22 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     startingLayer = a - 1;
     detectorLayer = b - 1;
     groundLayer = c - 1;
+
+    if (layerMapsImport)
+    {
+        ui->checkBox_useImage->setChecked(true);
+
+        setStatus(2,"Loading Input Definitions"); delay(1);
+
+        on_checkBox_useImage_clicked();
+        checkInputPics();
+    }
+    else
+    {
+        ui->checkBox_useImage->setChecked(false);
+    }
+
+    setStatus(1,"");
 }
 
 /**
@@ -13373,11 +13408,14 @@ void MainWindow::checkInputPics()
 
 
     string picLetter = "";
+    inputMatrixDefsShown = false;
+    if (inputMatrixDefsShown) cout<<"Input Matrix definitions: ";
+
     for (int z = 0; z < model->rowCount(); ++z)
     {
         QStandardItem* item = model->itemFromIndex(model->index(z, 3, QModelIndex()));
         item->setTextAlignment(Qt::AlignCenter);
-        picLetter = "";
+        picLetter = "";        
 
         temp = z + 1;
         if ((inputPics[z] == 0) && (inputPics2[z] == 0) && (inputPics3[z] == 0))
@@ -13386,35 +13424,45 @@ void MainWindow::checkInputPics()
         }
         else
         {
+            if (inputMatrixDefsShown) cout<<castIntToString(temp);
+
             if (inputPics[z] == 1)
             {
                 picLetter += "m";
+                if (inputMatrixDefsShown) cout<<"m";
             }
             if (inputPics2[z] == 1)
             {
                 picLetter += "d";
+                if (inputMatrixDefsShown) cout<<"d";
             }
             if (inputPics3[z] == 1)
             {
                 picLetter += "p";
+                if (inputMatrixDefsShown) cout<<"p";
             }
             if (inputPics[z] == 2)
             {
                 picLetter += "M";
+                if (inputMatrixDefsShown) cout<<"M";
             }
             if (inputPics2[z] == 2)
             {
                 picLetter += "D";
+                if (inputMatrixDefsShown) cout<<"D";
             }
             if (inputPics3[z] == 2)
             {
                 picLetter += "P";
+                if (inputMatrixDefsShown) cout<<"P";
             }
+            if (inputMatrixDefsShown) cout<<" ";
 
             item->setText(QString::fromStdString((string)castIntToString(temp) + picLetter + " [" + (string)castIntToString(inputPicSizes[z]) + "]"));
-        }
+        }       
         inputMatrixPixels = inputPicSizes[z]; //doesn't make so much sense
     }
+    if (inputMatrixDefsShown) cout<<endl;
 
     if (foundData)
     {
@@ -13433,10 +13481,13 @@ void MainWindow::checkInputPics()
  */
 void MainWindow::on_checkBox_useImage_clicked()
 {
-    if (useImage)
+    bool checkBoxChecked = ui->checkBox_useImage->isChecked();
+
+    if (!(checkBoxChecked))
     {
         useImage = false;
         haveDifferentSoilMoistures = false;
+        layerMapsImport = false;
         for (int z = 0; z < model->rowCount(); ++z)
         {
             QStandardItem* item = model->itemFromIndex(model->index(z, 3, QModelIndex()));
@@ -13445,6 +13496,7 @@ void MainWindow::on_checkBox_useImage_clicked()
     }
     else
     {
+        layerMapsImport = true;
         useImage = true;
         checkInputPics();
     }

@@ -1,11 +1,14 @@
-# Publications using URANOS (21)
+# Publications using URANOS (22)
 
-Citations: **409** (based on [CrossRef.org](https://www.crossref.org/))
+Citations: **412** (based on [CrossRef.org](https://www.crossref.org/))
 
 *Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
 ![Publications and citations per year](pubplot.png)
 
 ## Details 
+- `2022` Rasche, Weimar, Schrön, Köhli, Morgner, Güntner, Blume  
+**"A change in perspective: Downhole cosmic-ray neutron sensing for the estimation of soil moisture"**  
+— *[preprint]*, doi:[10.5194/hess-2022-364](http://dx.doi.org/10.5194/hess-2022-364), Citations: **0**  
 - `2022` Köhli, Schrön, Zacharias, Schmidt  
 **"URANOS v1.0 – the Ultra Rapid Adaptable Neutron-Only Simulation for Environmental Research"**  
 — *[preprint]*, doi:[10.5194/gmd-2022-93](http://dx.doi.org/10.5194/gmd-2022-93), Citations: **0**  
@@ -50,23 +53,23 @@ Citations: **409** (based on [CrossRef.org](https://www.crossref.org/))
 — *Physica B: Condensed Matter*, doi:[10.1016/j.physb.2018.03.026](http://dx.doi.org/10.1016/j.physb.2018.03.026), Citations: **5**  
 - `2018` Schrön, Rosolem, Köhli, Piussi, Schröter, Iwema, Kögler, Oswald, ..., Zacharias  
 **"Cosmic-ray Neutron Rover Surveys of Field Soil Moisture and the Influence of Roads"**  
-— *Water Resour. Res.*, doi:[10.1029/2017wr021719](http://dx.doi.org/10.1029/2017wr021719), Citations: **38**  
+— *Water Resour. Res.*, doi:[10.1029/2017wr021719](http://dx.doi.org/10.1029/2017wr021719), Citations: **39**  
 - `2018` Köhli, Schrön, Schmidt  
 **"Response functions for detectors in cosmic ray neutron sensing"**  
-— *Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment*, doi:[10.1016/j.nima.2018.06.052](http://dx.doi.org/10.1016/j.nima.2018.06.052), Citations: **22**  
+— *Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment*, doi:[10.1016/j.nima.2018.06.052](http://dx.doi.org/10.1016/j.nima.2018.06.052), Citations: **23**  
 - `2018` Schrön, Zacharias, Womack, Köhli, Desilets, Oswald, Bumberger, Mollenhauer, ...., Dietrich  
 **"Intercomparison of cosmic-ray neutron sensors and water balance monitoring in an urban environment"**  
 — *Geosci. Instrum. Method. Data Syst.*, doi:[10.5194/gi-7-83-2018](http://dx.doi.org/10.5194/gi-7-83-2018), Citations: **27**  
 - `2017` Schrön, Köhli, Scheiffele, Iwema, Bogena, Lv, Martini, Baroni, ........, Zacharias  
 **"Improving calibration and validation of cosmic-ray neutron sensors in the light of spatial sensitivity"**  
-— *Hydrol. Earth Syst. Sci.*, doi:[10.5194/hess-21-5009-2017](http://dx.doi.org/10.5194/hess-21-5009-2017), Citations: **63**  
+— *Hydrol. Earth Syst. Sci.*, doi:[10.5194/hess-21-5009-2017](http://dx.doi.org/10.5194/hess-21-5009-2017), Citations: **61**  
 - `2016` Schrön, Zacharias, Köhli, Weimar, Dietrich  
 **"Monitoring Environmental Water with Ground Albedo Neutrons from Cosmic Rays"**  
-— *Proceedings of The 34th International Cosmic Ray Conference  — PoS(ICRC2015)*, doi:[10.22323/1.236.0231](http://dx.doi.org/10.22323/1.236.0231), Citations: **5**  
+— *Proceedings of The 34th International Cosmic Ray Conference  — PoS(ICRC2015)*, doi:[10.22323/1.236.0231](http://dx.doi.org/10.22323/1.236.0231), Citations: **6**  
 - `2016` Köhli, Allmendinger, Häußler, Schröder, Klein, Meven, Schmidt  
 **"Efficiency and spatial resolution of the CASCADE thermal neutron detector"**  
 — *Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment*, doi:[10.1016/j.nima.2016.05.014](http://dx.doi.org/10.1016/j.nima.2016.05.014), Citations: **30**  
 - `2015` Köhli\*, Schrön\*, Zreda, Schmidt, Dietrich, Zacharias *(\*shared 1st authorship)*  
 **"Footprint characteristics revised for field‐scale soil moisture monitoring with cosmic‐ray neutrons"**  
-— *Water Resour. Res.*, doi:[10.1002/2015wr017169](http://dx.doi.org/10.1002/2015wr017169), Citations: **147**  
+— *Water Resour. Res.*, doi:[10.1002/2015wr017169](http://dx.doi.org/10.1002/2015wr017169), Citations: **149**  
 

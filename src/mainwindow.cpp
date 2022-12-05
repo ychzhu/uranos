@@ -7486,7 +7486,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 rGeneral = 1.;
                                 rMaterial = 1.;
                                 saltConcentration = 3.5;
-                                rWater = 0.99;
+                                if ((int)geometries.at(g)[6] != 8) rWater = 0.99; //not Snow
                                 rPlants = 0.003;
                                 soilWaterFrac = soilWaterFracVar;
                                 absHumidityAir = absHumidityAirVar;
@@ -7569,7 +7569,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-                    if ((material != 10) && (material != 11) && (hasPassedSurface) && (!hasBeenInSoil)) hasBeenInSoil = true;
+                    if ((material != 10) && (material != 11) && (hasPassedSurface) && (!hasBeenInSoil)) hasBeenInSoil = true;  
 
                     //calculate interaction length for absorbtion (wwRangeAbs) and probability for incoherent scattering (probSi <- no spatial information due to small WW probabilities)
                     //materials: water = 9, air (dry) = 10, air (wet) = 11, Quarz = 12, Al2O3 = 13; Soil(wc%) = 20, Plants = 21;
@@ -12481,8 +12481,8 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.0&beta;(30.09.2022)<br> ";
-    messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.0</small> <br>";
+    messageString+=        "v1.01;(05.12.2022)<br> ";
+    messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.1</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
     messageString += "<font color='#e4e4e4'> All your neutrons <br> are belong to us!<\font>";

@@ -1,0 +1,1 @@
+Detector Response Functions are energy-dependent detection probability characterizations of CRNS systems. The files provided here are tab-separated ASCII files with the columns energy [MeV] and detection probability [not normalized]

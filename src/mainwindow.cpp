@@ -2482,7 +2482,17 @@ void MainWindow::exportSettings(string str)
  */
 MainWindow::~MainWindow()
 {
-    exportSettings("");
+    if (!noGUIMode)
+    {
+        if (configFilePathConfigured)
+        {
+            exportSettings(configFilePath);
+        }
+        else
+        {
+            exportSettings("");
+        }
+    }
     delete ui;
 }
 
@@ -2493,8 +2503,7 @@ MainWindow::~MainWindow()
 void MainWindow::exportToSave()
 {
     setStatus(1, "Exporting Data");
-    setStatus(2, "");
-    delay(5);
+    if (!noGUIMode) {setStatus(2, "");    delay(5);}
 
     gROOT->ForceStyle();
 
@@ -6530,7 +6539,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     //time (&actualTime);
                     newDataComes = true;
 
-                    uiM->redrawNeutronMap(difftime(diffmean, start) - pauseTime);
+                    if (!noGUIMode) uiM->redrawNeutronMap(difftime(diffmean, start) - pauseTime);
                     //uiM->redrawNeutronMap(difftime(diffmean,oldTime));
                     //time (&oldTime);
                 }
@@ -6997,9 +7006,9 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if (true)
                     {
-                        if (n % 20000 == 0)
+                        if (((nTotal <= 100000) && (n % 500 == 0)) || ((nTotal > 100000) && (n % 5000 == 0)))
                         {
-                            progressN = 50 * (nTotal) / (neutrons);
+                            //progressN = 50 * (nTotal) / (neutrons);
                             cout << "\r" << castFloatToString(100. * (nTotal * 1.) / (neutrons * 1.), 6) << " % completed";
                             cout.flush();
                         }
@@ -7012,13 +7021,19 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if ((doDetectorBatchRun) || (doDetectorBatchRun2) || (doDetectorAngleBatchRun))
                     {
-                        if (n % 10000 == 0) delay(2);
-                        if (n % 50000 == 0) delay(3);
+                        if (!noGUIMode)
+                        {
+                            if (n % 10000 == 0) delay(2);
+                            if (n % 50000 == 0) delay(3);
+                        }
                     }
                     else
                     {
-                        if (n % 2000 == 0) delay(2);
-                        if (n % 10000 == 0) delay(3);
+                        if (!noGUIMode)
+                        {
+                            if (n % 2000 == 0) delay(2);
+                            if (n % 10000 == 0) delay(3);
+                        }
                     }
 
                     if ((clearEveryXNeutronsNumber > 0) || (setAutoRefreshRateClearing))
@@ -10777,7 +10792,10 @@ bool cosmicNSimulator(MainWindow* uiM)
         time(&end);
         Double_t dif = difftime(end, start);
         cout << "\r" << castFloatToString(100., 6) << " % completed ";
-        cout << endl << "Runtime: " << castDoubleToString(dif) << " s" << endl << endl;
+        int secondsEnd = dif;
+        int minutesEnd = dif / 60;
+        int hoursEnd = minutesEnd / 60;
+        cout << endl << "Runtime: " << castDoubleToString(dif) << " s (" << int(hoursEnd) <<" h, "<< int(minutesEnd%60) <<" min, " << int(secondsEnd%60) <<" s)" << endl << endl;
         if (doTheCoastalTransect)
         {
             TString detOutput = castIntToString(detd) + "\t" + castIntToString(detc) + "\t" + castIntToString(detb) + "\t" + castIntToString(deta) + "\t" + castIntToString(det0)
@@ -14732,7 +14750,14 @@ void MainWindow::on_checkBoxFileOutput3_toggled(bool checked)
  */
 void MainWindow::on_pushButton_SaveConfig_clicked()
 {
-    exportSettings("");
+    if (configFilePathConfigured)
+    {
+        exportSettings(configFilePath);
+    }
+    else
+    {
+        exportSettings("");
+    }
     if (!noGUIMode) setStatus(1, "Uranos.cfg written");
 }
 

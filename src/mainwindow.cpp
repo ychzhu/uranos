@@ -621,9 +621,9 @@ bool setupFootprintFunction()
         p0 = (TF2*)readParFtPrnt2.Get("grfunction2");
         p1 = (TF2*)readParFtPrnt2.Get("grfunction4");
         p2 = (TF2*)readParFtPrnt2.Get("grfunction3");
-        p3 = (TF2*)readParFtPrnt2
-                .Get("grfunction5");
+        p3 = (TF2*)readParFtPrnt2.Get("grfunction5");
     }
+    if (!successful) cout << "FootprintParams root files not found in the ENDF folder (only required for graphical representation)" << endl;
     return successful;
 }
 
@@ -12481,7 +12481,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.01;(05.12.2022)<br> ";
+    messageString+=        "v1.01;(26.12.2022)<br> ";
     messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.1</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 

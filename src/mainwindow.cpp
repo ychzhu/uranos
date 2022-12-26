@@ -122,6 +122,7 @@ TString outputFolder = "";
 TString workFolder = "";
 
 string configFilePath = "";
+bool configFilePathConfigured = false;
 
 TString inputSpectrumFile = "";
 
@@ -182,6 +183,7 @@ bool usexSheetDetector = false;
 bool useRealisticModel = false;     // uses the detector response function instead of upper and lower thl
 bool useRealisticModelDetector = false; // uses the realistic (response function) model for the virtual detector
 bool useRealisticModelLayer = false; // uses the realistic (response function) model for the detector layer
+bool useAdditionalDetectorModel = false; // uses a second response function for the realistic detector model
 bool useRoverModel = false;
 bool useVolumeSource = false;       // source model which extends the source beyound the source layer until the ground layer by an exponential
 bool useHECascadeModel = true;      // model which continues the high energetic part in case of absorption in order to reproduce the correct attenuation length
@@ -555,7 +557,7 @@ void MainWindow::setStatus(int numberLabel, string msg)
 }
 
 /**
- * Set up the Geometry in the main tab.
+ * Set up the Geometry in the main tab, also defines the matrixMetricFactor, the resolution of the image.
  *
  */
 void MainWindow::setupGeometry()
@@ -834,10 +836,16 @@ void MainWindow::setupGraph(int index)
     for (int i = 0; i < (::plotGUIxBinsScatDepthDet.size()); i++) { ::plotGUIxBinsScatDepthDet[i] = 0; ::plotGUIyBinsScatDepthDet[i] = 0; }
     for (int i = 0; i < (::plotGUIxBinsScatDepthDetMax.size()); i++) { ::plotGUIxBinsScatDepthDetMax[i] = 0; ::plotGUIyBinsScatDepthDetMax[i] = 0; }
 
-    setupImport();
+    //setupImport();
+    //ui->customPlot->replot();
+}
 
+void MainWindow::getGraphConfig()
+{
+    setupImport();
     ui->customPlot->replot();
 }
+
 /**
  * Set the output format for vector graphic export (pdf).
  *
@@ -2194,7 +2202,7 @@ bool MainWindow::importSettings()
     string fileName = "Uranos.cfg";
     int lineCounter = 0, tempInt = 0;
 
-    if (noGUIMode) fileName = configFilePath;
+    if ((noGUIMode) || (configFilePathConfigured)) fileName = configFilePath;
 
     ifstream input_stream(fileName, ios::in);
     while (curLine.ReadLine(input_stream))
@@ -3321,7 +3329,7 @@ void MainWindow::exportToSave()
     }
     delay(100);
 
-    setStatus(1, "");
+    if (!noGUIMode) setStatus(1, "");
 }
 
 /**
@@ -3420,7 +3428,7 @@ void MainWindow::replotFootprint()
 
 /**
  * Function to be called On clicking View Spectrum button in Showcase tab.
- * This is the old Sato 2008 function, which is not used any more in the simulation itself
+ * This is the old Sato 2008 function, which is not used any more in the simulation itself (but only for graphical representation)
  */
 void MainWindow::on_pushButton_2_clicked()
 {
@@ -3514,7 +3522,7 @@ void MainWindow::on_pushButton_2_clicked()
  * Gets the splined detector response function energy model from the file.
  *
  * @param dname - file name
- * @return splineEnergy - length of the file.
+ * @return splineEnergy - spline function with logarithmic energy and detection probability normalized to 1.
  */
 TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname)
 {
@@ -4128,7 +4136,7 @@ bool MainWindow::loadParamData(string fileFolder)
     float temp;
     bool error = false;
 
-    cout << "Reading Parameters from " << fileFolder << endl;
+    cout << "Reading Sato 2016 Parameters from " << fileFolder << endl;
 
     i = 0; j = 0;
     dname = fileFolder + "/" + paramGjiFile;
@@ -4153,7 +4161,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + paramGjiFile);
+        setStatus(2, "Failed to load " + paramGjiFile);
     }
 
     i = 0; j = 0;
@@ -4179,7 +4187,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr1File);
+        setStatus(2, "Failed to load " + acorr1File);
     }
 
     i = 0; j = 0;
@@ -4205,7 +4213,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr2File);
+        setStatus(2, "Failed to load " + acorr2File);
     }
 
     i = 0; j = 0;
@@ -4231,7 +4239,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr3File);
+        setStatus(2, "Failed to load " + acorr3File);
     }
 
     i = 0; j = 0;
@@ -4283,7 +4291,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr7File);
+        setStatus(2, "Failed to load " + acorr7File);
     }
 
     i = 0; j = 0;
@@ -4309,7 +4317,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + parampiAngularFile);
+        setStatus(2, "Failed to load " + parampiAngularFile);
     }
 
     return error;
@@ -4805,7 +4813,7 @@ void generateNormalizedSpectrum(TH1F* precalculatedSpectrum, int entries, TStrin
 
     TString histoName1 = "scatteredSurfaceSpectrumRel";
 
-    TString outputFolder = "G:/Analyse/Simulation/Cosmics/results19";
+    TString outputFolder = "";
 
     TFile f1(file1, "READ");
 
@@ -4971,8 +4979,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         //using namespace Ui ;
 
         if (!noGUIMode) uiM->setStatus(1, "Activate Live Mode");
-        if (!noGUIMode) uiM->setStatus(2, "");
-        delay(10);
+        if (!noGUIMode) {uiM->setStatus(2, "");        delay(10);}
 
         setupLiveTHs();
 
@@ -5031,8 +5038,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         int absMaterialNo, currentG, startingLayerHere;
         long loopNumber = -1, neutronTrackNeutrons = 0;
         bool domainWallHit, differentMaterial1, differentMaterial2, differentMaterial3, oneLastCheck, neutronAbsorbedbyDetector;
-        bool doNormalCalc;
-        bool useAdditionalDetectorModel = false;
+        bool doNormalCalc;       
         bool foundSomething, enteredDetectorLayer = false, detectorLayerOverride = false, detectorOverride = false;
 
         const double pi = TMath::Pi();
@@ -5164,8 +5170,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         // Sato 2008 function
         if (usePrecalculatedSpectrum)
         {
-            uiM->setStatus(1, "Generating Input Spectrum");
-            delay(5);
+            if (!noGUIMode) {uiM->setStatus(1, "Generating Input Spectrum");            delay(5);}
             generateNormalizedSpectrum(precalculatedSpectrum, 500000, inputSpectrumFile);
         }
 
@@ -5181,8 +5186,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
         if (usePrecalculatedSato2016Spectrum)
         {
-            uiM->setStatus(1, "Generating Sato 2016 Input Spectrum");
-            delay(5);
+            if (!noGUIMode) {uiM->setStatus(1, "Generating Sato 2016 Input Spectrum");            delay(5);}
 
             double value, energyvalue, result;
             double intSum, intSumAll = 0, xSpl,ySpl;
@@ -5290,8 +5294,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             }
         }
 
-        uiM->setStatus(1, "Generating Detector Model");
-        delay(50);
+        if (!noGUIMode) {uiM->setStatus(1, "Generating Detector Model");        delay(50);}
 
         TSpline3* detectorEnergyModel;
         if (detectorResponseFunctionFile.Length() < 8)
@@ -5305,19 +5308,21 @@ bool cosmicNSimulator(MainWindow* uiM)
         }
 
         TSpline3* detectorEnergyModel2;
-        if (detectorResponseFunctionFile.Length() > 6)
+        if (detectorResponseFunctionFile2.Length() > 6)
         {
-            detectorEnergyModel2 = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile2);
-            cout << "Using additional energy model from: " << detectorResponseFunctionFile2 << endl;
-            useAdditionalDetectorModel = true;
+            if (useAdditionalDetectorModel)
+            {
+                detectorEnergyModel2 = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile2);
+                cout << "Using additional energy model from: " << detectorResponseFunctionFile2 << endl;
+                //useAdditionalDetectorModel = true;
+            }
         }
 
         TF1* detectorAngleModel = new TF1("detectorAngleModel", "[0]+[1]*TMath::Exp(-x/[2])", 0, 1.6);
         detectorAngleModel->SetParameters(1.32171, -0.2542, -0.92);
         detectorAngleModel->SetParNames("Offset", "Base", "Tau");
 
-        uiM->setStatus(1, "Generating Histograms");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Generating Histograms");        delay(5);}
 
         // Histograms to be filled during runtime
         TH1F* scatteredSurfaceSpectrumRel = new TH1F("scatteredSurfaceSpectrumRel", "Relative Scattered Neutron at Surface Spectrum", 10000, 1e-9, 10000);  TH1Fashion(scatteredSurfaceSpectrumRel, "n", "Energy [MeV]", setSize);
@@ -5466,15 +5471,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                 inputPicVector3.push_back(*imageMatrix3);
             }
 
-            uiM->setStatus(1, "Reading Matrices");
-            delay(5);
+            if (!noGUIMode) {uiM->setStatus(1, "Reading Matrices");   delay(5);}
 
             TString add = ""; // the additional letter after the layer number
 
             int picNo = 0;
 
-            uiM->setStatus(1, "Reading ASCII and png maps...");
-            delay(5);
+            {uiM->setStatus(1, "Reading ASCII and png maps...");            delay(5);}
 
             for (int i = 0; i < model->rowCount(); i++)
             {
@@ -5489,7 +5492,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     inputPicVector.at(i) = readmatrix(workFolder, castIntToString(picNo) + add, "dat", -1, inputPicSizes[i]); turnInputMatrix(inputPicVector.at(i));
                      //status bar message
                     string tpp = "#" + castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2);}
                 }
 
                 if ((inputPics[i] == 2) || (inputPics[i] == 4) || (inputPics[i] == 6))
@@ -5497,7 +5500,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     inputPicVector.at(i) = readMatrixPNG(workFolder, castIntToString(picNo) + add); //TMatrixF mm =  readMatrixPNG(workFolder, castIntToString(picNo));
                     string tpp = "#" + castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) { uiM->setStatus(2, tpp);   delay(2);}
 
                 }
 
@@ -5508,13 +5511,14 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                     inputPicVector2.at(i) = readmatrix(workFolder, castIntToString(picNo) + add, "dat", -1, inputPicSizes[i]); turnInputMatrix(inputPicVector2.at(i));
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2);}
                 }
+
                 if (inputPics2[i] == 2)
                 {
                     inputPicVector2.at(i) = readMatrixPNG(workFolder, castIntToString(picNo) + add);
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2);}
                 }
 
                 if (inputPics3[i] == 1) add = "p";
@@ -5524,20 +5528,21 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                     inputPicVector3.at(i) = readmatrix(workFolder, castIntToString(picNo) + add, "dat", -1, inputPicSizes[i]); turnInputMatrix(inputPicVector3.at(i));
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) { uiM->setStatus(2, tpp);   delay(2);}
                 }
+
                 if (inputPics3[i] == 2)
                 {
                     inputPicVector3.at(i) = readMatrixPNG(workFolder, castIntToString(picNo) + add);
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2); }
                 }
 
             }
 
             matrixMetricFactor = squareDim / 1000. / (inputMatrixPixels * 1.);
         }
-        uiM->setStatus(2, "");
+        if (!noGUIMode) uiM->setStatus(2, "");
 
         // initialize random generator
         r.SetSeed(time(NULL));
@@ -5647,8 +5652,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         // ****************************************
         // Reading all cross sections from matrices
 
-        uiM->setStatus(1, "Reading Angular Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Angular Cross Sections");        delay(5);}
+        else {cout << "Reading Cross Sections" <<endl;}
 
         vector<TMatrixF> angularHighEnergySi = readAngularTabulatedCoefficients(endfFolder, "angularSi28tabulated.txt", 182);
         vector<TMatrixF> angularHighEnergyN = readAngularTabulatedCoefficients(endfFolder, "angularN14tabulated2.txt", 182);
@@ -5693,8 +5698,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF angularK39 = readAngularCoefficients(endfFolder, "angularK39.txt");
         static TMatrixF angularTi48 = readAngularCoefficients(endfFolder, "angularTi48.txt");
 
-        uiM->setStatus(1, "Reading Elastic Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Elastic Cross Sections");        delay(5);}
 
         static TMatrixF sigmaSi = readSigmaEnergy(endfFolder, "elasticSi28.txt");		//if (varyCrosssections) modifyCSmatrix(&sigmaSi, sigmaElasticFactor*0.01,sigmaElasticFactor*0.08);
         static TMatrixF sigmaN = readSigmaEnergy(endfFolder, "elasticN14.txt");		//if (varyCrosssections) modifyCSmatrix(&sigmaN, sigmaElasticFactor*0.04,sigmaElasticFactor*0.02); //not known in fact, taken from N15
@@ -5727,8 +5731,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         csMatrixOP = &sigmaO;
         csMatrixNP = &sigmaN;
 
-        uiM->setStatus(1, "Reading Absorption Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Absorption Cross Sections");        delay(5);}
 
         static TMatrixF absorbSi = readSigmaEnergy(endfFolder, "absorbSi28.txt");           //if (varyCrosssections) modifyCSmatrix(&absorbSi, sigmaAbsorbFactor*0.20,sigmaAbsorbFactor*0.40);
         static TMatrixF absorbN = readSigmaEnergy(endfFolder, "absorbN14.txt");             //if (varyCrosssections) modifyCSmatrix(&absorbN, sigmaAbsorbFactor*0.30,sigmaAbsorbFactor*0.075);
@@ -5843,8 +5846,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF absorbMt107Ti48 = readSigmaEnergy(endfFolder, "absorbMt107Ti48.txt");
         static TMatrixF absorbMt207Ti48 = readSigmaEnergy(endfFolder, "absorbMt207Ti48.txt");
 
-        uiM->setStatus(1, "Reading Inelastic Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Inelastic Cross Sections");        delay(5);}
 
         static TMatrixF sigmaInMt51N = readSigmaEnergy(endfFolder, "inelasticMt51N14.txt");	//if (varyCrosssections) modifyCSmatrix(&sigmaInMt51N, sigmaInelasticFactor*0.40,sigmaInelasticFactor*0.40);
         static TMatrixF sigmaInMt52N = readSigmaEnergy(endfFolder, "inelasticMt52N14.txt");	//if (varyCrosssections) modifyCSmatrix(&sigmaInMt52N, sigmaInelasticFactor*0.40,sigmaInelasticFactor*0.40);
@@ -6136,8 +6138,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         vector<double> inelasticEnergyLossTi48;
         inelasticEnergyLossTi48.push_back(0.9835); inelasticEnergyLossTi48.push_back(2.2956); inelasticEnergyLossTi48.push_back(2.421); inelasticEnergyLossTi48.push_back(2.997);
 
-        uiM->setStatus(1, "Reading Inelastic Angular Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Inelastic Angular Cross Sections");        delay(5);}
 
         static TMatrixF angularInelasticMt51N = readAngularCoefficients(endfFolder, "angularInelasticMt51N14.txt");
         static TMatrixF angularInelasticMt52N = readAngularCoefficients(endfFolder, "angularInelasticMt52N14.txt");
@@ -6378,9 +6379,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         sigmaInTi48AngularVec.push_back(angularInelasticMt51Ti48); sigmaInTi48AngularVec.push_back(angularInelasticMt52Ti48); sigmaInTi48AngularVec.push_back(angularInelasticMt53Ti48); sigmaInTi48AngularVec.push_back(angularInelasticMt54Ti48);
 
 
-        cout << endl;
-        uiM->setStatus(1, "Starting simulation...");
-        delay(5);
+        if (!noGUIMode) cout << endl;
+        if (!noGUIMode) {uiM->setStatus(1, "Starting simulation...");        delay(5);}
 
         // for parameter batch run
         int parInt1, parInt2;
@@ -6517,8 +6517,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             {
                 if (n == 0)
                 {
-                    uiM->setStatus(1, "");
-                    delay(5);
+                    if (!noGUIMode) {uiM->setStatus(1, "");                    delay(5);}
                 }
                 totalActualNeutrons = n;
 
@@ -6538,7 +6537,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                 if ((n % (refreshCycle / 10) == 0) && (n > 9))
                 {
-                    delay(1);
+                    if (!noGUIMode) delay(1);
                 }
 
                 if ((n % refreshCycle == 0) && (n > 99) && (n < 5100))
@@ -10906,13 +10905,16 @@ bool cosmicNSimulator(MainWindow* uiM)
         for (int bn = 0; bn < scatteredSurfaceMaxDepth->GetNbinsX(); bn++) { scatteredSurfaceMaxDepth->SetBinContent(bn, 0); }
 
 
-        uiM->setStatus(1, "Clearing Data");
-        cout << "Internal: ";
+        if (!noGUIMode)
+        {
+            uiM->setStatus(1, "Clearing Data");
+            cout << "Internal: ";
+        }
         histoClearUp(&allTHs2);
-        cout << "External: ";
+        if (!noGUIMode) cout << "External: ";
         histoClearUp(&allTHs);
-        cout << "done" << endl;
-        uiM->setStatus(1, "");
+        if (!noGUIMode) cout << "done" << endl;
+        if (!noGUIMode) uiM->setStatus(1, "");
     }
 
     catch (std::out_of_range& e)
@@ -11035,8 +11037,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
         }
     }
 
-    setStatus(1, "Reading Spectrum Parameter Files");
-    delay(5);
+    if (!noGUIMode) {setStatus(1, "Reading Spectrum Parameter Files");    delay(5);}
 
     if (loadParamData((string)endfFolder)) return;
 
@@ -11262,7 +11263,7 @@ void MainWindow::on_pushButton_Clear_clicked()
     if (alreadyStarted)
     {
         //if (allTHs.size()>1) histoClearUp(&allTHs);
-        setStatus(1, "Clearing Data");
+        if (!noGUIMode) setStatus(1, "Clearing Data");
         delay(15);
         if (liveTHs.size() > 1) histoLiveClearUp(&liveTHs);
 
@@ -11272,8 +11273,8 @@ void MainWindow::on_pushButton_Clear_clicked()
         ui->label_npers->setText("()");
         ui->neutronCountView->setText("");
         ui->label_detectorNs->setText("()");
-        setStatus(1, "");
-        setStatus(2, "");
+        if (!noGUIMode) setStatus(1, "");
+        if (!noGUIMode) setStatus(2, "");
         redrawNeutronMap(-1);
 
         ui->detectorLayerRatioBar->setValue(0);
@@ -12481,7 +12482,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.01;(26.12.2022)<br> ";
+    messageString+=        "v1.02 (26.12.2022)<br> ";
     messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.1</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -12611,6 +12612,15 @@ void MainWindow::activateThermal()
     ui->checkBoxThermalData->setHidden(false);
 }
 
+void MainWindow::setConfigFilePath(string pathtoConfigFile)
+{
+    if (pathtoConfigFile.length() > 1)
+    {
+        configFilePath = pathtoConfigFile;
+        configFilePathConfigured = true;
+    }
+}
+
 /**
  * Function to disable the GUI and run in command line.
  * @param - path to ConfigFile (uranos.cfg)
@@ -12625,6 +12635,7 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
 
     if (pathtoConfigFile.length() > 1)
     {
+        configFilePathConfigured = true;
         cout << "Using Config File " << pathtoConfigFile << endl;
         importSettings();
         //setupImport();
@@ -12639,11 +12650,11 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
 
     setupGeometry();
 
-    cout << "Cosmic Neutron Spectrum Definition..." << endl;
+    //cout << "Cosmic Neutron Spectrum Definition..." << endl;
 
     if (!(loadParamData((string)endfFolder)))
     {
-        cout << endl << "done" << endl;
+        cout << "done" << endl;
         cosmicNSimulator(this);
     }
     else
@@ -12857,7 +12868,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     {
         if (!silentMode)
         {
-            if (noGUIMode) cout<<"No Config File"<<endl;
+            if (noGUIMode) { cout<<"No Config File"<<endl; }
         }
         setStatus(1,"No Geometry Config File"); delay(1);
         return;
@@ -12869,7 +12880,8 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
         model->removeRow(0, QModelIndex());
     }
 
-    setStatus(1,"Loading Geometry File"); delay(1);
+    if (!noGUIMode) {setStatus(1,"Loading Geometry File"); delay(1);}
+    if (noGUIMode) { cout<<"Loading Geometry Files"<<endl; }
 
     int a, b, c, i;
     float posInput, heightInput, materialInput;
@@ -12930,7 +12942,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     {
         ui->checkBox_useImage->setChecked(true);
 
-        setStatus(2,"Loading Input Definitions"); delay(1);
+        if (!noGUIMode) {setStatus(2,"Loading Input Definitions"); delay(1);}
 
         on_checkBox_useImage_clicked();
         checkInputPics();
@@ -12940,7 +12952,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
         ui->checkBox_useImage->setChecked(false);
     }
 
-    setStatus(1,"");
+    if (!noGUIMode) setStatus(1,"");
 }
 
 /**
@@ -13204,7 +13216,7 @@ void checkInputMaterialDefinitions()
  */
 void MainWindow::checkInputPics()
 {
-    setStatus(1, "");   setStatus(2, "");
+    if (!noGUIMode) {setStatus(1, "");   setStatus(2, "");}
     ifstream* stream_in;
     bool foundData = false;
     TString add = "";
@@ -14689,6 +14701,7 @@ void MainWindow::on_lineEdit_DetectorFile_textChanged(const QString& arg1)
         {
             ui->label_25->setText("Detector Energy Calibration File (+1)");
             detectorResponseFunctionFile2 = textHere;
+            useAdditionalDetectorModel = true;
         }
     }
 }
@@ -14720,6 +14733,6 @@ void MainWindow::on_checkBoxFileOutput3_toggled(bool checked)
 void MainWindow::on_pushButton_SaveConfig_clicked()
 {
     exportSettings("");
-    setStatus(1, "Uranos.cfg written");
+    if (!noGUIMode) setStatus(1, "Uranos.cfg written");
 }
 

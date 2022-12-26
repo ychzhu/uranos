@@ -19,7 +19,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.01 (26.12.2022)";
+string versionString = "v1.02 (26.12.2022)";
 
 class I : public QThread
 {
@@ -76,7 +76,6 @@ int main(int argc, char *argv[])
 
     MainWindow w;
 
-
     // these are the command line options for starting URANOS
     if (argc>1)
     {
@@ -113,7 +112,7 @@ int main(int argc, char *argv[])
             w.activateDetectorAngleBatchRun();
         }
 
-        if ((std::string(argv[1])=="--version"))
+        if ((std::string(argv[1])=="--version") || ((std::string(argv[1])=="version")))
         {
             cout<<versionString<<endl;
             return 0;
@@ -131,12 +130,11 @@ int main(int argc, char *argv[])
         }
 
          // hides the GUI and starts from the config file in the folder specified by the second parameter
-        if ((std::string(argv[1])=="noGUI")&&(std::string(argv[2])!=""))
+        if (((std::string(argv[1])=="noGUI") || (std::string(argv[1])=="config")) && (std::string(argv[2])!=""))
         {
-            disableGUI = true;
+            if (std::string(argv[1])=="noGUI") disableGUI = true;
             configFilePath = std::string(argv[2]);
             std::replace(configFilePath.begin(), configFilePath.end(), '\\', '/'); cout<<" +";
-
 
             if (!access( configFilePath.c_str(), 0 ) == 0 )            
             {
@@ -156,9 +154,9 @@ int main(int argc, char *argv[])
         }
 
         //  hides the GUI and starts from the config file in the folder specified by the second parameter and allows a third parameter
-        if ((std::string(argv[1])=="noGUI")&&(std::string(argv[2])!=""))
+        if (((std::string(argv[1])=="noGUI") || (std::string(argv[1])=="config")) && (std::string(argv[2])!=""))
         {
-            disableGUI = true;
+            if (std::string(argv[1])=="noGUI") disableGUI = true;
             configFilePath = std::string(argv[2]);
             std::replace( configFilePath.begin(), configFilePath.end(), '\\', '/'); cout<<" +";
 
@@ -317,7 +315,13 @@ int main(int argc, char *argv[])
         return a.closeAllWindows();
     }
     else
-    {
+    {        
+        if (configFilePath.length() > 1)
+        {
+            cout<<"Using inline config file"<<endl;
+            w.setConfigFilePath(configFilePath);
+        }
+        w.getGraphConfig();
         splash.show();
         if(splashImage.isNull());
         else  I::sleep(1.5);

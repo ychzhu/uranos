@@ -41,6 +41,7 @@ public:
 
     void setupImport();
     void setupGraph(int index);
+    void getGraphConfig();
     void setupRunSpectraGraph(QCustomPlot *customPlot);
     void setupRunBirdsEyeViewGraph(QCustomPlot *customPlot);
     void setupRunHorizSliceXGraph(QCustomPlot *customPlot);
@@ -63,6 +64,8 @@ public:
     void buttonClickFunction();
 
     void activateThermal();
+
+    void setConfigFilePath(string pathtoConfigFile);
 
     void disabledGUIRun(string pathtoConfigFile);
 

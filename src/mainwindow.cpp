@@ -1,7 +1,3 @@
-#define hypot __hypot  //this is only due to some changes in MSCV2010
-
-//#define ROOTOLDVERSION
-
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -17,13 +13,20 @@
 
 #include <algorithm>
 
-#include <io.h>
 //wchar_t BOM = 0xFEFF;
+
+
+#ifdef _WIN32
+    #include <io.h>
+    #define access _access
+#elif __linux_
+#endif
+
+#pragma warning (disable: 4018 4305)
+
 
 //Initialization of Objects for data transfer
 //not yet in order
-
-#pragma warning (disable: 4018 4305)
 
 TRandom3 r; // general random generator in ROOT
 
@@ -607,7 +610,7 @@ bool setupFootprintFunction()
     bool successful = false;
 
     // the names of the root files and the name of the functions within them are hardcoded here
-    TFile readParFtPrnt1(endfFolder + "/FootprintParams1.root", "READ");
+    TFile readParFtPrnt1(endfFolder + "FootprintParams1.root", "READ");
     if (readParFtPrnt1.IsOpen())
     {
         p01 = (TF2*)readParFtPrnt1.Get("grfunction2");
@@ -617,7 +620,7 @@ bool setupFootprintFunction()
         successful = true;
     }
 
-    TFile readParFtPrnt2(endfFolder + "/FootprintParams2.root", "READ");
+    TFile readParFtPrnt2(endfFolder + "FootprintParams2.root", "READ");
     if (readParFtPrnt2.IsOpen())
     {
         p0 = (TF2*)readParFtPrnt2.Get("grfunction2");
@@ -1787,7 +1790,7 @@ void  MainWindow::redrawNeutronMap(double difftime)
                 for (int x = 0; x < 500; x += 2)
                 {
                     for (int y = 0; y < 500; y += 2)
-                    {                       
+                    {
                         if (showDensityTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityTrackMap->GetBinContent(x, y) + ::densityTrackMap->GetBinContent(x + 1, y) + ::densityTrackMap->GetBinContent(x, y + 1) + ::densityTrackMap->GetBinContent(x + 1, y + 1));
                         if (showDensityIntermediateTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityIntermediateTrackMap->GetBinContent(x, y) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y) + ::densityIntermediateTrackMap->GetBinContent(x, y + 1) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y + 1));
                         if (showDensityFastTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityFastTrackMap->GetBinContent(x, y) + ::densityFastTrackMap->GetBinContent(x + 1, y) + ::densityFastTrackMap->GetBinContent(x, y + 1) + ::densityFastTrackMap->GetBinContent(x + 1, y + 1));
@@ -2319,7 +2322,7 @@ bool MainWindow::importSettings()
 
         if (lineCounter == 80) { stream >> tempInt; if ((((tempInt == 5) || (tempInt == 15)) && (!noThermalRegime)) || (noThermalRegime)) densityMapButtonID = tempInt; }
 
-        if (lineCounter==81)  {stream >> rPlants ; rPlants = rPlants*0.001; stream >> rCelluloseFrac; if ((rCelluloseFrac < 0)||(rCelluloseFrac > 3)) {rCelluloseFrac = 1;} else {rCelluloseFrac = rCelluloseFrac/1.5; stream >> rCelluloseWaterFrac;}  }
+        if (lineCounter == 81)  {stream >> rPlants ; rPlants = rPlants*0.001; stream >> rCelluloseFrac; if ((rCelluloseFrac < 0)||(rCelluloseFrac > 3)) {rCelluloseFrac = 1;} else {rCelluloseFrac = rCelluloseFrac/1.5; stream >> rCelluloseWaterFrac;}  }
 
         if (lineCounter == 82) { stream >> tempInt; if (tempInt == 1) { reflectiveBoundaries = true; } else { reflectiveBoundaries = false; } ui->checkBox_ReflectiveBoundaries->setChecked(reflectiveBoundaries); }
         if (lineCounter == 83) { stream >> tempInt; if (tempInt == 1) { periodicBoundaries = true; } else { periodicBoundaries = false; } ui->checkBox_PeriodicBoundaries->setChecked(periodicBoundaries); }
@@ -2336,7 +2339,7 @@ bool MainWindow::importSettings()
     fpHum = 10. / 0.6 * (relHumidityAir * 1.) / 50.;
     pressureFac = (atmDensity * 1.) / 1020.;
 
-    string wrkFldrName = workFolder;
+    string wrkFldrName = (string)workFolder;
     visualization->setWorkFolder(wrkFldrName);
 
     if (lineCounter > 1) return true;
@@ -3362,7 +3365,7 @@ double rangeIntegral = -1, rangeUpToIntegral, integralResult;
  *
  */
 void MainWindow::replotFootprint()
-{     
+{
     if (!fpReadSuccess) return;
 
     float lowEdge = 1.5;
@@ -3755,7 +3758,8 @@ TMatrixF readSigmaEnergy(TString folder, TString filename)
     TString line;
     float temp;
     int linecounter = 1, lengthFile = 0;
-    string dname = (string)folder + "/" + (string)filename;
+    //string dname = (string)folder + "/" + (string)filename;
+    string dname = (string)folder + (string)filename;
 
     float minDeviation = 1.001;
 
@@ -3866,8 +3870,6 @@ void modifyCSmatrix(TMatrixF* sigmaMatrix, float factorLowE, float factorHighE)
  */
 vector<TMatrixF> readAngularTabulatedCoefficients(TString folder, TString filename, const int coefficients)
 {
-
-
     TString line;
     string lineStr, part, temp;
     string tempFl;
@@ -3875,7 +3877,8 @@ vector<TMatrixF> readAngularTabulatedCoefficients(TString folder, TString filena
     int minusThere = 0;
     //int templength, columns = 0;
     bool setSkipLines;
-    string dname = (string)folder + "/" + (string)filename;
+    //string dname = (string)folder + "/" + (string)filename;
+    string dname = (string)folder + (string)filename;
 
     vector<TMatrixF> dataVec;
 
@@ -3942,7 +3945,8 @@ vector<TMatrixF> readAngularTabulatedCoefficients(TString folder, TString filena
             lineCounter++;
 
             if (lineCounter > coefficients - 1);
-            else {
+            else
+            {
                 angleMatrix(matrCounter, lineCounter) = endfNumberConv(lineStr.substr(21 + minusThere, 11));
                 if (lineCounter > 1) { cumulatedProbMatrix(matrCounter, lineCounter) = cumulatedProbMatrix(matrCounter, lineCounter - 1) + endfNumberConv(lineStr.substr(32 + minusThere, 11)); }
                 else cumulatedProbMatrix(matrCounter, lineCounter) = endfNumberConv(lineStr.substr(32 + minusThere, 11));
@@ -4017,7 +4021,8 @@ TMatrixF readAngularCoefficients(TString folder, TString filename)
     int linecounter = -1, lengthFile = 0, matrixElm;
     int minusThere = 0;
     int columns = 0;
-    string dname = (string)folder + "/" + (string)filename;
+    //string dname = (string)folder + "/" + (string)filename;
+    string dname = (string)folder + (string)filename;
 
     if (outputCSfilenames) cout << "Reading Angular Distributions from " << dname;
 
@@ -4030,7 +4035,6 @@ TMatrixF readAngularCoefficients(TString folder, TString filename)
 
     const int matrixSize = lengthFile;
     TMatrixF sigmaMatrix(matrixSize, 21);
-
 
     for (int l = 0; l < matrixSize; l++)
     {
@@ -4051,11 +4055,12 @@ TMatrixF readAngularCoefficients(TString folder, TString filename)
         istrstream stream(line.Data());
 
         lineStr = line;
+        if (!(stream.good())) break;
 
         if ((linecounter > 0) && (endfNumberConv(lineStr.substr(0, 11)) < sigmaMatrix(linecounter - 1, 0))) { columns = 1; }
         else
         {
-            stream >> tempFl;  if ((!(stream.good()))) break;
+            stream >> tempFl;  if (!(stream.good())) break;
             linecounter++;
             sigmaMatrix(linecounter, 0) = endfNumberConv(tempFl);
             matrixElm = 0;
@@ -4148,7 +4153,7 @@ bool MainWindow::loadParamData(string fileFolder)
     cout << "Reading Sato 2016 Parameters from " << fileFolder << endl;
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + paramGjiFile;
+    dname = fileFolder + paramGjiFile;
 
     ifstream input_stream(dname, ios::in);
     while (line.ReadLine(input_stream))
@@ -4174,7 +4179,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr1File;
+    dname = fileFolder + acorr1File;
 
     ifstream input_stream1(dname, ios::in);
     while (line.ReadLine(input_stream1))
@@ -4200,7 +4205,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr2File;
+    dname = fileFolder + acorr2File;
 
     ifstream input_stream2(dname, ios::in);
     while (line.ReadLine(input_stream2))
@@ -4226,7 +4231,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr3File;
+    dname = fileFolder + acorr3File;
 
     ifstream input_stream3(dname, ios::in);
     while (line.ReadLine(input_stream3))
@@ -4252,7 +4257,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr6File;
+    dname = fileFolder + acorr6File;
 
     ifstream input_stream6(dname, ios::in);
     while (line.ReadLine(input_stream6))
@@ -4278,7 +4283,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr7File;
+    dname = fileFolder + acorr7File;
 
     ifstream input_stream7(dname, ios::in);
     while (line.ReadLine(input_stream7))
@@ -4304,7 +4309,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + parampiAngularFile;
+    dname = fileFolder + parampiAngularFile;
 
     ifstream input_stream8(dname, ios::in);
     while (line.ReadLine(input_stream8))
@@ -5047,7 +5052,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         int absMaterialNo, currentG, startingLayerHere;
         long loopNumber = -1, neutronTrackNeutrons = 0;
         bool domainWallHit, differentMaterial1, differentMaterial2, differentMaterial3, oneLastCheck, neutronAbsorbedbyDetector;
-        bool doNormalCalc;       
+        bool doNormalCalc;
         bool foundSomething, enteredDetectorLayer = false, detectorLayerOverride = false, detectorOverride = false;
 
         const double pi = TMath::Pi();
@@ -5100,7 +5105,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         bool usePrecalculatedSato2016Spectrum = true;   // use spectrum from Sato 2016
         bool useHomogenousSpectrum = false;     //equal distribution for all spectrum bins
         //bool noThermalRegime = true;          // thermal cutoff
-        bool noHighEnergyRegime = false;        // high energy cutoff       
+        bool noHighEnergyRegime = false;        // high energy cutoff
         // these options set up specific cases
         bool doTheWaterThing = false;
         bool doTheCoastalTransect = false;
@@ -5661,7 +5666,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         // ****************************************
         // Reading all cross sections from matrices
 
-        if (!noGUIMode) {uiM->setStatus(1, "Reading Angular Cross Sections");        delay(5);}
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Angular Tabulated Cross Sections");        delay(5);}
         else {cout << "Reading Cross Sections" <<endl;}
 
         vector<TMatrixF> angularHighEnergySi = readAngularTabulatedCoefficients(endfFolder, "angularSi28tabulated.txt", 182);
@@ -5678,6 +5683,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         vector<TMatrixF> angularHighEnergyPb206 = readAngularTabulatedCoefficients(endfFolder, "angularPb206tabulated.txt", 182);
         vector<TMatrixF> angularHighEnergyPb207 = readAngularTabulatedCoefficients(endfFolder, "angularPb207tabulated.txt", 182);
         vector<TMatrixF> angularHighEnergyPb208 = readAngularTabulatedCoefficients(endfFolder, "angularPb208tabulated.txt", 182);
+
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Angular Cross Sections");        delay(5);}
 
         static TMatrixF angularSi = readAngularCoefficients(endfFolder, "angularSi28.txt");
         static TMatrixF angularN = readAngularCoefficients(endfFolder, "angularN14.txt");
@@ -6781,7 +6788,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
                     //if ((xRnd>0.3)||(r.Rndm()>0.55))	xRnd = getEvaporationEnergy(2.e6, &r);
-                    xRnd = getEvaporationEnergy(2.e6, &r);                   
+                    xRnd = getEvaporationEnergy(2.e6, &r);
                 }
 
                 if (doSkyEvaporation)
@@ -6893,7 +6900,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                     scatteredThisLayer = true;
                     hasbeenEvaporized = true;
-                    z0 = r.Rndm() * geometries.at(startingLayer)[5] + geometries.at(startingLayer)[4];                 
+                    z0 = r.Rndm() * geometries.at(startingLayer)[5] + geometries.at(startingLayer)[4];
                 }
 
                 if (doTheZredaThing)
@@ -6921,7 +6928,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                 }
                 else
-                {                    
+                {
                     if ((energyInitial > 9) && ((!doSkyEvaporation) || (doNoSource)))
                     {
                         // that gives the angular distribution from Nesterenok
@@ -7464,7 +7471,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 default: materialNotFound = true;
                                 }
 
-                                if (detectorOverride) { detectorHeight = geometries.at(currentG)[4] + 0.5 * geometries.at(currentG)[5]; }                                
+                                if (detectorOverride) { detectorHeight = geometries.at(currentG)[4] + 0.5 * geometries.at(currentG)[5]; }
 
                                 if ((inputMatrixValue > 1) && (inputMatrixValue < 100))
                                 {
@@ -7583,7 +7590,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-                    if ((material != 10) && (material != 11) && (hasPassedSurface) && (!hasBeenInSoil)) hasBeenInSoil = true;  
+                    if ((material != 10) && (material != 11) && (hasPassedSurface) && (!hasBeenInSoil)) hasBeenInSoil = true;
 
                     //calculate interaction length for absorbtion (wwRangeAbs) and probability for incoherent scattering (probSi <- no spatial information due to small WW probabilities)
                     //materials: water = 9, air (dry) = 10, air (wet) = 11, Quarz = 12, Al2O3 = 13; Soil(wc%) = 20, Plants = 21;
@@ -9608,7 +9615,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         }
 
                                         inelasticEnergyLoss = inelasticEnergyLossVec.at(tempInt);
-                                        angularProb = allInelasticAngulars.at(tempInt);                                       
+                                        angularProb = allInelasticAngulars.at(tempInt);
                                     }
                                 }
 
@@ -9622,8 +9629,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     if (!dontFillunecessaryPlots) scatElement->Fill(element);
 
                                     if (!scatteredInelastic)
-                                    {                                        
-                                        if (((energy >= 20.5) && (element > 1)) && (!(((element == 16) || (element == 140) || (element == 39) || (element == 48) || (element == 10) || (element == 155) || (element == 157)) && (energy < 30.5))))                                        
+                                    {
+                                        if (((energy >= 20.5) && (element > 1)) && (!(((element == 16) || (element == 140) || (element == 39) || (element == 48) || (element == 10) || (element == 155) || (element == 157)) && (energy < 30.5))))
                                         {
                                             switch (element)
                                             {
@@ -9652,7 +9659,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         {
                                             if (((energy > 1e-2) && (element > 2)) || ((energy > 1) && (element == 1)))
                                             {
-                                                //clock_t t; t = clock();             
+                                                //clock_t t; t = clock();
 
                                                 TF1* angularProbFunc = calcMeanAngularDistribution(*angularProb, energy * 1e6);
 
@@ -9747,7 +9754,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                             if (energyNew > thermalcutoff) energyNew = getThermalEnergy(spectrumMaxwellPhiLinMod, &r);
                                                         }
 
-                                                        intoThermalization = true;                                                        
+                                                        intoThermalization = true;
                                                     }
                                                     // liquid velocity distribution?  m^3v^5/(kT)^3 * EXP [-mv^2/kT]
                                                     // Reference https://www.physicsforums.com/threads/liquid-molecular-velocity-distribution.231145/
@@ -9841,10 +9848,10 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                         if (phiScat > 0) phi = phi + TMath::ACos((dcosTheta - theta12 * cos(thetaCalc)) / (sin(theta12) * sin(thetaCalc)));
                                         else phi = phi - TMath::ACos((dcosTheta - theta12 * cos(thetaCalc)) / (sin(theta12) * sin(thetaCalc)));
-                                    }                                    
+                                    }
 
                                     if (theta > pi) { theta = 2. * pi - theta;  phi = phi + 1. * pi; }
-                                    if (theta < 0) { theta = fabs(theta);  phi = phi + 1. * pi; }                                 
+                                    if (theta < 0) { theta = fabs(theta);  phi = phi + 1. * pi; }
 
                                     if (phi < 0) phi = phi + 2. * pi;
                                     if (phi > 2. * pi) phi = phi - 2. * pi;
@@ -9908,7 +9915,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                 if (drawSingleNeutronGraphs)
                                 {
-                                    scale = (log10(energyNew) + 7.7) / 12.; if (scale < 0) scale = 0.;                                   
+                                    scale = (log10(energyNew) + 7.7) / 12.; if (scale < 0) scale = 0.;
                                     rgbValues = getRGBfromHCL(getLinearC(scale, 0, 240), getScaledColorValue(scale, 0.4, 0.91, 0.9), getScaledColorValue(scale, 2.2, 0.8, 0.9));
                                     graphs.push_back(new TGraph());
                                     graphN++; graphCounterMG = 0;
@@ -10111,7 +10118,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     }
 
                                     if (((differentMaterial1) || (differentMaterial2) || (differentMaterial3)) && (continueTracking))
-                                    {                                        
+                                    {
                                         continueTracking = false;
                                         foundSomething = true;
                                         differentMaterialHit = true;
@@ -10828,7 +10835,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
             for (int k = 0; ((k < maxRecNeutronCoord) && (k < numberOfFrames)); k++)
             {
-                TGraph* neutronDots = new TGraph();                
+                TGraph* neutronDots = new TGraph();
                 pointcter = 0;
 
                 TMultiGraph* multigraphNeutrons = new TMultiGraph();
@@ -10899,7 +10906,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 if (k<10) foutName = "NeutronPathSingle_000"+(string)castIntToString(k);
 
                 cGraphSingleN->SaveAs((string)outputFolder+neutronPicSubPath+"/"+foutName+".png");
-            
+
                 delete neutronDots;
                 if (multigraphNeutrons != 0x0) delete multigraphNeutrons;
             }
@@ -11174,7 +11181,7 @@ void MainWindow::on_sliderSoilMoisture_sliderMoved(int position)
  * @param position
  */
 void MainWindow::on_sliderAirHum_sliderMoved(int position)
-{    
+{
     absHumidityAir = (position * 1.) / 3.;
     absHumidityAirVar = absHumidityAir;
 
@@ -11182,7 +11189,7 @@ void MainWindow::on_sliderAirHum_sliderMoved(int position)
     ui->labelHum->setText(QString::fromStdString(posText));
 
     rLuftWater = absHumidityAir / 1e6;
-    fpHum = 10. / 0.6 * (position * 1.) / 50.;   
+    fpHum = 10. / 0.6 * (position * 1.) / 50.;
 
     if (activateFP) rangeIntegral = -1;
 
@@ -11214,7 +11221,7 @@ void MainWindow::on_sliderAtm1_sliderMoved(int position)
     ui->labelAtm1->setText(QString::fromStdString(posText));
     pressureFac = (position * 1.) / 1020.;
     atmPressure = atmDensity * 100.;
-    rLuft = atmPressure / 287.058 / sysTemperature / 1e3;    
+    rLuft = atmPressure / 287.058 / sysTemperature / 1e3;
 }
 
 
@@ -11227,7 +11234,7 @@ void MainWindow::on_sliderRigidity_sliderMoved(int position)
 {
     rigidity = (position * 1.) / 10.;
     string posText = castFloatToString((position * 1.) / 10., 4);
-    ui->labelrigidity->setText(QString::fromStdString(posText));    
+    ui->labelrigidity->setText(QString::fromStdString(posText));
 }
 
 /**
@@ -11268,7 +11275,7 @@ void MainWindow::on_lineEditRefresh_textChanged(const QString& arg1)
  */
 void dataDelete(QVector<double>* vec)
 {
-    vec->clear();   
+    vec->clear();
 }
 
 /**
@@ -11633,7 +11640,7 @@ void MainWindow::on_lineEdit_Lake_textChanged(const QString& arg1)
  */
 void MainWindow::on_checkBoxFileOutput_clicked()
 {
-     
+
 }
 
 /**
@@ -11662,7 +11669,7 @@ bool MainWindow::eventFilter(QObject* target, QEvent* event)
         float y = ui->customPlot2->yAxis->pixelToCoord(_mouseEvent->pos().y());
 
         xCustomPos = x * 1000.;
-        yCustomPos = y * 1000.;      
+        yCustomPos = y * 1000.;
     }
 
     if (target == ui->customPlot2 && event->type() == QEvent::MouseButtonRelease)
@@ -11961,7 +11968,7 @@ void MainWindow::redrawTopView()
         ui->label_detectorLayerNs->setText(QString::fromStdString(numberofDetectorLayerNs));
 
         allEntriesInt = densityMapHighEnergy->GetEntries();
-        if (useExtraCounter) ui->label_detectorLayerNs2->setText(QString::fromStdString((string)castLongToString(allEntriesInt)));       
+        if (useExtraCounter) ui->label_detectorLayerNs2->setText(QString::fromStdString((string)castLongToString(allEntriesInt)));
     }
 
     float colorscaleMax = (ui->horizontalSliderColor->value() * 1.) / 200. * maximumWeight;
@@ -12108,7 +12115,7 @@ void MainWindow::on_radioButton_mapInter_clicked()
  *
  */
 void MainWindow::on_radioButton_mapFast_clicked()
-{   
+{
     if (!showDensityMapFast)
     {
         showDensityTrackMap = false;
@@ -12348,7 +12355,7 @@ void MainWindow::on_radioButton_mapTrackThermal_clicked()
  *
  */
 void MainWindow::on_radioButton_mapTrackEnergy_clicked()
-{     
+{
     if (!showDensityEnergyTrackMap)
     {
         showDensityTrackMap = false;
@@ -12437,7 +12444,7 @@ void MainWindow::on_lineEdit_CrosssectionFolder_editingFinished()
     string textHere = valueString.toStdString();
     std::replace(textHere.begin(), textHere.end(), '\\', '/');
 
-    ifstream input_streamCheck(textHere + "/absorbH1.txt", ios::in);
+    ifstream input_streamCheck(textHere + "absorbH1.txt", ios::in);
 
     ui->lineEdit_CrosssectionFolder->setPalette(*paletteB);
 
@@ -12500,8 +12507,8 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.02 (26.12.2022)<br> ";
-    messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.1</small> <br>";
+    messageString+=        "v1.03 (29.12.2022)<br> ";
+    messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
     messageString += "<font color='#e4e4e4'> All your neutrons <br> are belong to us!<\font>";
@@ -13195,7 +13202,7 @@ vector<float> getMaterialVector(string fileString)
 
 /**
  * Function to be called to Check the input material definitions.
- * 
+ *
  */
 void checkInputMaterialDefinitions()
 {
@@ -13230,7 +13237,7 @@ void checkInputMaterialDefinitions()
  * inputpics: material definitions
  * inputpics2: density definitions
  * inputpics3: porosity definitions
- * 
+ *
  */
 void MainWindow::checkInputPics()
 {
@@ -13445,11 +13452,11 @@ void MainWindow::checkInputPics()
     {
         QStandardItem* item = model->itemFromIndex(model->index(z, 3, QModelIndex()));
         item->setTextAlignment(Qt::AlignCenter);
-        picLetter = "";        
+        picLetter = "";
 
         temp = z + 1;
         if ((inputPics[z] == 0) && (inputPics2[z] == 0) && (inputPics3[z] == 0))
-        {            
+        {
             item->setText(QString::fromStdString((string)""));
         }
         else
@@ -13489,7 +13496,7 @@ void MainWindow::checkInputPics()
             if (inputMatrixDefsShown) cout<<" ";
 
             item->setText(QString::fromStdString((string)castIntToString(temp) + picLetter + " [" + (string)castIntToString(inputPicSizes[z]) + "]"));
-        }       
+        }
         inputMatrixPixels = inputPicSizes[z]; //doesn't make so much sense
     }
     if (inputMatrixDefsShown) cout<<endl;
@@ -13507,7 +13514,7 @@ void MainWindow::checkInputPics()
 
 /**
  * Function to be called on clicking Use layer maps checkbox in the Parameters tab.
- * 
+ *
  */
 void MainWindow::on_checkBox_useImage_clicked()
 {
@@ -13535,7 +13542,7 @@ void MainWindow::on_checkBox_useImage_clicked()
 
 /**
  * Function to be called on clicking view layer maps button in the Parameters tab.
- * 
+ *
  */
 void MainWindow::on_pushButton_Show_clicked()
 {
@@ -13549,7 +13556,7 @@ void MainWindow::on_pushButton_Show_clicked()
 
 /**
  * Function to be called on get the T matrix for the input pic definitions.
- * 
+ *
  */
 TMatrixF MainWindow::getTMatrix(int i)
 {
@@ -13588,16 +13595,16 @@ TMatrixF MainWindow::getTMatrix(int i)
                 pixelValue = matrixImage.pixel(i, matrixHeight - 1 - j);
                 matr(i, j) = qGray(pixelValue);
             }
-        }       
+        }
         return matr;
     }
 
-    return      dummyTMatrix;  
+    return      dummyTMatrix;
 }
 
 /**
  * Function to be called on changing the upper bound slider in the Parameters tab.
- * 
+ *
  */
 void MainWindow::on_horizontalSliderColor_sliderMoved(int position)
 {
@@ -13633,9 +13640,9 @@ void MainWindow::on_horizontalSliderColorZero_sliderMoved(int position)
 
 
 /**
- * Function to be called on clicking the radio button Dark Gray Scale 
+ * Function to be called on clicking the radio button Dark Gray Scale
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronNight_clicked()
 {
@@ -13650,9 +13657,9 @@ void MainWindow::on_radioButton_NeutronNight_clicked()
 }
 
 /**
- * Function to be called on clicking the radio button Cold 
+ * Function to be called on clicking the radio button Cold
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronCold_clicked()
 {
@@ -13667,9 +13674,9 @@ void MainWindow::on_radioButton_NeutronCold_clicked()
 }
 
 /**
- * Function to be called on clicking the radio button Polar 
+ * Function to be called on clicking the radio button Polar
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronPolar_clicked()
 {
@@ -13684,9 +13691,9 @@ void MainWindow::on_radioButton_NeutronPolar_clicked()
 }
 
 /**
- * Function to be called on clicking the radio button URANOS 
+ * Function to be called on clicking the radio button URANOS
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronRainbow_clicked()
 {
@@ -13783,9 +13790,9 @@ void MainWindow::on_pushButton_ActivateFP_clicked()
 
 
 /**
- * Function to be called on changing the value of Only Record in Material No 
+ * Function to be called on changing the value of Only Record in Material No
  * textbox in the detector layer of detector tab.
- * 
+ *
  */
 void MainWindow::on_lineEditScotoma_editingFinished()
 {
@@ -14079,7 +14086,7 @@ void MainWindow::on_checkBox_NoMultipleScattering_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_checkBoxManual_toggled(bool checked)
-{     
+{
     redrawTopView();
     //redrawNeutronMap(0);
 }
@@ -14212,7 +14219,7 @@ void MainWindow::on_radioButton_Sphere_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_radioButton_detectorLayerEnergyBand_toggled(bool checked)
-{    
+{
     if (checked)
     {
         useRealisticModelLayer = false;
@@ -14225,7 +14232,7 @@ void MainWindow::on_radioButton_detectorLayerEnergyBand_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_radioButton_detectorLayerRealistic_toggled(bool checked)
-{   
+{
     if (checked)
     {
         useRealisticModelLayer = true;
@@ -14238,7 +14245,7 @@ void MainWindow::on_radioButton_detectorLayerRealistic_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_radioButton_detectorEnergyBand_toggled(bool checked)
-{     
+{
     if (checked)
     {
         useRealisticModelDetector = false;
@@ -14289,7 +14296,7 @@ void MainWindow::on_checkBox_HEModel_toggled(bool checked)
     }
     else
     {
-        useHECascadeModel = false;       
+        useHECascadeModel = false;
     }
 }
 

@@ -1,11 +1,19 @@
-#define hypot _hypot  //this is only due to some changes in MSCV2010
-
-//#include <math.h>
-
-//#ifndef hypot
-//#define hypot _hypot
-//#endif
-#include <io.h>
+#ifdef _WIN32
+    #include <io.h>
+    #define access _access
+#elif __linux__
+    #include <inttypes.h>
+    #include <unistd.h>
+    #define __int64 int64_t
+    #define _close close
+    #define _read read
+    #define _lseek64 lseek64
+    #define _O_RDONLY O_RDONLY
+    #define _open open
+    #define _lseeki64 lseek64
+    #define _lseek lseek
+    #define stricmp strcasecmp
+#endif
 
 #include "Toolkit.h"
 
@@ -19,14 +27,15 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.02 (26.12.2022)";
+string versionString = "v1.03 (29.12.2022)";
 
 class I : public QThread
 {
-public:
-static void sleep(unsigned long secs) {
-QThread::sleep(secs);
-}
+    public:
+    static void sleep(unsigned long secs)
+    {
+        QThread::sleep(secs);
+    }
 };
 
 
@@ -53,24 +62,39 @@ int main(int argc, char *argv[])
     //cout<<"width"<<width;
     bool disableGUI = false;
     bool silent = false;
-    string configFilePath = "";  
+    string configFilePath = "";
 
     QPixmap splashImage("splashScreen.png");
 
     QSplashScreen splash(splashImage,Qt::WindowStaysOnTopHint);
 
+    #ifdef _WIN32
+    #elif __linux__
+    QFont custom_font = QFont();
+    //custom_font.setWeight(20);
+    //custom_font.setPixelSize(9);
+    custom_font.setPointSize(8);
+    a.setFont(custom_font, "QLabel");
+    a.setFont(custom_font, "QTabWidget");
+    a.setFont(custom_font, "QPushButton");
+    a.setFont(custom_font, "QLineEdit");
+    a.setFont(custom_font, "QGroupBox");
+    a.setFont(custom_font, "QCheckBox");
+    a.setFont(custom_font, "QRadioButton");
+    a.setFont(custom_font, "QTableView");
+    a.setFont(custom_font, "QTableWidgetItem");
+    a.setFont(custom_font, "QStandardItemModel");
+    a.setFont(custom_font, "QStandardItem");
+    a.setFont(custom_font, "QString");
+    a.setFont(custom_font, "QSpinBox");
+    #endif
 
     /* To intercept mousclick to hide splash screen. Since the
     splash screen is typically displayed before the event loop
     has started running, it is necessary to periodically call. */
-    //app.processEvents();
 
-    //qApp->processEvents();
     a.processEvents();
 
-
-    //splash->showStatusMessage(QObject::tr("Initializing…"));
-    //splash->showStatusMessage(QObject::tr("Loading something…"));
 
     rootlogon();
 
@@ -121,7 +145,7 @@ int main(int argc, char *argv[])
 
     if ((argc>2)&&(argc<4))
     {
-       
+
         // activates the source control panel which allows other sources than the cosmic spectrum
         if ((std::string(argv[1])=="nuclear")&&(std::string(argv[2])=="warfare"))
         //if (true)
@@ -136,7 +160,7 @@ int main(int argc, char *argv[])
             configFilePath = std::string(argv[2]);
             std::replace(configFilePath.begin(), configFilePath.end(), '\\', '/'); cout<<" +";
 
-            if (!access( configFilePath.c_str(), 0 ) == 0 )            
+            if (!(access(configFilePath.c_str(), 0) == 0))
             {
                 cout<<"Config File not found"<<endl;
                 return 0;
@@ -162,10 +186,7 @@ int main(int argc, char *argv[])
 
             ifstream input_stream(configFilePath,ios::in);
 
-            //if (!access( textHere.c_str(), 0 ) == 0 )
-
-            if (!access(configFilePath.c_str(), 0 ) == 0)
-            //if(input_stream.bad())
+            if (!(access(configFilePath.c_str(), 0) == 0))
             {
                 cout<<"Config File not found"<<endl;
                 return 0;
@@ -238,7 +259,7 @@ int main(int argc, char *argv[])
 
                      ifstream input_stream(configFilePath,ios::in);
 
-                     if (!access(configFilePath.c_str(), 0 ) == 0)
+                     if (!(access(configFilePath.c_str(), 0) == 0))
                      {
                          cout<<"Config File not found"<<endl;
                          return 0;
@@ -284,8 +305,8 @@ int main(int argc, char *argv[])
         cout<<"     ,*((######((*,             .........,,,,,,,,,****************************************************************************************,,,,,...   "<<endl;
         cout<<"           ..                          .........................,,,,,,,,,,,,,,,,,,,,,,,........................................................      "<<endl;
     }
-	
-	
+
+
     if (!silent)
     {
         cout<<"                                                                       ./%%/** "<<endl;
@@ -311,11 +332,11 @@ int main(int argc, char *argv[])
         I::sleep(0.5);
 
         w.close();
-
-        return a.closeAllWindows();
+        a.closeAllWindows();
+        return 0;
     }
     else
-    {        
+    {
         if (configFilePath.length() > 1)
         {
             cout<<"Using inline config file"<<endl;

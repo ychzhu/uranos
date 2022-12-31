@@ -1,5 +1,13 @@
 # URANOS Release Notes
 
+## URANOS version 1.03 (December 30, 2022)
+
+### Changelog
+- URANOS Linux version release. 
+- URANOS has currently been tested on Ubuntu 20 64bit with QT 5.12.8 and ROOT 6.22.08.
+- Compiled binaries are now available for Ubuntu 20. For running under Linux, please also update the ENDF data.
+
+
 ## URANOS version 1.02 (December 26, 2022)
 
 ### Changelog

@@ -208,7 +208,7 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
     float colorscaleMax = (horizontalSliderValue*1.)/99.*maximumWeight;
     if (colorscaleMax < 1) colorscaleMax = 1;
 
-    if (colorScheme==0) {colorMap->setGradient(QCPColorGradient::gpJet); colorScale->setGradient(QCPColorGradient::gpCold); }
+    if (colorScheme==0) {colorMap->setGradient(QCPColorGradient::gpJet); colorScale->setGradient(QCPColorGradient::gpJet); }
     if (colorScheme==1) {colorMap->setGradient(QCPColorGradient::gpNight); colorScale->setGradient(QCPColorGradient::gpNight); }
     if (colorScheme==2) {colorMap->setGradient(QCPColorGradient::gpCold); colorScale->setGradient(QCPColorGradient::gpCold);}
     if (colorScheme==3) {colorMap->setGradient(QCPColorGradient::gpThermal); colorScale->setGradient(QCPColorGradient::gpThermal);}

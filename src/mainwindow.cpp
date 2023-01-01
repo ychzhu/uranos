@@ -1883,6 +1883,9 @@ void  MainWindow::redrawNeutronMap(double difftime)
         int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorScaleMax;
         int highColorValue = colorScaleMax;
 
+        ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
+        ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+
         string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
         ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
 
@@ -11946,7 +11949,10 @@ void MainWindow::redrawTopView()
     int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorscaleMax;
     int highColorValue = colorscaleMax;
 
-     string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
+    ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
+    ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+
+    string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
     ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
 
     ui->customPlot2->update();
@@ -12445,7 +12451,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.03 (29.12.2022)<br> ";
+    messageString+=        "v1.03b (01.01.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 

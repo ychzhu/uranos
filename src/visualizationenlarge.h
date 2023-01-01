@@ -5,7 +5,6 @@
 
 #include "qcustomplot.h"
 
-//#include "mainwindow.h"
 #include "Toolkit.h"
 
 namespace Ui {

@@ -19,7 +19,6 @@ int number=1;
 void DialogShowPic::setupShowGraph(QCustomPlot *customPlot)
 {
    TMatrixF matrix = MainWindow::getTMatrix(number);
-   // TMatrixF matrix(1,1);
 
    QCPColorMap *colorMap = new QCPColorMap(customPlot->xAxis,customPlot->yAxis);
    customPlot->axisRect()->setupFullAxesBox(true);
@@ -58,8 +57,6 @@ void DialogShowPic::replotGraph()
 
     Int_t a = matrix.GetColUpb();
     Int_t b = matrix.GetNcols();
-    //cout<<castIntToString(a)<<" "<<castIntToString(b)<<endl;
-    // ui->widget->addPlottable(colorMap);
 
     colorMap->data()->setSize(matrix.GetNcols(), matrix.GetNcols());
     colorMap->data()->setRange(QCPRange(0, matrix.GetColUpb()), QCPRange(0, matrix.GetColUpb()));

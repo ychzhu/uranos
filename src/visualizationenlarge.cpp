@@ -16,7 +16,7 @@ bool plotTopViewLogV = false;
 bool silderColorMovedV = false;
 bool useManualColor = false;
 
-string workFolder;
+string workFolderV;
 
 VisualizationEnlarge::VisualizationEnlarge(QWidget *parent) :
     QDialog(parent),
@@ -79,7 +79,7 @@ void VisualizationEnlarge::setColorScheme(int value)
 
 void VisualizationEnlarge::setWorkFolder(string text)
 {
-    workFolder = text;
+    workFolderV = text;
 }
 
 
@@ -300,7 +300,7 @@ void VisualizationEnlarge::setupRunGraph(QCustomPlot *customPlot)
 
 void VisualizationEnlarge::on_pushButtonPNG_toggled(bool checked)
 {
-    //originalPixmap.save(QString::fromStdString(workFolder)+fileName, format.toAscii());
+    //originalPixmap.save(QString::fromStdString(workFolderV)+fileName, format.toAscii());
 }
 
 void VisualizationEnlarge::on_pushButtonPNG_clicked()
@@ -311,7 +311,7 @@ void VisualizationEnlarge::on_pushButtonPNG_clicked()
 
     originalPixmap = screen->grabWindow(ui->customPlot->winId());
 
-    QString fileName = QString::fromStdString(workFolder)+"/neutronHitDensityExport_"+QString::number(screenshotcounter)+".png";
+    QString fileName = QString::fromStdString(workFolderV)+"/neutronHitDensityExport_"+QString::number(screenshotcounter)+".png";
 
     if (!originalPixmap.save(fileName))
     {

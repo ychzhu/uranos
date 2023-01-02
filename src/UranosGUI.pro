@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     Toolkit.cpp \
     dialogshowpic.cpp \
     customSplashScreen.cpp \
-    visualizationenlarge.cpp
+    visualizationenlarge.cpp \
+    visualizationenlarge2.cpp
 
 
 HEADERS  += mainwindow.h \
@@ -35,10 +36,12 @@ HEADERS  += mainwindow.h \
     Toolkit.h \
     dialogshowpic.h \
     customSplashScreen.h \
-    visualizationenlarge.h
+    visualizationenlarge.h \
+    visualizationenlarge2.h
 
 FORMS    += mainwindow.ui \
     dialogshowpic.ui \
+    visualizationEnlarge2.ui \
     visualizationenlarge.ui
 
 DEFINES += _CRT_SECURE_NO_WARNINGS

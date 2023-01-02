@@ -27,7 +27,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.03b (01.01.2023)";
+string versionString = "v1.04 (02.01.2023)";
 
 class I : public QThread
 {

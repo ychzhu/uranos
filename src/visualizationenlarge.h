@@ -20,8 +20,6 @@ public:
     explicit VisualizationEnlarge(QWidget *parent = 0);
     ~VisualizationEnlarge();
 
-
-
     void setSquareDimSize(float squareDimSize);
 
     void sethorizontalSliderValue(int value);
@@ -55,7 +53,6 @@ private slots:
 
 private:
     Ui::VisualizationEnlarge *ui;
-
 };
 
 #endif // VISUALIZATIONENLARGE_H

@@ -31,6 +31,7 @@
 TRandom3 r; // general random generator in ROOT
 
 VisualizationEnlarge* visualization;  // the 1000 x 1000 pixel window for the bird's eyes view
+VisualizationEnlarge2* visualization2;
 
 // objects used for plotting data in QCustomplot (mainly vectors for x and y axis data)
 vector< QVector<double>* > allDisplayData;
@@ -87,6 +88,17 @@ TH2F* densityHighEnergyTrackMapHighRes;
 TH2F* densityEnergyTrackMapHighRes;
 
 TH2F* densityThermalTrackMapHighRes;
+
+TH2F* densityTrackMapHighRes15x;
+TH2F* densityIntermediateTrackMapHighRes15x;
+TH2F* densityFastTrackMapHighRes15x;
+TH2F* densityAlbedoTrackMapHighRes15x;
+TH2F* densityHighEnergyTrackMapHighRes15x;
+TH2F* densityEnergyTrackMapHighRes15x;
+
+TH2F* densityThermalTrackMapHighRes15x;
+
+TH2F* densityFastTrackMapHighRes2x;
 
 TH2F* densityMapThermal;
 
@@ -146,6 +158,7 @@ bool plotTopViewLog = false;        // GUI
 bool noGUIMode = false;             // deactivates the GUI for command line run
 bool silentMode = false;            // deactivates the message output
 bool layerMapsImport = false;       // GUI
+bool highResCalc = false;            // extra resolution mode
 
 float densitySideTrackingEnergyCutoff = 20000.; //upper cutoff for sideways tracking... not so important any more
 
@@ -277,7 +290,7 @@ bool showDensityMapThermal = false;
 
 bool showDetectorOriginMap = true;
 bool updateEnlargedView = false;    // GUI
-
+bool updateEnlargedView2 = false;    // GUI
 
 //activates sideways projection (slows down)
 bool showDensityTrackMapSide = false;   // activates sideways tracking (computationally expensive)
@@ -1414,7 +1427,17 @@ void setupLiveTHs()
     delete densityHighEnergyTrackMapHighRes;
     delete densityEnergyTrackMapHighRes;
 
+    delete densityTrackMapHighRes15x;
+    delete densityIntermediateTrackMapHighRes15x;
+    delete densityFastTrackMapHighRes15x;
+    delete densityAlbedoTrackMapHighRes15x;
+    delete densityHighEnergyTrackMapHighRes15x;
+    delete densityEnergyTrackMapHighRes15x;
+
+    delete densityFastTrackMapHighRes2x;
+
     delete densityThermalTrackMapHighRes;
+    delete densityThermalTrackMapHighRes15x;
 
     delete densityThermalTrackMap;
     delete densityMapThermal;
@@ -1447,7 +1470,18 @@ void setupLiveTHs()
 
     densityEnergyTrackMapHighRes = new TH2F("densityEnergyTrackMapHighRes", "Detector Layer Neutron Energy Weighted Tracks", 1000, domainLowEdge, domainUpperEdge, 1000, domainLowEdge, domainUpperEdge);
 
+    densityTrackMapHighRes15x = new TH2F("densityTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityIntermediateTrackMapHighRes15x = new TH2F("densityIntermediateTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityFastTrackMapHighRes15x = new TH2F("densityFastTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityAlbedoTrackMapHighRes15x = new TH2F("densityAlbedoTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityHighEnergyTrackMapHighRes15x = new TH2F("densityHighEnergyTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+
+    densityEnergyTrackMapHighRes15x = new TH2F("densityEnergyTrackMapHighRes15x", "Detector Layer Neutron Energy Weighted Tracks", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+
+    densityFastTrackMapHighRes2x = new TH2F("densityFastTrackMapHighRes2x", "Detector Layer Neutron Track Density", 2000, domainLowEdge, domainUpperEdge, 2000, domainLowEdge, domainUpperEdge);
+
     densityThermalTrackMapHighRes = new TH2F("densityThermalTrackMapHighRes", "Detector Layer Neutron Track Density", 1000, domainLowEdge, domainUpperEdge, 1000, domainLowEdge, domainUpperEdge);
+    densityThermalTrackMapHighRes15x = new TH2F("densityThermalTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
 
     densityTrackMap = new TH2F("densityTrackMap", "Detector Layer Neutron Track Density", 500, domainLowEdge, domainUpperEdge, 500, domainLowEdge, domainUpperEdge);
     densityIntermediateTrackMap = new TH2F("densityIntermediateTrackMap", "Detector Layer Neutron Track Density", 500, domainLowEdge, domainUpperEdge, 500, domainLowEdge, domainUpperEdge);
@@ -1494,9 +1528,12 @@ void setupLiveTHs()
     liveTHs.push_back(densityMapAlbedo); liveTHs.push_back(densityMapFast); liveTHs.push_back(densityMapIntermediate); liveTHs.push_back(densityMap); liveTHs.push_back(densityMapHighEnergy);
     liveTHs.push_back(densityTrackMap); liveTHs.push_back(densityIntermediateTrackMap); liveTHs.push_back(densityFastTrackMap); liveTHs.push_back(densityAlbedoTrackMap); liveTHs.push_back(densityHighEnergyTrackMap);
     liveTHs.push_back(densityEnergyTrackMap);
-    liveTHs.push_back(densityMapThermal); liveTHs.push_back(densityThermalTrackMap); liveTHs.push_back(densityThermalTrackMapHighRes);
-    liveTHs.push_back(densityTrackMapHighRes); liveTHs.push_back(densityIntermediateTrackMapHighRes); liveTHs.push_back(densityFastTrackMapHighRes); liveTHs.push_back(densityAlbedoTrackMapHighRes); liveTHs.push_back(densityHighEnergyTrackMapHighRes);
+    liveTHs.push_back(densityMapThermal); liveTHs.push_back(densityThermalTrackMap); liveTHs.push_back(densityThermalTrackMapHighRes); liveTHs.push_back(densityThermalTrackMapHighRes15x);
+    liveTHs.push_back(densityTrackMapHighRes); liveTHs.push_back(densityIntermediateTrackMapHighRes); liveTHs.push_back(densityFastTrackMapHighRes); liveTHs.push_back(densityFastTrackMapHighRes2x); liveTHs.push_back(densityAlbedoTrackMapHighRes); liveTHs.push_back(densityHighEnergyTrackMapHighRes);
     liveTHs.push_back(densityEnergyTrackMapHighRes);
+    liveTHs.push_back(densityTrackMapHighRes15x); liveTHs.push_back(densityIntermediateTrackMapHighRes15x); liveTHs.push_back(densityFastTrackMapHighRes15x); liveTHs.push_back(densityAlbedoTrackMapHighRes15x); liveTHs.push_back(densityHighEnergyTrackMapHighRes15x);
+    liveTHs.push_back(densityEnergyTrackMapHighRes15x);
+
     liveTHs.push_back(scatteredSurfaceDepth); liveTHs.push_back(scatteredSurfaceMaxDepth);
     liveTHs.push_back(detectorOriginMap);
 
@@ -1543,6 +1580,7 @@ void MainWindow::redrawEnlargedView()
     visualization->setsilderColorMoved(silderColorMoved);
     visualization->sethorizontalSliderColorZeroValue(ui->horizontalSliderColorZero->value());
     visualization->sethorizontalSliderValue(ui->horizontalSliderColor->value());
+    visualization->setplotTopViewLog(ui->checkBoxLogarithmic->isChecked());
 
     if (showDensityMapThermal) { visualization->plotGraph(densityMapThermal, 500, squareDim); }
 
@@ -1559,6 +1597,41 @@ void MainWindow::redrawEnlargedView()
     if (showDensityThermalTrackMap) { visualization->plotGraph(densityThermalTrackMapHighRes, 1000, squareDim); }
 
     if (showDensityEnergyTrackMap) { visualization->plotGraph(densityEnergyTrackMapHighRes, 1000, squareDim); }
+}
+
+void MainWindow::redrawEnlargedView2()
+{
+    visualization2->setColorScheme2(0);
+    if (ui->radioButton_NeutronNight->isChecked()) { visualization2->setColorScheme2(1); }
+    if (ui->radioButton_NeutronCold->isChecked()) { visualization2->setColorScheme2(2); }
+    if (ui->radioButton_NeutronPolar->isChecked()) { visualization2->setColorScheme2(3); }
+    if (ui->radioButton_NeutronHot->isChecked()) { visualization2->setColorScheme2(4); }
+    if (ui->radioButton_NeutronThermal->isChecked()) { visualization2->setColorScheme2(5); }
+    if (ui->radioButton_NeutronGrayScale->isChecked()) { visualization2->setColorScheme2(6); }
+
+    visualization2->setmanualColorZero2(manualColorZero);
+    visualization2->setmanualColor2(manualColor);
+    visualization2->setuseManualColor2(useManualColors);
+    visualization2->setsilderColorMoved2(silderColorMoved);
+    visualization2->sethorizontalSliderColorZeroValue2(ui->horizontalSliderColorZero->value());
+    visualization2->sethorizontalSliderValue2(ui->horizontalSliderColor->value());
+    visualization2->setplotTopViewLog2(ui->checkBoxLogarithmic->isChecked());
+
+    if (showDensityMapThermal) { visualization2->plotGraph2(densityMapThermal, 500, squareDim); }
+
+    if (showDensityMap) { visualization2->plotGraph2(densityMap, 500, squareDim); }
+    if (showDensityMapIntermediate) { visualization2->plotGraph2(densityMapIntermediate, 500, squareDim); }
+    if (showDensityMapFast) { visualization2->plotGraph2(densityMapFast, 500, squareDim); }
+    if (showDensityMapAlbedo) { visualization2->plotGraph2(densityMapAlbedo, 500, squareDim); }
+
+    if (showDensityTrackMap) { visualization2->plotGraph2(densityTrackMapHighRes15x, 1500, squareDim); }
+    if (showDensityIntermediateTrackMap) { visualization2->plotGraph2(densityIntermediateTrackMapHighRes15x, 1500, squareDim); }
+    if (showDensityFastTrackMap) { visualization2->plotGraph2(densityFastTrackMapHighRes15x, 1500, squareDim); }
+    if (showDensityAlbedoTrackMap) { visualization2->plotGraph2(densityAlbedoTrackMapHighRes15x, 1500, squareDim); }
+
+    if (showDensityThermalTrackMap) { visualization2->plotGraph2(densityThermalTrackMapHighRes15x, 1500, squareDim); }
+
+    if (showDensityEnergyTrackMap) { visualization2->plotGraph2(densityEnergyTrackMapHighRes15x, 1500, squareDim); }
 }
 
 
@@ -1899,9 +1972,20 @@ void  MainWindow::redrawNeutronMap(double difftime)
             else  updateEnlargedView = false;
         }
 
+        if (visualization2 != 0x0)
+        {
+            if (visualization2->isVisible()) updateEnlargedView2 = true;
+            else  updateEnlargedView2 = false;
+        }
+
         if (updateEnlargedView)
         {
             redrawEnlargedView();
+        }
+
+        if (updateEnlargedView2)
+        {
+            redrawEnlargedView2();
         }
 
         ui->customPlot->graph(0)->data()->clear();
@@ -2344,6 +2428,7 @@ bool MainWindow::importSettings()
 
     string wrkFldrName = (string)workFolder;
     visualization->setWorkFolder(wrkFldrName);
+    visualization2->setWorkFolder2(wrkFldrName);
 
     if (lineCounter > 1) return true;
 
@@ -6494,7 +6579,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                 detLayerTrackOutputFile.close();
             }
 
-
             if (allTrackFileOutput)
             {
                 allTrackOutputFile.open(outputFolder + "NeutronTrackData.dat", ios::out | ios::app);
@@ -7050,10 +7134,11 @@ bool cosmicNSimulator(MainWindow* uiM)
                     {
                         if (((n % clearEveryXNeutronsNumber == 0) && (clearEveryXNeutrons)) || ((n % refreshCycle == 0) && (setAutoRefreshRateClearing)))
                         {
-                            if (!noThermalRegime) { densityThermalTrackMap->Reset();  densityThermalTrackMapHighRes->Reset(); densityMapThermal->Reset(); }
+                            if (!noThermalRegime) { densityThermalTrackMap->Reset();  densityThermalTrackMapHighRes->Reset(); densityThermalTrackMapHighRes15x->Reset(); densityMapThermal->Reset(); }
 
                             densityTrackMap->Reset(); densityIntermediateTrackMap->Reset(); densityFastTrackMap->Reset(); densityAlbedoTrackMap->Reset();  densityEnergyTrackMap->Reset();
-                            densityTrackMapHighRes->Reset(); densityIntermediateTrackMapHighRes->Reset(); densityFastTrackMapHighRes->Reset(); densityAlbedoTrackMapHighRes->Reset(); densityHighEnergyTrackMapHighRes->Reset();
+                            densityTrackMapHighRes->Reset(); densityIntermediateTrackMapHighRes->Reset(); densityFastTrackMapHighRes->Reset();   densityAlbedoTrackMapHighRes->Reset(); densityHighEnergyTrackMapHighRes->Reset();  densityFastTrackMapHighRes2x->Reset();
+                            densityTrackMapHighRes15x->Reset(); densityIntermediateTrackMapHighRes15x->Reset(); densityFastTrackMapHighRes15x->Reset();   densityAlbedoTrackMapHighRes15x->Reset(); densityHighEnergyTrackMapHighRes15x->Reset();  densityEnergyTrackMapHighRes15x->Reset();
                             densityMapIntermediate->Reset(); densityMapFast->Reset(); densityMapAlbedo->Reset(); densityMap->Reset(); densityMapHighEnergy->Reset();  densityEnergyTrackMapHighRes->Reset();
 
                             if (showDensityTrackMapSide) { densityTrackMapSide->Reset();  densityTrackMapSideAlbedo->Reset(); densityTrackMapSideDetector->Reset(); densityTrackMapSideThermal->Reset(); }
@@ -10343,7 +10428,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     sinPhiTr = sin(phiTr);
                                     tanThetaTr = tan(thetaTr);
 
-                                    trackMetricFactor = fabs(mapMetricFactor * 1000. / tanThetaTr);
+                                    trackMetricFactor = fabs(mapMetricFactor * 1000. / tanThetaTr)*0.4;
 
                                     continueTracking = true;
                                     ztrCounter = 0;
@@ -10391,22 +10476,23 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                             densityEnergyTrackMap->SetBinContent(densityEnergyTrackMap->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMap->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
 
-                                            if (true)
+                                            if ((!noGUIMode) && (highResCalc))
                                             {
-                                                for (int hr = 0; hr < 2; hr++)
+                                                const short hrmax = 2; // oversampling ratio
+                                                for (int hr = 0; hr < hrmax; hr++)
                                                 {
                                                     //that is because mapMetricFactor is defined for a 500 px map and so is trackMetricFactor and therefore an intermediate value for 1000 px has to be inserted
-                                                    if (hr == 1)
+                                                    if (hr != 0)
                                                     {
                                                         if (thetaTr < piHalf)
                                                         {
-                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr + 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
-                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr + 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
                                                         }
                                                         else
                                                         {
-                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr - 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
-                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr - 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
                                                         }
                                                     }
 
@@ -10418,6 +10504,37 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                     if ((energyTr < 100000) && (energyTr > 20)) densityHighEnergyTrackMapHighRes->Fill(xTrack * 0.001, yTrack * 0.001);
 
                                                     densityEnergyTrackMapHighRes->SetBinContent(densityEnergyTrackMapHighRes->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
+                                                }
+                                            }
+
+                                            if ((!noGUIMode) && (highResCalc))
+                                            {
+                                                const short hrmax2 = 6;
+                                                for (int hr = 0; hr < hrmax2; hr++)
+                                                {
+                                                    //that is because mapMetricFactor is defined for a 500 px map and so is trackMetricFactor and therefore an intermediate value for 1000 px has to be inserted
+                                                    if (hr != 0)
+                                                    {
+                                                        if (thetaTr < piHalf)
+                                                        {
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                        }
+                                                        else
+                                                        {
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                        }
+                                                    }
+
+                                                    if ((energyTr < 2e-7) && (energyTr > 1e-9))  densityThermalTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 0.001) && (energyTr > 0.000001))  densityTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 0.5) && (energyTr > 0.001)) densityIntermediateTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 10) && (energyTr > 0.5)) densityFastTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if (((energyTr < energyhighTHL) && (energyTr > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) densityAlbedoTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 100000) && (energyTr > 20)) densityHighEnergyTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+
+                                                    //densityEnergyTrackMapHighRes->SetBinContent(densityEnergyTrackMapHighRes->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
                                                 }
                                             }
                                         }
@@ -11963,9 +12080,18 @@ void MainWindow::redrawTopView()
         if (visualization->isVisible()) updateEnlargedView = true;
         else  updateEnlargedView = false;
     }
+    if (visualization2 != 0x0)
+    {
+        if (visualization2->isVisible()) updateEnlargedView2 = true;
+        else  updateEnlargedView2 = false;
+    }
     if (updateEnlargedView)
     {
         redrawEnlargedView();
+    }
+    if (updateEnlargedView2)
+    {
+        redrawEnlargedView2();
     }
 
     if (showDensityTrackMap)            cutView = densityTrackMap->ProjectionX("proj", 240, 260);
@@ -12451,7 +12577,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.03b (01.01.2023)<br> ";
+    messageString+=        "v1.04 (02.01.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -12638,6 +12764,7 @@ void MainWindow::activateThermalSkyEvaporation()
 {
     noThermalRegime = false;
     doSkyEvaporation = true;
+    highResCalc = true;
 
     maxScatterings = 1500; // maximum number of scatterings of a neutron until killed
 
@@ -14037,8 +14164,11 @@ void MainWindow::on_checkBox_TrackAllLayers_toggled(bool checked)
  */
 void MainWindow::on_checkBoxLogarithmic_toggled(bool checked)
 {
-    if (checked) { plotTopViewLog = true; visualization->setplotTopViewLog(true); }
+    if (checked) {plotTopViewLog = true; visualization->setplotTopViewLog(true); }
     else { plotTopViewLog = false; visualization->setplotTopViewLog(false); }
+
+    if (checked) {visualization2->setplotTopViewLog2(true); }
+    else {visualization2->setplotTopViewLog2(false); }
 
     redrawTopView();
 }
@@ -14693,5 +14823,19 @@ void MainWindow::on_pushButton_SaveConfig_clicked()
         exportSettings("");
     }
     if (!noGUIMode) setStatus(1, "Uranos.cfg written");
+}
+
+
+void MainWindow::on_pushButton_Enlarge2_clicked()
+{
+    delete visualization2;
+    visualization2 = new VisualizationEnlarge2(this);
+    visualization2->show();
+
+    updateEnlargedView2 = true;
+    if (alreadyStarted)
+    {
+        redrawEnlargedView2();
+    }
 }
 

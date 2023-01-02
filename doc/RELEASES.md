@@ -1,5 +1,12 @@
 # URANOS Release Notes
 
+## URANOS version 1.04 (January 2, 2023)
+
+Changelog:
+- additional high resolution track output added
+- URANOS CentOS 7 64bit version release with QT 5.9.7 and ROOT 6.22.08.
+
+
 ## URANOS version 1.03 (December 30, 2022)
 
 ### Changelog

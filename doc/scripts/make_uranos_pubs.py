@@ -1,3 +1,4 @@
+# %%
 # Update URANOS publication list:
 # 1. Add new DOIs to publications-uranos.csv 
 # 2. Run this script 
@@ -85,7 +86,7 @@ color_labels = '#AAAAAA'
 # Spiral params
 radius          = 0
 space           = 0
-rotation        = 110 # try to keep the latest paper on top
+rotation        = 60 # try to keep the latest paper on top
 segment_len     = 130
 segment_len_max = 10
 segment_gap     = 10

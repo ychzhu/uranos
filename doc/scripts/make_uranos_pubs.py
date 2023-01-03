@@ -133,7 +133,7 @@ with Figure(size=(8,1.5),
     ax.plot(plotdata.t, plotdata.num, color=color_data, drawstyle='steps-post')
     ax.set_xlim(
         date( plotdata.t[len(plotdata)-1].year, 1, 1),
-        date( plotdata.t[0].year,              12,31))
+        date( plotdata.t[0].year+1,            12,31))
     ax.set_yticks(np.arange(0,len(plotdata),5))
     ax.xaxis.set_tick_params(labelsize=6)
     ax.yaxis.set_tick_params(labelsize=6)

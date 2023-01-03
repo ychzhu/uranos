@@ -3,20 +3,20 @@
 
 
 // variables for drawing the enlarged visulization view
-float squareDim = 10;
+float squareDimV = 10;
 
 int horizontalSliderValue = 50;
 int horizontalSliderColorZeroValue = 0;
-int manualColorZero = 0;
-int manualColor = 0;
+int manualColorZeroV = 0;
+int manualColorV = 0;
 int colorScheme = 0;
 int screenshotcounter = 1;
 
-bool plotTopViewLog = false;
-bool silderColorMoved = false;
+bool plotTopViewLogV = false;
+bool silderColorMovedV = false;
 bool useManualColor = false;
 
-string workFolder;
+string workFolderV;
 
 VisualizationEnlarge::VisualizationEnlarge(QWidget *parent) :
     QDialog(parent),
@@ -33,7 +33,7 @@ VisualizationEnlarge::~VisualizationEnlarge()
 
 void VisualizationEnlarge::setSquareDimSize(float squareDimSize)
 {
-    squareDim = squareDimSize;
+    squareDimV = squareDimSize;
 }
 
 void VisualizationEnlarge::sethorizontalSliderValue(int value)
@@ -49,22 +49,22 @@ void VisualizationEnlarge::sethorizontalSliderColorZeroValue(int value)
 
 void VisualizationEnlarge::setmanualColorZero(int value)
 {
-    manualColorZero = value;
+    manualColorZeroV = value;
 }
 
 void VisualizationEnlarge::setmanualColor(int value)
 {
-    manualColor = value;
+    manualColorV = value;
 }
 
 void VisualizationEnlarge::setsilderColorMoved(bool value)
 {
-    silderColorMoved = value;
+    silderColorMovedV = value;
 }
 
 void VisualizationEnlarge::setplotTopViewLog(bool value)
 {
-    plotTopViewLog = value;
+    plotTopViewLogV = value;
 }
 
 void VisualizationEnlarge::setuseManualColor(bool value)
@@ -79,9 +79,8 @@ void VisualizationEnlarge::setColorScheme(int value)
 
 void VisualizationEnlarge::setWorkFolder(string text)
 {
-    workFolder = text;
+    workFolderV = text;
 }
-
 
 void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
 {
@@ -107,17 +106,21 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
 
     if (size == 500)  colorMap->data()->setSize(500, 500);
     if (size == 1000)  colorMap->data()->setSize(1000, 1000);
-    if (size == 2000)  colorMap->data()->setSize(1000, 1000);
+    if (size == 2000)  colorMap->data()->setSize(2000, 2000);
     if (size == 4000)  colorMap->data()->setSize(1000, 1000);
-    colorMap->data()->setRange(QCPRange(-::squareDim/2./1000., ::squareDim/2./1000.), QCPRange(-::squareDim/2./1000., ::squareDim/2./1000.));
+    colorMap->data()->setRange(QCPRange(-::squareDimV/2./1000., ::squareDimV/2./1000.), QCPRange(-::squareDimV/2./1000., ::squareDimV/2./1000.));
 
-    if (plotTopViewLog) colorMap->setDataScaleType(QCPAxis::stLogarithmic);
+    if (plotTopViewLogV) colorMap->setDataScaleType(QCPAxis::stLogarithmic);
+    else colorMap->setDataScaleType(QCPAxis::stLinear);
 
     QCPColorScale *colorScale = new QCPColorScale(ui->customPlot);
 
     colorScale->setType(QCPAxis::atRight);
     colorMap->setColorScale(colorScale);
     colorScale->axis()->setLabel("Neutron Hit Density");
+
+    if (plotTopViewLogV) colorScale->setDataScaleType(QCPAxis::stLogarithmic);
+    else colorScale->setDataScaleType(QCPAxis::stLinear);
 
     colorScale->axis()->setSubTickPen(QPen(lightBlue));
     colorScale->axis()->setTickPen(QPen(lightBlue));
@@ -130,11 +133,11 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
     subLayout->setMargins(QMargins(10, 10, 10, 5));
     subLayout->addElement(0, 0, colorScale);
 
-    ui->customPlot->plotLayout()->element(0,0)->setMaximumSize(997,997);
+    ui->customPlot->plotLayout()->element(0,0)->setMaximumSize(1000,1000);
 
     float minZ = 0;
 
-    if (plotTopViewLog) minZ = 1;
+    if (plotTopViewLogV) minZ = 1;
 
     if (true)
     {
@@ -149,6 +152,7 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
             }
             entryWeight = (data->GetEntries())/(500.*500.)*4.; maximumWeight = 1.* data->GetBinContent(data->GetMaximumBin());
         }
+
         if (size == 1000)
         {
             for (int x=0; x<1000; x+=1)
@@ -160,7 +164,20 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
             }
             entryWeight = (data->GetEntries())/(1000.*1000.)*4.; maximumWeight = 1.* data->GetBinContent(data->GetMaximumBin());
         }
+
         if (size == 2000)
+        {
+            for (int x=0; x<2000; x+=1)
+            {
+                for (int y=0; y<2000; y+=1)
+                {
+                    colorMap->data()->setCell((int)x, (int)y, data->GetBinContent(x,y));
+                }
+            }
+            entryWeight = (data->GetEntries())/(2000.*2000.)*4.; maximumWeight = 1.* data->GetBinContent(data->GetMaximumBin());
+        }
+
+        if (size == 2020)
         {
             for (int x=0; x<1000; x+=1)
             {
@@ -208,7 +225,7 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
     float colorscaleMax = (horizontalSliderValue*1.)/99.*maximumWeight;
     if (colorscaleMax < 1) colorscaleMax = 1;
 
-    if (colorScheme==0) {colorMap->setGradient(QCPColorGradient::gpJet); colorScale->setGradient(QCPColorGradient::gpCold); }
+    if (colorScheme==0) {colorMap->setGradient(QCPColorGradient::gpJet); colorScale->setGradient(QCPColorGradient::gpJet); }
     if (colorScheme==1) {colorMap->setGradient(QCPColorGradient::gpNight); colorScale->setGradient(QCPColorGradient::gpNight); }
     if (colorScheme==2) {colorMap->setGradient(QCPColorGradient::gpCold); colorScale->setGradient(QCPColorGradient::gpCold);}
     if (colorScheme==3) {colorMap->setGradient(QCPColorGradient::gpThermal); colorScale->setGradient(QCPColorGradient::gpThermal);}
@@ -218,9 +235,9 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
 
     colorMap->setInterpolate(true);
 
-    if (manualColorZero < minZ) { manualColorZero = minZ;}
+    if (manualColorZeroV < minZ) { manualColorZeroV = minZ;}
 
-    if (!silderColorMoved)
+    if (!silderColorMovedV)
     {
         if (entryWeight*1.1 < 5) {colorMap->setDataRange(QCPRange(minZ,5));  colorScale->setDataRange(QCPRange(minZ,5));}
         else {colorMap->setDataRange(QCPRange(minZ,entryWeight*1.1)); colorScale->setDataRange(QCPRange(minZ,entryWeight*1.1));}
@@ -233,8 +250,8 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
 
     if (useManualColor)
     {
-        colorMap->setDataRange(QCPRange( manualColorZero,manualColor ));
-        colorScale->setDataRange(QCPRange(manualColorZero,manualColor));
+        colorMap->setDataRange(QCPRange( manualColorZeroV,manualColorV));
+        colorScale->setDataRange(QCPRange(manualColorZeroV,manualColorV));
     }
 
     ui->customPlot->rescaleAxes();
@@ -244,8 +261,8 @@ void VisualizationEnlarge::plotGraph(TH2F* data, int size, float squareDimSize)
 void VisualizationEnlarge::setupRunGraph(QCustomPlot *customPlot)
 {
     //QColor lightBlue = QColor ( 234 , 246 , 255);
-    QColor lightBlue = QColor ( 215 , 237 , 255);
-    QColor someBlue = QColor (  0 , 88 , 156);
+    QColor lightBlue = QColor (215, 237, 255);
+    QColor someBlue = QColor (0, 88, 156);
     customPlot->setBackground(someBlue);
     customPlot->axisRect()->setBackground(Qt::white);
     customPlot->xAxis->setTickLabelColor(lightBlue);
@@ -265,7 +282,7 @@ void VisualizationEnlarge::setupRunGraph(QCustomPlot *customPlot)
     customPlot->yAxis->setLabel("y [m]");
 
     colorMap->data()->setSize(500, 500);
-    colorMap->data()->setRange(QCPRange(-::squareDim/2./1000., ::squareDim/2./1000.), QCPRange(-::squareDim/2./1000., ::squareDim/2./1000.));
+    colorMap->data()->setRange(QCPRange(-::squareDimV/2./1000., ::squareDimV/2./1000.), QCPRange(-::squareDimV/2./1000., ::squareDimV/2./1000.));
 
     colorMap->setGradient(QCPColorGradient::gpJet);
     colorMap->rescaleDataRange(true);
@@ -278,7 +295,7 @@ void VisualizationEnlarge::setupRunGraph(QCustomPlot *customPlot)
     colorMap->setColorScale(colorScale);
     colorScale->axis()->setLabel("Neutron Flux");
 
-    ui->customPlot->plotLayout()->element(0,0)->setMaximumSize(997,997);
+    ui->customPlot->plotLayout()->element(0,0)->setMaximumSize(1000,1000);
 
     colorScale->axis()->setSubTickPen(QPen(lightBlue));
     colorScale->axis()->setTickPen(QPen(lightBlue));
@@ -292,15 +309,10 @@ void VisualizationEnlarge::setupRunGraph(QCustomPlot *customPlot)
     customPlot->replot();
 }
 
-//void VisualizationEnlarge::setFocus(MainWindow* wF)
-//{
-//
-//}
-
 
 void VisualizationEnlarge::on_pushButtonPNG_toggled(bool checked)
 {
-    //originalPixmap.save(QString::fromStdString(workFolder)+fileName, format.toAscii());
+    //originalPixmap.save(QString::fromStdString(workFolderV)+fileName, format.toAscii());
 }
 
 void VisualizationEnlarge::on_pushButtonPNG_clicked()
@@ -311,7 +323,7 @@ void VisualizationEnlarge::on_pushButtonPNG_clicked()
 
     originalPixmap = screen->grabWindow(ui->customPlot->winId());
 
-    QString fileName = QString::fromStdString(workFolder)+"/neutronHitDensityExport_"+QString::number(screenshotcounter)+".png";
+    QString fileName = QString::fromStdString(workFolderV)+"/neutronHitDensityExport_"+QString::number(screenshotcounter)+".png";
 
     if (!originalPixmap.save(fileName))
     {

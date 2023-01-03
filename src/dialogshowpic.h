@@ -3,7 +3,6 @@
 
 #include <QDialog>
 #include "qcustomplot.h"
-//#include "mainwindow.h"
 
 namespace Ui {
 class DialogShowPic;

@@ -353,6 +353,7 @@ public:
     QCustomPlot *customPlot2;
     QPushButton *pushButton_Enlarge;
     QLabel *label_detectorLayerNs2;
+    QPushButton *pushButton_Enlarge2;
     QWidget *tab_8;
     QFrame *frame;
     QCustomPlot *customPlot4;
@@ -548,6 +549,11 @@ public:
         tabWidget = new QTabWidget(centralWidget);
         tabWidget->setObjectName(QString::fromUtf8("tabWidget"));
         tabWidget->setGeometry(QRect(50, 90, 871, 801));
+        QSizePolicy sizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
+        sizePolicy.setHorizontalStretch(0);
+        sizePolicy.setVerticalStretch(0);
+        sizePolicy.setHeightForWidth(tabWidget->sizePolicy().hasHeightForWidth());
+        tabWidget->setSizePolicy(sizePolicy);
         tabWidget->setAutoFillBackground(false);
         tabWidget->setTabShape(QTabWidget::Rounded);
         tabWidget->setElideMode(Qt::ElideNone);
@@ -1785,6 +1791,9 @@ public:
         label_detectorLayerNs2->setFont(font2);
         label_detectorLayerNs2->setLayoutDirection(Qt::RightToLeft);
         label_detectorLayerNs2->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+        pushButton_Enlarge2 = new QPushButton(liveframe1);
+        pushButton_Enlarge2->setObjectName(QString::fromUtf8("pushButton_Enlarge2"));
+        pushButton_Enlarge2->setGeometry(QRect(481, 0, 20, 20));
         tabWidget_live->addTab(tab_7, QString());
         tab_8 = new QWidget();
         tab_8->setObjectName(QString::fromUtf8("tab_8"));
@@ -2337,6 +2346,7 @@ public:
         pushButton_about->setText(QString());
         pushButton_Enlarge->setText(QCoreApplication::translate("MainWindow", "+", nullptr));
         label_detectorLayerNs2->setText(QCoreApplication::translate("MainWindow", "-", nullptr));
+        pushButton_Enlarge2->setText(QCoreApplication::translate("MainWindow", "+", nullptr));
         tabWidget_live->setTabText(tabWidget_live->indexOf(tab_7), QCoreApplication::translate("MainWindow", "Birds-eye View && Spectra", nullptr));
         label_24->setText(QCoreApplication::translate("MainWindow", "Range distribution of Neutrons passing the Detector Layer", nullptr));
         label_4->setText(QCoreApplication::translate("MainWindow", "Range distribution of Neutrons passing the Detector", nullptr));

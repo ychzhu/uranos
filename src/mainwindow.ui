@@ -169,6 +169,12 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
       <height>801</height>
      </rect>
     </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Expanding">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <property name="autoFillBackground">
      <bool>false</bool>
     </property>
@@ -5103,6 +5109,19 @@ background-color: transparent;</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+      </widget>
+      <widget class="QPushButton" name="pushButton_Enlarge2">
+       <property name="geometry">
+        <rect>
+         <x>481</x>
+         <y>0</y>
+         <width>20</width>
+         <height>20</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>+</string>
        </property>
       </widget>
      </widget>

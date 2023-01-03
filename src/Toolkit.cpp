@@ -1071,11 +1071,11 @@ string  castLongToString(Long_t &number)
 }
 
 // converts a hex value to base-10 integers
-unsigned int heXheX(const TCHAR *value)
+unsigned int heXheX(const char *value)
 {
     struct CHexMap
     {
-        TCHAR chr;
+        char chr;
         int value;
     };
     const unsigned int HexMapL = 16;
@@ -1090,8 +1090,8 @@ unsigned int heXheX(const TCHAR *value)
         {'C', 12}, {'D', 13},
         {'E', 14}, {'F', 15}
     };
-    TCHAR *mstr = _tcsupr(_tcsdup(value));
-    TCHAR *s = mstr;
+    char *mstr = (strdup(value));
+    char *s = mstr;
     unsigned int result = 0;
     if (*s == '0' && *(s + 1) == 'X') s += 2;
     bool firsttime = true;
@@ -1100,7 +1100,7 @@ unsigned int heXheX(const TCHAR *value)
         bool found = false;
         for (int i = 0; i < HexMapL; i++)
         {
-            if (*s == HexMap[i].chr)
+            if (toupper(*s) == HexMap[i].chr)
             {
                 if (!firsttime) result <<= 4;
                 result |= HexMap[i].value;

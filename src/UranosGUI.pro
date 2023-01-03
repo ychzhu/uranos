@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     Toolkit.cpp \
     dialogshowpic.cpp \
     customSplashScreen.cpp \
-    visualizationenlarge.cpp
+    visualizationenlarge.cpp \
+    visualizationenlarge2.cpp
 
 
 HEADERS  += mainwindow.h \
@@ -35,23 +36,38 @@ HEADERS  += mainwindow.h \
     Toolkit.h \
     dialogshowpic.h \
     customSplashScreen.h \
-    visualizationenlarge.h
+    visualizationenlarge.h \
+    visualizationenlarge2.h
 
 FORMS    += mainwindow.ui \
     dialogshowpic.ui \
+    visualizationEnlarge2.ui \
     visualizationenlarge.ui
 
 DEFINES += _CRT_SECURE_NO_WARNINGS
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0
 
-QMAKE_LFLAGS +=  /FORCE
-QMAKE_LFLAGS += /INCREMENTAL:NO
+CONFIG += static
+
+win32:QMAKE_LFLAGS +=  /FORCE
+win32:QMAKE_LFLAGS += /INCREMENTAL:NO
+#QMAKE_LFLAGS += -static
+
 
 win32:CXXFLAGS += /O2
+unix: QMAKE_CXXFLAGS += -Wno-sign-compare
+unix: QMAKE_CXXFLAGS += -Wno-unused-parameter
+unix: QMAKE_CXXFLAGS += -Wno-unused-variable
+unix: QMAKE_CXXFLAGS += -Wno-unused-but-set-variable
+unix: QMAKE_CXXFLAGS += -Wno-maybe-uninitialized
+unix: QMAKE_CXXFLAGS += -Wno-unused-result
+unix: QMAKE_CXXFLAGS += -Wno-unused-function
+unix: QMAKE_CXXFLAGS += -Wno-misleading-indentation
 
-QMAKE_CXXFLAGS += -openmp
-QMAKE_CXXFLAGS += -MP
 
+#QMAKE_CXXFLAGS += -openmp
+#unix: QMAKE_CXXFLAGS += -MM
+win32: QMAKE_CXXFLAGS += -MP
 
 #LIBS += -fopenmp
 
@@ -61,73 +77,58 @@ win32: LIBS += -L$$PWD/root/lib/ -llibCore
 win32: LIBS += -L$$PWD/root/lib/ -llibMathCore
 win32: LIBS += -L$$PWD/root/lib/ -llibGui
 win32: LIBS += -L$$PWD/root/lib/ -llibHist
-#win32: LIBS += -L$$PWD/root/lib/ -llibCint
 win32: LIBS += -L$$PWD/root/lib/ -llibGraf
 win32: LIBS += -L$$PWD/root/lib/ -llibRIO
 win32: LIBS += -L$$PWD/root/lib/ -llibGPad
-#win32: LIBS += -L$$PWD/GnuWin32/lib -llibgsl
-#win32: LIBS += -L$$PWD/gsl/lib -lgsl
+
+unix: LIBS += -L$$PWD/root/lib/ -lMatrix
+unix: LIBS += -L$$PWD/root/lib/ -lCore
+unix: LIBS += -L$$PWD/root/lib/ -lMathCore
+unix: LIBS += -L$$PWD/root/lib/ -lGui
+unix: LIBS += -L$$PWD/root/lib/ -lHist
+unix: LIBS += -L$$PWD/root/lib/ -lGraf
+unix: LIBS += -L$$PWD/root/lib/ -lRIO
+unix: LIBS += -L$$PWD/root/lib/ -lGpad
+unix: LIBS += -L$$PWD/root/lib/ -lThread
+unix: LIBS += -L$$PWD/root/lib/ -lImt
+unix: LIBS += -L$$PWD/root/lib/ -ltbb
+
+unix: LIBS += -W
+
 
 INCLUDEPATH += $$PWD/root/include
-#INCLUDEPATH += $$PWD/GnuWin32/include
-#INCLUDEPATH += $$PWD/gsl/include
-
-#DEPENDPATH += $$PWD/GnuWin32/lib
-#DEPENDPATH += $$PWD/GnuWin32
-#DEPENDPATH += $$PWD/GnuWin32/include
-
-#DEPENDPATH += $$PWD/gsl/lib
-#DEPENDPATH += $$PWD/gsl
-#DEPENDPATH += $$PWD/gsl/include
 
 DEPENDPATH += $$PWD/root/include
 
 
-#win32:!win32-g++: PRE_TARGETDEPS += $$PWD/gsl/lib/gsl.lib
-#else:win32-g++: PRE_TARGETDEPS += $$PWD/gsl/lib/gsl.lib
-
-#win32: PRE_TARGETDEPS += $$PWD/GnuWin32/lib/libgsl.lib
-#else:win32-g++: PRE_TARGETDEPS += $$PWD/GnuWin32/lib/libgsl.a
-
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libMatrix.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libMatrix.a
+#unix: PRE_TARGETDEPS += $$PWD/root/lib/libMatrix.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libCore.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libCore.a
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libCore.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libMathCore.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libMathCore.a
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libCore.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libGui.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libGui.a
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libGui.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libHist.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libHist.a
-
-#win32: PRE_TARGETDEPS += $$PWD/root/lib/libCint.lib
-#else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libCint.a
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libHist.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libGraf.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libGraf.a
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libGraf.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libRIO.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libRIO.a
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libRIO.so
 
 win32: PRE_TARGETDEPS += $$PWD/root/lib/libGPad.lib
 #else:win32-g++: PRE_TARGETDEPS += $$PWD/root/lib/libGPad.a
-
-#win32: LIBS += -L$$PWD/GnuWin32/lib/ -llibgsl
-#else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/GnuWin32/lib/ -lgsld
-#else:unix: LIBS += -L$$PWD/GnuWin32/lib/ -llibgsl
-
-#INCLUDEPATH += $$PWD/GnuWin32/include
-#DEPENDPATH += $$PWD/GnuWin32/include
-
-#win32: PRE_TARGETDEPS += $$PWD/GnuWin32/lib/libgsl.lib
-#else:win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/GnuWin32/lib/libgsld.a
-#else:win32:!win32-g++:CONFIG(release, debug|release): PRE_TARGETDEPS += $$PWD/GnuWin32/lib/gsl.lib
-#else:win32:!win32-g++:CONFIG(debug, debug|release): PRE_TARGETDEPS += $$PWD/GnuWin32/lib/gsld.lib
-#else:unix: PRE_TARGETDEPS += $$PWD/GnuWin32/lib/libgsl.a
-
- #   PRECOMPILED_HEADER = pch/precompiled_header.h
- #   CONFIG += precompile_header
+#else:unix: PRE_TARGETDEPS += $$PWD/root/lib/libGpad.so

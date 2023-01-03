@@ -1,6 +1,40 @@
 # URANOS Release Notes
 
-## URANOS v1.00a (May 24, 2022)
+## URANOS version 1.04 (January 2, 2023)
+
+### Changelog
+- additional high resolution track output added
+- URANOS CentOS 7 64bit version release with QT 5.9.7 and ROOT 6.22.08.
+
+
+## URANOS version 1.03 (December 30, 2022)
+
+### Changelog
+- URANOS Linux version release. 
+- URANOS has currently been tested on Ubuntu 20 64bit with QT 5.12.8 and ROOT 6.22.08.
+- Compiled binaries are now available for Ubuntu 20. For running under Linux, please also update the ENDF data.
+
+
+## URANOS version 1.02 (December 26, 2022)
+
+### Changelog
+- bugfixes for command line options
+
+
+## URANOS version 1.01 (December 5, 2022)
+
+### Changelog
+- smaller bugfixes
+- updated QCustomPlot to version 2.1.1
+
+
+## URANOS version 1.00 beta (September 22, 2022)
+
+### Changelog
+- bugfixes for material settings
+
+
+## URANOS version 1.00a (May 24, 2022)
 
 ### New installation guidelines
 

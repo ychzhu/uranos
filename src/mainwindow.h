@@ -18,6 +18,7 @@
 
 #include "dialogshowpic.h"
 #include "visualizationenlarge.h"
+#include "visualizationenlarge2.h"
 
 
 //extern QVector<double> x(101), y(101);
@@ -25,7 +26,6 @@
 
 namespace Ui {
 class MainWindow;
-
 
 }
 
@@ -41,6 +41,7 @@ public:
 
     void setupImport();
     void setupGraph(int index);
+    void getGraphConfig();
     void setupRunSpectraGraph(QCustomPlot *customPlot);
     void setupRunBirdsEyeViewGraph(QCustomPlot *customPlot);
     void setupRunHorizSliceXGraph(QCustomPlot *customPlot);
@@ -58,11 +59,15 @@ public:
 
     void redrawEnlargedView();
 
+    void redrawEnlargedView2();
+
     void redrawNeutronMap(double difftime);
 
     void buttonClickFunction();
 
     void activateThermal();
+
+    void setConfigFilePath(string pathtoConfigFile);
 
     void disabledGUIRun(string pathtoConfigFile);
 
@@ -459,6 +464,8 @@ private slots:
     void on_checkBoxFileOutput3_toggled(bool checked);
 
     void on_pushButton_SaveConfig_clicked();
+
+    void on_pushButton_Enlarge2_clicked();
 
 private:
     Ui::MainWindow *ui;

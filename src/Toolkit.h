@@ -46,10 +46,8 @@
 #include <strstream>
 #include <sstream>
 //#include <vector>
-
-
 #include <float.h>
-#include <TCHAR.h>
+
 #include <malloc.h>
 
 #include <QImage>
@@ -149,7 +147,7 @@ using namespace std;
 
 	//void deleteStatsTH(vector<TH1*> *allTHs);
 
-	unsigned int heXheX(const TCHAR *value);
+    unsigned int heXheX(const char *value);
 
 	const std::string intToHex( int i);
 

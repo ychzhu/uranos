@@ -1,7 +1,3 @@
-#define hypot __hypot  //this is only due to some changes in MSCV2010
-
-//#define ROOTOLDVERSION
-
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -17,17 +13,25 @@
 
 #include <algorithm>
 
-#include <io.h>
 //wchar_t BOM = 0xFEFF;
+
+
+#ifdef _WIN32
+    #include <io.h>
+    #define access _access
+#elif __linux_
+#endif
+
+#pragma warning (disable: 4018 4305)
+
 
 //Initialization of Objects for data transfer
 //not yet in order
 
-#pragma warning (disable: 4018 4305)
-
 TRandom3 r; // general random generator in ROOT
 
 VisualizationEnlarge* visualization;  // the 1000 x 1000 pixel window for the bird's eyes view
+VisualizationEnlarge2* visualization2;
 
 // objects used for plotting data in QCustomplot (mainly vectors for x and y axis data)
 vector< QVector<double>* > allDisplayData;
@@ -85,6 +89,17 @@ TH2F* densityEnergyTrackMapHighRes;
 
 TH2F* densityThermalTrackMapHighRes;
 
+TH2F* densityTrackMapHighRes15x;
+TH2F* densityIntermediateTrackMapHighRes15x;
+TH2F* densityFastTrackMapHighRes15x;
+TH2F* densityAlbedoTrackMapHighRes15x;
+TH2F* densityHighEnergyTrackMapHighRes15x;
+TH2F* densityEnergyTrackMapHighRes15x;
+
+TH2F* densityThermalTrackMapHighRes15x;
+
+TH2F* densityFastTrackMapHighRes2x;
+
 TH2F* densityMapThermal;
 
 TH2F* densityMap;
@@ -122,6 +137,7 @@ TString outputFolder = "";
 TString workFolder = "";
 
 string configFilePath = "";
+bool configFilePathConfigured = false;
 
 TString inputSpectrumFile = "";
 
@@ -142,6 +158,7 @@ bool plotTopViewLog = false;        // GUI
 bool noGUIMode = false;             // deactivates the GUI for command line run
 bool silentMode = false;            // deactivates the message output
 bool layerMapsImport = false;       // GUI
+bool highResCalc = false;            // extra resolution mode
 
 float densitySideTrackingEnergyCutoff = 20000.; //upper cutoff for sideways tracking... not so important any more
 
@@ -182,6 +199,7 @@ bool usexSheetDetector = false;
 bool useRealisticModel = false;     // uses the detector response function instead of upper and lower thl
 bool useRealisticModelDetector = false; // uses the realistic (response function) model for the virtual detector
 bool useRealisticModelLayer = false; // uses the realistic (response function) model for the detector layer
+bool useAdditionalDetectorModel = false; // uses a second response function for the realistic detector model
 bool useRoverModel = false;
 bool useVolumeSource = false;       // source model which extends the source beyound the source layer until the ground layer by an exponential
 bool useHECascadeModel = true;      // model which continues the high energetic part in case of absorption in order to reproduce the correct attenuation length
@@ -272,7 +290,7 @@ bool showDensityMapThermal = false;
 
 bool showDetectorOriginMap = true;
 bool updateEnlargedView = false;    // GUI
-
+bool updateEnlargedView2 = false;    // GUI
 
 //activates sideways projection (slows down)
 bool showDensityTrackMapSide = false;   // activates sideways tracking (computationally expensive)
@@ -555,7 +573,7 @@ void MainWindow::setStatus(int numberLabel, string msg)
 }
 
 /**
- * Set up the Geometry in the main tab.
+ * Set up the Geometry in the main tab, also defines the matrixMetricFactor, the resolution of the image.
  *
  */
 void MainWindow::setupGeometry()
@@ -605,7 +623,7 @@ bool setupFootprintFunction()
     bool successful = false;
 
     // the names of the root files and the name of the functions within them are hardcoded here
-    TFile readParFtPrnt1(endfFolder + "/FootprintParams1.root", "READ");
+    TFile readParFtPrnt1(endfFolder + "FootprintParams1.root", "READ");
     if (readParFtPrnt1.IsOpen())
     {
         p01 = (TF2*)readParFtPrnt1.Get("grfunction2");
@@ -615,15 +633,15 @@ bool setupFootprintFunction()
         successful = true;
     }
 
-    TFile readParFtPrnt2(endfFolder + "/FootprintParams2.root", "READ");
+    TFile readParFtPrnt2(endfFolder + "FootprintParams2.root", "READ");
     if (readParFtPrnt2.IsOpen())
     {
         p0 = (TF2*)readParFtPrnt2.Get("grfunction2");
         p1 = (TF2*)readParFtPrnt2.Get("grfunction4");
         p2 = (TF2*)readParFtPrnt2.Get("grfunction3");
-        p3 = (TF2*)readParFtPrnt2
-                .Get("grfunction5");
+        p3 = (TF2*)readParFtPrnt2.Get("grfunction5");
     }
+    if (!successful) cout << "FootprintParams root files not found in the ENDF folder (only required for graphical representation)" << endl;
     return successful;
 }
 
@@ -834,10 +852,16 @@ void MainWindow::setupGraph(int index)
     for (int i = 0; i < (::plotGUIxBinsScatDepthDet.size()); i++) { ::plotGUIxBinsScatDepthDet[i] = 0; ::plotGUIyBinsScatDepthDet[i] = 0; }
     for (int i = 0; i < (::plotGUIxBinsScatDepthDetMax.size()); i++) { ::plotGUIxBinsScatDepthDetMax[i] = 0; ::plotGUIyBinsScatDepthDetMax[i] = 0; }
 
-    setupImport();
+    //setupImport();
+    //ui->customPlot->replot();
+}
 
+void MainWindow::getGraphConfig()
+{
+    setupImport();
     ui->customPlot->replot();
 }
+
 /**
  * Set the output format for vector graphic export (pdf).
  *
@@ -1403,7 +1427,17 @@ void setupLiveTHs()
     delete densityHighEnergyTrackMapHighRes;
     delete densityEnergyTrackMapHighRes;
 
+    delete densityTrackMapHighRes15x;
+    delete densityIntermediateTrackMapHighRes15x;
+    delete densityFastTrackMapHighRes15x;
+    delete densityAlbedoTrackMapHighRes15x;
+    delete densityHighEnergyTrackMapHighRes15x;
+    delete densityEnergyTrackMapHighRes15x;
+
+    delete densityFastTrackMapHighRes2x;
+
     delete densityThermalTrackMapHighRes;
+    delete densityThermalTrackMapHighRes15x;
 
     delete densityThermalTrackMap;
     delete densityMapThermal;
@@ -1436,7 +1470,18 @@ void setupLiveTHs()
 
     densityEnergyTrackMapHighRes = new TH2F("densityEnergyTrackMapHighRes", "Detector Layer Neutron Energy Weighted Tracks", 1000, domainLowEdge, domainUpperEdge, 1000, domainLowEdge, domainUpperEdge);
 
+    densityTrackMapHighRes15x = new TH2F("densityTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityIntermediateTrackMapHighRes15x = new TH2F("densityIntermediateTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityFastTrackMapHighRes15x = new TH2F("densityFastTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityAlbedoTrackMapHighRes15x = new TH2F("densityAlbedoTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+    densityHighEnergyTrackMapHighRes15x = new TH2F("densityHighEnergyTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+
+    densityEnergyTrackMapHighRes15x = new TH2F("densityEnergyTrackMapHighRes15x", "Detector Layer Neutron Energy Weighted Tracks", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
+
+    densityFastTrackMapHighRes2x = new TH2F("densityFastTrackMapHighRes2x", "Detector Layer Neutron Track Density", 2000, domainLowEdge, domainUpperEdge, 2000, domainLowEdge, domainUpperEdge);
+
     densityThermalTrackMapHighRes = new TH2F("densityThermalTrackMapHighRes", "Detector Layer Neutron Track Density", 1000, domainLowEdge, domainUpperEdge, 1000, domainLowEdge, domainUpperEdge);
+    densityThermalTrackMapHighRes15x = new TH2F("densityThermalTrackMapHighRes15x", "Detector Layer Neutron Track Density", 1500, domainLowEdge, domainUpperEdge, 1500, domainLowEdge, domainUpperEdge);
 
     densityTrackMap = new TH2F("densityTrackMap", "Detector Layer Neutron Track Density", 500, domainLowEdge, domainUpperEdge, 500, domainLowEdge, domainUpperEdge);
     densityIntermediateTrackMap = new TH2F("densityIntermediateTrackMap", "Detector Layer Neutron Track Density", 500, domainLowEdge, domainUpperEdge, 500, domainLowEdge, domainUpperEdge);
@@ -1483,9 +1528,12 @@ void setupLiveTHs()
     liveTHs.push_back(densityMapAlbedo); liveTHs.push_back(densityMapFast); liveTHs.push_back(densityMapIntermediate); liveTHs.push_back(densityMap); liveTHs.push_back(densityMapHighEnergy);
     liveTHs.push_back(densityTrackMap); liveTHs.push_back(densityIntermediateTrackMap); liveTHs.push_back(densityFastTrackMap); liveTHs.push_back(densityAlbedoTrackMap); liveTHs.push_back(densityHighEnergyTrackMap);
     liveTHs.push_back(densityEnergyTrackMap);
-    liveTHs.push_back(densityMapThermal); liveTHs.push_back(densityThermalTrackMap); liveTHs.push_back(densityThermalTrackMapHighRes);
-    liveTHs.push_back(densityTrackMapHighRes); liveTHs.push_back(densityIntermediateTrackMapHighRes); liveTHs.push_back(densityFastTrackMapHighRes); liveTHs.push_back(densityAlbedoTrackMapHighRes); liveTHs.push_back(densityHighEnergyTrackMapHighRes);
+    liveTHs.push_back(densityMapThermal); liveTHs.push_back(densityThermalTrackMap); liveTHs.push_back(densityThermalTrackMapHighRes); liveTHs.push_back(densityThermalTrackMapHighRes15x);
+    liveTHs.push_back(densityTrackMapHighRes); liveTHs.push_back(densityIntermediateTrackMapHighRes); liveTHs.push_back(densityFastTrackMapHighRes); liveTHs.push_back(densityFastTrackMapHighRes2x); liveTHs.push_back(densityAlbedoTrackMapHighRes); liveTHs.push_back(densityHighEnergyTrackMapHighRes);
     liveTHs.push_back(densityEnergyTrackMapHighRes);
+    liveTHs.push_back(densityTrackMapHighRes15x); liveTHs.push_back(densityIntermediateTrackMapHighRes15x); liveTHs.push_back(densityFastTrackMapHighRes15x); liveTHs.push_back(densityAlbedoTrackMapHighRes15x); liveTHs.push_back(densityHighEnergyTrackMapHighRes15x);
+    liveTHs.push_back(densityEnergyTrackMapHighRes15x);
+
     liveTHs.push_back(scatteredSurfaceDepth); liveTHs.push_back(scatteredSurfaceMaxDepth);
     liveTHs.push_back(detectorOriginMap);
 
@@ -1532,6 +1580,7 @@ void MainWindow::redrawEnlargedView()
     visualization->setsilderColorMoved(silderColorMoved);
     visualization->sethorizontalSliderColorZeroValue(ui->horizontalSliderColorZero->value());
     visualization->sethorizontalSliderValue(ui->horizontalSliderColor->value());
+    visualization->setplotTopViewLog(ui->checkBoxLogarithmic->isChecked());
 
     if (showDensityMapThermal) { visualization->plotGraph(densityMapThermal, 500, squareDim); }
 
@@ -1548,6 +1597,41 @@ void MainWindow::redrawEnlargedView()
     if (showDensityThermalTrackMap) { visualization->plotGraph(densityThermalTrackMapHighRes, 1000, squareDim); }
 
     if (showDensityEnergyTrackMap) { visualization->plotGraph(densityEnergyTrackMapHighRes, 1000, squareDim); }
+}
+
+void MainWindow::redrawEnlargedView2()
+{
+    visualization2->setColorScheme2(0);
+    if (ui->radioButton_NeutronNight->isChecked()) { visualization2->setColorScheme2(1); }
+    if (ui->radioButton_NeutronCold->isChecked()) { visualization2->setColorScheme2(2); }
+    if (ui->radioButton_NeutronPolar->isChecked()) { visualization2->setColorScheme2(3); }
+    if (ui->radioButton_NeutronHot->isChecked()) { visualization2->setColorScheme2(4); }
+    if (ui->radioButton_NeutronThermal->isChecked()) { visualization2->setColorScheme2(5); }
+    if (ui->radioButton_NeutronGrayScale->isChecked()) { visualization2->setColorScheme2(6); }
+
+    visualization2->setmanualColorZero2(manualColorZero);
+    visualization2->setmanualColor2(manualColor);
+    visualization2->setuseManualColor2(useManualColors);
+    visualization2->setsilderColorMoved2(silderColorMoved);
+    visualization2->sethorizontalSliderColorZeroValue2(ui->horizontalSliderColorZero->value());
+    visualization2->sethorizontalSliderValue2(ui->horizontalSliderColor->value());
+    visualization2->setplotTopViewLog2(ui->checkBoxLogarithmic->isChecked());
+
+    if (showDensityMapThermal) { visualization2->plotGraph2(densityMapThermal, 500, squareDim); }
+
+    if (showDensityMap) { visualization2->plotGraph2(densityMap, 500, squareDim); }
+    if (showDensityMapIntermediate) { visualization2->plotGraph2(densityMapIntermediate, 500, squareDim); }
+    if (showDensityMapFast) { visualization2->plotGraph2(densityMapFast, 500, squareDim); }
+    if (showDensityMapAlbedo) { visualization2->plotGraph2(densityMapAlbedo, 500, squareDim); }
+
+    if (showDensityTrackMap) { visualization2->plotGraph2(densityTrackMapHighRes15x, 1500, squareDim); }
+    if (showDensityIntermediateTrackMap) { visualization2->plotGraph2(densityIntermediateTrackMapHighRes15x, 1500, squareDim); }
+    if (showDensityFastTrackMap) { visualization2->plotGraph2(densityFastTrackMapHighRes15x, 1500, squareDim); }
+    if (showDensityAlbedoTrackMap) { visualization2->plotGraph2(densityAlbedoTrackMapHighRes15x, 1500, squareDim); }
+
+    if (showDensityThermalTrackMap) { visualization2->plotGraph2(densityThermalTrackMapHighRes15x, 1500, squareDim); }
+
+    if (showDensityEnergyTrackMap) { visualization2->plotGraph2(densityEnergyTrackMapHighRes15x, 1500, squareDim); }
 }
 
 
@@ -1779,7 +1863,7 @@ void  MainWindow::redrawNeutronMap(double difftime)
                 for (int x = 0; x < 500; x += 2)
                 {
                     for (int y = 0; y < 500; y += 2)
-                    {                       
+                    {
                         if (showDensityTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityTrackMap->GetBinContent(x, y) + ::densityTrackMap->GetBinContent(x + 1, y) + ::densityTrackMap->GetBinContent(x, y + 1) + ::densityTrackMap->GetBinContent(x + 1, y + 1));
                         if (showDensityIntermediateTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityIntermediateTrackMap->GetBinContent(x, y) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y) + ::densityIntermediateTrackMap->GetBinContent(x, y + 1) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y + 1));
                         if (showDensityFastTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityFastTrackMap->GetBinContent(x, y) + ::densityFastTrackMap->GetBinContent(x + 1, y) + ::densityFastTrackMap->GetBinContent(x, y + 1) + ::densityFastTrackMap->GetBinContent(x + 1, y + 1));
@@ -1872,6 +1956,9 @@ void  MainWindow::redrawNeutronMap(double difftime)
         int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorScaleMax;
         int highColorValue = colorScaleMax;
 
+        ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
+        ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+
         string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
         ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
 
@@ -1885,9 +1972,20 @@ void  MainWindow::redrawNeutronMap(double difftime)
             else  updateEnlargedView = false;
         }
 
+        if (visualization2 != 0x0)
+        {
+            if (visualization2->isVisible()) updateEnlargedView2 = true;
+            else  updateEnlargedView2 = false;
+        }
+
         if (updateEnlargedView)
         {
             redrawEnlargedView();
+        }
+
+        if (updateEnlargedView2)
+        {
+            redrawEnlargedView2();
         }
 
         ui->customPlot->graph(0)->data()->clear();
@@ -2194,7 +2292,7 @@ bool MainWindow::importSettings()
     string fileName = "Uranos.cfg";
     int lineCounter = 0, tempInt = 0;
 
-    if (noGUIMode) fileName = configFilePath;
+    if ((noGUIMode) || (configFilePathConfigured)) fileName = configFilePath;
 
     ifstream input_stream(fileName, ios::in);
     while (curLine.ReadLine(input_stream))
@@ -2311,7 +2409,7 @@ bool MainWindow::importSettings()
 
         if (lineCounter == 80) { stream >> tempInt; if ((((tempInt == 5) || (tempInt == 15)) && (!noThermalRegime)) || (noThermalRegime)) densityMapButtonID = tempInt; }
 
-        if (lineCounter==81)  {stream >> rPlants ; rPlants = rPlants*0.001; stream >> rCelluloseFrac; if ((rCelluloseFrac < 0)||(rCelluloseFrac > 3)) {rCelluloseFrac = 1;} else {rCelluloseFrac = rCelluloseFrac/1.5; stream >> rCelluloseWaterFrac;}  }
+        if (lineCounter == 81)  {stream >> rPlants ; rPlants = rPlants*0.001; stream >> rCelluloseFrac; if ((rCelluloseFrac < 0)||(rCelluloseFrac > 3)) {rCelluloseFrac = 1;} else {rCelluloseFrac = rCelluloseFrac/1.5; stream >> rCelluloseWaterFrac;}  }
 
         if (lineCounter == 82) { stream >> tempInt; if (tempInt == 1) { reflectiveBoundaries = true; } else { reflectiveBoundaries = false; } ui->checkBox_ReflectiveBoundaries->setChecked(reflectiveBoundaries); }
         if (lineCounter == 83) { stream >> tempInt; if (tempInt == 1) { periodicBoundaries = true; } else { periodicBoundaries = false; } ui->checkBox_PeriodicBoundaries->setChecked(periodicBoundaries); }
@@ -2328,8 +2426,9 @@ bool MainWindow::importSettings()
     fpHum = 10. / 0.6 * (relHumidityAir * 1.) / 50.;
     pressureFac = (atmDensity * 1.) / 1020.;
 
-    string wrkFldrName = workFolder;
+    string wrkFldrName = (string)workFolder;
     visualization->setWorkFolder(wrkFldrName);
+    visualization2->setWorkFolder2(wrkFldrName);
 
     if (lineCounter > 1) return true;
 
@@ -2474,7 +2573,17 @@ void MainWindow::exportSettings(string str)
  */
 MainWindow::~MainWindow()
 {
-    exportSettings("");
+    if (!noGUIMode)
+    {
+        if (configFilePathConfigured)
+        {
+            exportSettings(configFilePath);
+        }
+        else
+        {
+            exportSettings("");
+        }
+    }
     delete ui;
 }
 
@@ -2485,8 +2594,7 @@ MainWindow::~MainWindow()
 void MainWindow::exportToSave()
 {
     setStatus(1, "Exporting Data");
-    setStatus(2, "");
-    delay(5);
+    if (!noGUIMode) {setStatus(2, "");    delay(5);}
 
     gROOT->ForceStyle();
 
@@ -3321,7 +3429,7 @@ void MainWindow::exportToSave()
     }
     delay(100);
 
-    setStatus(1, "");
+    if (!noGUIMode) setStatus(1, "");
 }
 
 /**
@@ -3345,7 +3453,7 @@ double rangeIntegral = -1, rangeUpToIntegral, integralResult;
  *
  */
 void MainWindow::replotFootprint()
-{     
+{
     if (!fpReadSuccess) return;
 
     float lowEdge = 1.5;
@@ -3420,7 +3528,7 @@ void MainWindow::replotFootprint()
 
 /**
  * Function to be called On clicking View Spectrum button in Showcase tab.
- * This is the old Sato 2008 function, which is not used any more in the simulation itself
+ * This is the old Sato 2008 function, which is not used any more in the simulation itself (but only for graphical representation)
  */
 void MainWindow::on_pushButton_2_clicked()
 {
@@ -3514,7 +3622,7 @@ void MainWindow::on_pushButton_2_clicked()
  * Gets the splined detector response function energy model from the file.
  *
  * @param dname - file name
- * @return splineEnergy - length of the file.
+ * @return splineEnergy - spline function with logarithmic energy and detection probability normalized to 1.
  */
 TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname)
 {
@@ -3738,7 +3846,8 @@ TMatrixF readSigmaEnergy(TString folder, TString filename)
     TString line;
     float temp;
     int linecounter = 1, lengthFile = 0;
-    string dname = (string)folder + "/" + (string)filename;
+    //string dname = (string)folder + "/" + (string)filename;
+    string dname = (string)folder + (string)filename;
 
     float minDeviation = 1.001;
 
@@ -3849,8 +3958,6 @@ void modifyCSmatrix(TMatrixF* sigmaMatrix, float factorLowE, float factorHighE)
  */
 vector<TMatrixF> readAngularTabulatedCoefficients(TString folder, TString filename, const int coefficients)
 {
-
-
     TString line;
     string lineStr, part, temp;
     string tempFl;
@@ -3858,7 +3965,8 @@ vector<TMatrixF> readAngularTabulatedCoefficients(TString folder, TString filena
     int minusThere = 0;
     //int templength, columns = 0;
     bool setSkipLines;
-    string dname = (string)folder + "/" + (string)filename;
+    //string dname = (string)folder + "/" + (string)filename;
+    string dname = (string)folder + (string)filename;
 
     vector<TMatrixF> dataVec;
 
@@ -3925,7 +4033,8 @@ vector<TMatrixF> readAngularTabulatedCoefficients(TString folder, TString filena
             lineCounter++;
 
             if (lineCounter > coefficients - 1);
-            else {
+            else
+            {
                 angleMatrix(matrCounter, lineCounter) = endfNumberConv(lineStr.substr(21 + minusThere, 11));
                 if (lineCounter > 1) { cumulatedProbMatrix(matrCounter, lineCounter) = cumulatedProbMatrix(matrCounter, lineCounter - 1) + endfNumberConv(lineStr.substr(32 + minusThere, 11)); }
                 else cumulatedProbMatrix(matrCounter, lineCounter) = endfNumberConv(lineStr.substr(32 + minusThere, 11));
@@ -4000,7 +4109,8 @@ TMatrixF readAngularCoefficients(TString folder, TString filename)
     int linecounter = -1, lengthFile = 0, matrixElm;
     int minusThere = 0;
     int columns = 0;
-    string dname = (string)folder + "/" + (string)filename;
+    //string dname = (string)folder + "/" + (string)filename;
+    string dname = (string)folder + (string)filename;
 
     if (outputCSfilenames) cout << "Reading Angular Distributions from " << dname;
 
@@ -4013,7 +4123,6 @@ TMatrixF readAngularCoefficients(TString folder, TString filename)
 
     const int matrixSize = lengthFile;
     TMatrixF sigmaMatrix(matrixSize, 21);
-
 
     for (int l = 0; l < matrixSize; l++)
     {
@@ -4034,11 +4143,12 @@ TMatrixF readAngularCoefficients(TString folder, TString filename)
         istrstream stream(line.Data());
 
         lineStr = line;
+        if (!(stream.good())) break;
 
         if ((linecounter > 0) && (endfNumberConv(lineStr.substr(0, 11)) < sigmaMatrix(linecounter - 1, 0))) { columns = 1; }
         else
         {
-            stream >> tempFl;  if ((!(stream.good()))) break;
+            stream >> tempFl;  if (!(stream.good())) break;
             linecounter++;
             sigmaMatrix(linecounter, 0) = endfNumberConv(tempFl);
             matrixElm = 0;
@@ -4128,10 +4238,10 @@ bool MainWindow::loadParamData(string fileFolder)
     float temp;
     bool error = false;
 
-    cout << "Reading Parameters from " << fileFolder << endl;
+    cout << "Reading Sato 2016 Parameters from " << fileFolder << endl;
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + paramGjiFile;
+    dname = fileFolder + paramGjiFile;
 
     ifstream input_stream(dname, ios::in);
     while (line.ReadLine(input_stream))
@@ -4153,11 +4263,11 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + paramGjiFile);
+        setStatus(2, "Failed to load " + paramGjiFile);
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr1File;
+    dname = fileFolder + acorr1File;
 
     ifstream input_stream1(dname, ios::in);
     while (line.ReadLine(input_stream1))
@@ -4179,11 +4289,11 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr1File);
+        setStatus(2, "Failed to load " + acorr1File);
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr2File;
+    dname = fileFolder + acorr2File;
 
     ifstream input_stream2(dname, ios::in);
     while (line.ReadLine(input_stream2))
@@ -4205,11 +4315,11 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr2File);
+        setStatus(2, "Failed to load " + acorr2File);
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr3File;
+    dname = fileFolder + acorr3File;
 
     ifstream input_stream3(dname, ios::in);
     while (line.ReadLine(input_stream3))
@@ -4231,11 +4341,11 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr3File);
+        setStatus(2, "Failed to load " + acorr3File);
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr6File;
+    dname = fileFolder + acorr6File;
 
     ifstream input_stream6(dname, ios::in);
     while (line.ReadLine(input_stream6))
@@ -4261,7 +4371,7 @@ bool MainWindow::loadParamData(string fileFolder)
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + acorr7File;
+    dname = fileFolder + acorr7File;
 
     ifstream input_stream7(dname, ios::in);
     while (line.ReadLine(input_stream7))
@@ -4283,11 +4393,11 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + acorr7File);
+        setStatus(2, "Failed to load " + acorr7File);
     }
 
     i = 0; j = 0;
-    dname = fileFolder + "/" + parampiAngularFile;
+    dname = fileFolder + parampiAngularFile;
 
     ifstream input_stream8(dname, ios::in);
     while (line.ReadLine(input_stream8))
@@ -4309,7 +4419,7 @@ bool MainWindow::loadParamData(string fileFolder)
     if (j < 1)
     {
         error = true;
-        if (!noGUIMode) setStatus(2, "Failed to load " + parampiAngularFile);
+        setStatus(2, "Failed to load " + parampiAngularFile);
     }
 
     return error;
@@ -4805,7 +4915,7 @@ void generateNormalizedSpectrum(TH1F* precalculatedSpectrum, int entries, TStrin
 
     TString histoName1 = "scatteredSurfaceSpectrumRel";
 
-    TString outputFolder = "G:/Analyse/Simulation/Cosmics/results19";
+    TString outputFolder = "";
 
     TFile f1(file1, "READ");
 
@@ -4971,8 +5081,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         //using namespace Ui ;
 
         if (!noGUIMode) uiM->setStatus(1, "Activate Live Mode");
-        if (!noGUIMode) uiM->setStatus(2, "");
-        delay(10);
+        if (!noGUIMode) {uiM->setStatus(2, "");        delay(10);}
 
         setupLiveTHs();
 
@@ -5032,7 +5141,6 @@ bool cosmicNSimulator(MainWindow* uiM)
         long loopNumber = -1, neutronTrackNeutrons = 0;
         bool domainWallHit, differentMaterial1, differentMaterial2, differentMaterial3, oneLastCheck, neutronAbsorbedbyDetector;
         bool doNormalCalc;
-        bool useAdditionalDetectorModel = false;
         bool foundSomething, enteredDetectorLayer = false, detectorLayerOverride = false, detectorOverride = false;
 
         const double pi = TMath::Pi();
@@ -5085,7 +5193,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         bool usePrecalculatedSato2016Spectrum = true;   // use spectrum from Sato 2016
         bool useHomogenousSpectrum = false;     //equal distribution for all spectrum bins
         //bool noThermalRegime = true;          // thermal cutoff
-        bool noHighEnergyRegime = false;        // high energy cutoff       
+        bool noHighEnergyRegime = false;        // high energy cutoff
         // these options set up specific cases
         bool doTheWaterThing = false;
         bool doTheCoastalTransect = false;
@@ -5164,8 +5272,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         // Sato 2008 function
         if (usePrecalculatedSpectrum)
         {
-            uiM->setStatus(1, "Generating Input Spectrum");
-            delay(5);
+            if (!noGUIMode) {uiM->setStatus(1, "Generating Input Spectrum");            delay(5);}
             generateNormalizedSpectrum(precalculatedSpectrum, 500000, inputSpectrumFile);
         }
 
@@ -5181,8 +5288,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
         if (usePrecalculatedSato2016Spectrum)
         {
-            uiM->setStatus(1, "Generating Sato 2016 Input Spectrum");
-            delay(5);
+            if (!noGUIMode) {uiM->setStatus(1, "Generating Sato 2016 Input Spectrum");            delay(5);}
 
             double value, energyvalue, result;
             double intSum, intSumAll = 0, xSpl,ySpl;
@@ -5290,8 +5396,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             }
         }
 
-        uiM->setStatus(1, "Generating Detector Model");
-        delay(50);
+        if (!noGUIMode) {uiM->setStatus(1, "Generating Detector Model");        delay(50);}
 
         TSpline3* detectorEnergyModel;
         if (detectorResponseFunctionFile.Length() < 8)
@@ -5305,19 +5410,21 @@ bool cosmicNSimulator(MainWindow* uiM)
         }
 
         TSpline3* detectorEnergyModel2;
-        if (detectorResponseFunctionFile.Length() > 6)
+        if (detectorResponseFunctionFile2.Length() > 6)
         {
-            detectorEnergyModel2 = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile2);
-            cout << "Using additional energy model from: " << detectorResponseFunctionFile2 << endl;
-            useAdditionalDetectorModel = true;
+            if (useAdditionalDetectorModel)
+            {
+                detectorEnergyModel2 = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile2);
+                cout << "Using additional energy model from: " << detectorResponseFunctionFile2 << endl;
+                //useAdditionalDetectorModel = true;
+            }
         }
 
         TF1* detectorAngleModel = new TF1("detectorAngleModel", "[0]+[1]*TMath::Exp(-x/[2])", 0, 1.6);
         detectorAngleModel->SetParameters(1.32171, -0.2542, -0.92);
         detectorAngleModel->SetParNames("Offset", "Base", "Tau");
 
-        uiM->setStatus(1, "Generating Histograms");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Generating Histograms");        delay(5);}
 
         // Histograms to be filled during runtime
         TH1F* scatteredSurfaceSpectrumRel = new TH1F("scatteredSurfaceSpectrumRel", "Relative Scattered Neutron at Surface Spectrum", 10000, 1e-9, 10000);  TH1Fashion(scatteredSurfaceSpectrumRel, "n", "Energy [MeV]", setSize);
@@ -5466,15 +5573,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                 inputPicVector3.push_back(*imageMatrix3);
             }
 
-            uiM->setStatus(1, "Reading Matrices");
-            delay(5);
+            if (!noGUIMode) {uiM->setStatus(1, "Reading Matrices");   delay(5);}
 
             TString add = ""; // the additional letter after the layer number
 
             int picNo = 0;
 
-            uiM->setStatus(1, "Reading ASCII and png maps...");
-            delay(5);
+            {uiM->setStatus(1, "Reading ASCII and png maps...");            delay(5);}
 
             for (int i = 0; i < model->rowCount(); i++)
             {
@@ -5489,7 +5594,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     inputPicVector.at(i) = readmatrix(workFolder, castIntToString(picNo) + add, "dat", -1, inputPicSizes[i]); turnInputMatrix(inputPicVector.at(i));
                      //status bar message
                     string tpp = "#" + castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2);}
                 }
 
                 if ((inputPics[i] == 2) || (inputPics[i] == 4) || (inputPics[i] == 6))
@@ -5497,7 +5602,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     inputPicVector.at(i) = readMatrixPNG(workFolder, castIntToString(picNo) + add); //TMatrixF mm =  readMatrixPNG(workFolder, castIntToString(picNo));
                     string tpp = "#" + castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) { uiM->setStatus(2, tpp);   delay(2);}
 
                 }
 
@@ -5508,13 +5613,14 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                     inputPicVector2.at(i) = readmatrix(workFolder, castIntToString(picNo) + add, "dat", -1, inputPicSizes[i]); turnInputMatrix(inputPicVector2.at(i));
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2);}
                 }
+
                 if (inputPics2[i] == 2)
                 {
                     inputPicVector2.at(i) = readMatrixPNG(workFolder, castIntToString(picNo) + add);
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2);}
                 }
 
                 if (inputPics3[i] == 1) add = "p";
@@ -5524,20 +5630,21 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                     inputPicVector3.at(i) = readmatrix(workFolder, castIntToString(picNo) + add, "dat", -1, inputPicSizes[i]); turnInputMatrix(inputPicVector3.at(i));
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) { uiM->setStatus(2, tpp);   delay(2);}
                 }
+
                 if (inputPics3[i] == 2)
                 {
                     inputPicVector3.at(i) = readMatrixPNG(workFolder, castIntToString(picNo) + add);
                     string tpp = "#" + (string)castIntToString(picNo);
-                    uiM->setStatus(2, tpp);   delay(2);
+                    if (!noGUIMode) {uiM->setStatus(2, tpp);   delay(2); }
                 }
 
             }
 
             matrixMetricFactor = squareDim / 1000. / (inputMatrixPixels * 1.);
         }
-        uiM->setStatus(2, "");
+        if (!noGUIMode) uiM->setStatus(2, "");
 
         // initialize random generator
         r.SetSeed(time(NULL));
@@ -5647,8 +5754,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         // ****************************************
         // Reading all cross sections from matrices
 
-        uiM->setStatus(1, "Reading Angular Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Angular Tabulated Cross Sections");        delay(5);}
+        else {cout << "Reading Cross Sections" <<endl;}
 
         vector<TMatrixF> angularHighEnergySi = readAngularTabulatedCoefficients(endfFolder, "angularSi28tabulated.txt", 182);
         vector<TMatrixF> angularHighEnergyN = readAngularTabulatedCoefficients(endfFolder, "angularN14tabulated2.txt", 182);
@@ -5664,6 +5771,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         vector<TMatrixF> angularHighEnergyPb206 = readAngularTabulatedCoefficients(endfFolder, "angularPb206tabulated.txt", 182);
         vector<TMatrixF> angularHighEnergyPb207 = readAngularTabulatedCoefficients(endfFolder, "angularPb207tabulated.txt", 182);
         vector<TMatrixF> angularHighEnergyPb208 = readAngularTabulatedCoefficients(endfFolder, "angularPb208tabulated.txt", 182);
+
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Angular Cross Sections");        delay(5);}
 
         static TMatrixF angularSi = readAngularCoefficients(endfFolder, "angularSi28.txt");
         static TMatrixF angularN = readAngularCoefficients(endfFolder, "angularN14.txt");
@@ -5693,8 +5802,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF angularK39 = readAngularCoefficients(endfFolder, "angularK39.txt");
         static TMatrixF angularTi48 = readAngularCoefficients(endfFolder, "angularTi48.txt");
 
-        uiM->setStatus(1, "Reading Elastic Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Elastic Cross Sections");        delay(5);}
 
         static TMatrixF sigmaSi = readSigmaEnergy(endfFolder, "elasticSi28.txt");		//if (varyCrosssections) modifyCSmatrix(&sigmaSi, sigmaElasticFactor*0.01,sigmaElasticFactor*0.08);
         static TMatrixF sigmaN = readSigmaEnergy(endfFolder, "elasticN14.txt");		//if (varyCrosssections) modifyCSmatrix(&sigmaN, sigmaElasticFactor*0.04,sigmaElasticFactor*0.02); //not known in fact, taken from N15
@@ -5727,8 +5835,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         csMatrixOP = &sigmaO;
         csMatrixNP = &sigmaN;
 
-        uiM->setStatus(1, "Reading Absorption Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Absorption Cross Sections");        delay(5);}
 
         static TMatrixF absorbSi = readSigmaEnergy(endfFolder, "absorbSi28.txt");           //if (varyCrosssections) modifyCSmatrix(&absorbSi, sigmaAbsorbFactor*0.20,sigmaAbsorbFactor*0.40);
         static TMatrixF absorbN = readSigmaEnergy(endfFolder, "absorbN14.txt");             //if (varyCrosssections) modifyCSmatrix(&absorbN, sigmaAbsorbFactor*0.30,sigmaAbsorbFactor*0.075);
@@ -5843,8 +5950,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF absorbMt107Ti48 = readSigmaEnergy(endfFolder, "absorbMt107Ti48.txt");
         static TMatrixF absorbMt207Ti48 = readSigmaEnergy(endfFolder, "absorbMt207Ti48.txt");
 
-        uiM->setStatus(1, "Reading Inelastic Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Inelastic Cross Sections");        delay(5);}
 
         static TMatrixF sigmaInMt51N = readSigmaEnergy(endfFolder, "inelasticMt51N14.txt");	//if (varyCrosssections) modifyCSmatrix(&sigmaInMt51N, sigmaInelasticFactor*0.40,sigmaInelasticFactor*0.40);
         static TMatrixF sigmaInMt52N = readSigmaEnergy(endfFolder, "inelasticMt52N14.txt");	//if (varyCrosssections) modifyCSmatrix(&sigmaInMt52N, sigmaInelasticFactor*0.40,sigmaInelasticFactor*0.40);
@@ -6136,8 +6242,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         vector<double> inelasticEnergyLossTi48;
         inelasticEnergyLossTi48.push_back(0.9835); inelasticEnergyLossTi48.push_back(2.2956); inelasticEnergyLossTi48.push_back(2.421); inelasticEnergyLossTi48.push_back(2.997);
 
-        uiM->setStatus(1, "Reading Inelastic Angular Cross Sections");
-        delay(5);
+        if (!noGUIMode) {uiM->setStatus(1, "Reading Inelastic Angular Cross Sections");        delay(5);}
 
         static TMatrixF angularInelasticMt51N = readAngularCoefficients(endfFolder, "angularInelasticMt51N14.txt");
         static TMatrixF angularInelasticMt52N = readAngularCoefficients(endfFolder, "angularInelasticMt52N14.txt");
@@ -6378,9 +6483,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         sigmaInTi48AngularVec.push_back(angularInelasticMt51Ti48); sigmaInTi48AngularVec.push_back(angularInelasticMt52Ti48); sigmaInTi48AngularVec.push_back(angularInelasticMt53Ti48); sigmaInTi48AngularVec.push_back(angularInelasticMt54Ti48);
 
 
-        cout << endl;
-        uiM->setStatus(1, "Starting simulation...");
-        delay(5);
+        if (!noGUIMode) cout << endl;
+        if (!noGUIMode) {uiM->setStatus(1, "Starting simulation...");        delay(5);}
 
         // for parameter batch run
         int parInt1, parInt2;
@@ -6475,7 +6579,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                 detLayerTrackOutputFile.close();
             }
 
-
             if (allTrackFileOutput)
             {
                 allTrackOutputFile.open(outputFolder + "NeutronTrackData.dat", ios::out | ios::app);
@@ -6517,8 +6620,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             {
                 if (n == 0)
                 {
-                    uiM->setStatus(1, "");
-                    delay(5);
+                    if (!noGUIMode) {uiM->setStatus(1, "");                    delay(5);}
                 }
                 totalActualNeutrons = n;
 
@@ -6531,14 +6633,14 @@ bool cosmicNSimulator(MainWindow* uiM)
                     //time (&actualTime);
                     newDataComes = true;
 
-                    uiM->redrawNeutronMap(difftime(diffmean, start) - pauseTime);
+                    if (!noGUIMode) uiM->redrawNeutronMap(difftime(diffmean, start) - pauseTime);
                     //uiM->redrawNeutronMap(difftime(diffmean,oldTime));
                     //time (&oldTime);
                 }
 
                 if ((n % (refreshCycle / 10) == 0) && (n > 9))
                 {
-                    delay(1);
+                    if (!noGUIMode) delay(1);
                 }
 
                 if ((n % refreshCycle == 0) && (n > 99) && (n < 5100))
@@ -6773,7 +6875,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
                     //if ((xRnd>0.3)||(r.Rndm()>0.55))	xRnd = getEvaporationEnergy(2.e6, &r);
-                    xRnd = getEvaporationEnergy(2.e6, &r);                   
+                    xRnd = getEvaporationEnergy(2.e6, &r);
                 }
 
                 if (doSkyEvaporation)
@@ -6885,7 +6987,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                     scatteredThisLayer = true;
                     hasbeenEvaporized = true;
-                    z0 = r.Rndm() * geometries.at(startingLayer)[5] + geometries.at(startingLayer)[4];                 
+                    z0 = r.Rndm() * geometries.at(startingLayer)[5] + geometries.at(startingLayer)[4];
                 }
 
                 if (doTheZredaThing)
@@ -6913,7 +7015,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 {
                 }
                 else
-                {                    
+                {
                     if ((energyInitial > 9) && ((!doSkyEvaporation) || (doNoSource)))
                     {
                         // that gives the angular distribution from Nesterenok
@@ -6998,9 +7100,9 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if (true)
                     {
-                        if (n % 20000 == 0)
+                        if (((nTotal <= 100000) && (n % 500 == 0)) || ((nTotal > 100000) && (n % 5000 == 0)))
                         {
-                            progressN = 50 * (nTotal) / (neutrons);
+                            //progressN = 50 * (nTotal) / (neutrons);
                             cout << "\r" << castFloatToString(100. * (nTotal * 1.) / (neutrons * 1.), 6) << " % completed";
                             cout.flush();
                         }
@@ -7013,23 +7115,30 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if ((doDetectorBatchRun) || (doDetectorBatchRun2) || (doDetectorAngleBatchRun))
                     {
-                        if (n % 10000 == 0) delay(2);
-                        if (n % 50000 == 0) delay(3);
+                        if (!noGUIMode)
+                        {
+                            if (n % 10000 == 0) delay(2);
+                            if (n % 50000 == 0) delay(3);
+                        }
                     }
                     else
                     {
-                        if (n % 2000 == 0) delay(2);
-                        if (n % 10000 == 0) delay(3);
+                        if (!noGUIMode)
+                        {
+                            if (n % 2000 == 0) delay(2);
+                            if (n % 10000 == 0) delay(3);
+                        }
                     }
 
                     if ((clearEveryXNeutronsNumber > 0) || (setAutoRefreshRateClearing))
                     {
                         if (((n % clearEveryXNeutronsNumber == 0) && (clearEveryXNeutrons)) || ((n % refreshCycle == 0) && (setAutoRefreshRateClearing)))
                         {
-                            if (!noThermalRegime) { densityThermalTrackMap->Reset();  densityThermalTrackMapHighRes->Reset(); densityMapThermal->Reset(); }
+                            if (!noThermalRegime) { densityThermalTrackMap->Reset();  densityThermalTrackMapHighRes->Reset(); densityThermalTrackMapHighRes15x->Reset(); densityMapThermal->Reset(); }
 
                             densityTrackMap->Reset(); densityIntermediateTrackMap->Reset(); densityFastTrackMap->Reset(); densityAlbedoTrackMap->Reset();  densityEnergyTrackMap->Reset();
-                            densityTrackMapHighRes->Reset(); densityIntermediateTrackMapHighRes->Reset(); densityFastTrackMapHighRes->Reset(); densityAlbedoTrackMapHighRes->Reset(); densityHighEnergyTrackMapHighRes->Reset();
+                            densityTrackMapHighRes->Reset(); densityIntermediateTrackMapHighRes->Reset(); densityFastTrackMapHighRes->Reset();   densityAlbedoTrackMapHighRes->Reset(); densityHighEnergyTrackMapHighRes->Reset();  densityFastTrackMapHighRes2x->Reset();
+                            densityTrackMapHighRes15x->Reset(); densityIntermediateTrackMapHighRes15x->Reset(); densityFastTrackMapHighRes15x->Reset();   densityAlbedoTrackMapHighRes15x->Reset(); densityHighEnergyTrackMapHighRes15x->Reset();  densityEnergyTrackMapHighRes15x->Reset();
                             densityMapIntermediate->Reset(); densityMapFast->Reset(); densityMapAlbedo->Reset(); densityMap->Reset(); densityMapHighEnergy->Reset();  densityEnergyTrackMapHighRes->Reset();
 
                             if (showDensityTrackMapSide) { densityTrackMapSide->Reset();  densityTrackMapSideAlbedo->Reset(); densityTrackMapSideDetector->Reset(); densityTrackMapSideThermal->Reset(); }
@@ -7450,7 +7559,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 default: materialNotFound = true;
                                 }
 
-                                if (detectorOverride) { detectorHeight = geometries.at(currentG)[4] + 0.5 * geometries.at(currentG)[5]; }                                
+                                if (detectorOverride) { detectorHeight = geometries.at(currentG)[4] + 0.5 * geometries.at(currentG)[5]; }
 
                                 if ((inputMatrixValue > 1) && (inputMatrixValue < 100))
                                 {
@@ -7486,7 +7595,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 rGeneral = 1.;
                                 rMaterial = 1.;
                                 saltConcentration = 3.5;
-                                rWater = 0.99;
+                                if ((int)geometries.at(g)[6] != 8) rWater = 0.99; //not Snow
                                 rPlants = 0.003;
                                 soilWaterFrac = soilWaterFracVar;
                                 absHumidityAir = absHumidityAirVar;
@@ -7532,7 +7641,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         rBoden = soilSolidFracVar * (soilSiFrac * rQuarz + soilAlFrac * rAl2O3) + soilWaterFracVar * rWater;
                         wBoden = soilSolidFracVar * (soilSiFrac * wQuarz + soilAlFrac * wAl2O3) + soilWaterFrac * wWater * soilStrechFactor;
                     }
-                    if (material == 7) { rSaltWater = 0.99 + saltConcentration / 100. * 0.8; nSalt = (saltConcentration * wWater) / ((100. - saltConcentration) * wSalt); wSaltWater = wWater + nSalt * wSalt; }
+                    if (material == 7) {rSaltWater = 0.99 + saltConcentration / 100. * 0.8; nSalt = (saltConcentration * wWater) / ((100. - saltConcentration) * wSalt); wSaltWater = wWater + nSalt * wSalt; }
 
 
                     if (!hasPassedSurface)
@@ -8604,7 +8713,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 {
                                     tempDist = sqrt(TMath::Power((x - detPosX[lCounter]), 2) + TMath::Power((y - detPosY[lCounter]), 2) + TMath::Power((z0 - detectorHeight), 2));
 
-
                                     if (true)
                                     {
                                         detHitSelected = true;
@@ -8626,10 +8734,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                                             {
                                                 detHitted = true;
                                             }
-
-
                                         }
-                                        }
+                                    }
                                 }
 
                                 //check if the neutron anyway intersects with the layer
@@ -8655,7 +8761,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     {
                                         if (fabs(vectorDirFactor) < wwRange) detHitSelected = true;
                                         //tempDist3 = sqrt(TMath::Power(x-detPosX[lCounter],2)+TMath::Power(y-detPosY[lCounter],2)+TMath::Power(z0-detectorHeight,2));
-
                                     }
                                 }
 
@@ -8726,7 +8831,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                             }
                             else
                             {
-
                                 xySqrt = calcCylindricalHitDist(x, y, z0, theta, phi, detPosX[lCounter], detPosY[lCounter], detectorHeight, detRad, xAtInterface, yAtInterface);
                             }
                         }
@@ -8768,7 +8872,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                             if (calcNeutronTime)
                             {
                                 if (timeNtr > 1) detectorTimeTrans->Fill(timeNtr + calcNeutronDiffTime(detectorHeight, z0, energy, cosTheta));
-
                             }
                         }
 
@@ -8780,7 +8883,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                             detectorDistanceDepth->Fill(xySqrt, z0);
                             detectorDistanceMaxDepth->Fill(xySqrt, z0max);
 
-
                             if (hasPassedSurface) detectorDistanceEnergy->Fill(xySqrt, energy);
                             if (hasPassedSurface) detectorSpectrumOriginMoisture->Fill(moistureAtInterface);
                         }
@@ -8788,7 +8890,6 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                         if (detFileOutput)
                         {
-
                             if (doBatchRun2D) detOutputFile.open(outputFolder + "detectorNeutronHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
                             else detOutputFile.open(outputFolder + "detectorNeutronHitData.dat", ios::out | ios::app);
 
@@ -8815,7 +8916,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         if (nt == 0) detTrackOutputFile << detectorID << "\t" << n << "\t" << neutronTrackCoordinatesFullSet.at(nt + 0) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 1) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 2) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 3) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 4) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 5) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 6) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 7) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 8) << "\t" << detectorRealisticallyHitted << endl;
                                     }
                                 }
-
                                 detTrackOutputFile.close();
                             }
                         }
@@ -8860,7 +8960,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 if (doBatchRun2D) detLayerTrackOutputFile.open(outputFolder + "detectorLayerNeutronTrackHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
                                 else detLayerTrackOutputFile.open(outputFolder + "detectorLayerNeutronTrackHitData.dat", ios::out | ios::app);
 
-
                                 for (int nt = 0; nt <= (neutronTrackCoordinatesFullSet.size() - 9); nt += 9)
                                 {
                                     if ((nt > 0) && ((neutronTrackCoordinatesFullSet[nt + 5] != neutronTrackCoordinatesFullSet[nt - 4]) || (neutronTrackCoordinatesFullSet[nt + 7] == 0) || (neutronTrackCoordinatesFullSet[nt + 7] == 1)))
@@ -8872,7 +8971,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         if (nt == 0) detLayerTrackOutputFile << scatterings << "\t" << n << "\t" << neutronTrackCoordinatesFullSet.at(nt + 0) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 1) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 2) * 0.001 << "\t" << neutronTrackCoordinatesFullSet.at(nt + 3) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 4) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 5) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 6) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 7) << "\t" << neutronTrackCoordinatesFullSet.at(nt + 8) << "\t" << layerRealisticallyHitted << endl;
                                     }
                                 }
-
                                 detLayerTrackOutputFile.close();
                             }
                         }
@@ -9173,7 +9271,6 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                             if (z0max < z0) z0max = z0; //maximum penetration depth
 
-
                             //set new coordiantes for trajectory vector
                             x = cosPhi * fabs(tanTheta * (z0Alt - z0)) + x;
                             y = sinPhi * fabs(tanTheta * (z0Alt - z0)) + y;
@@ -9237,7 +9334,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                     if (material == 28)
                                     {
-                                        temp = r.Rndm();
+                                        //temp = r.Rndm();
                                         //if (temp*asAll > 3.*asF) element = 10; else element = 19;
                                         if (r.Rndm() > deadMaterialFactor)
                                         { //account for absorption with the boron itself
@@ -9370,10 +9467,10 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         nEvapoVector.push_back(x); //put in new coordinates of the particle
                                         nEvapoVector.push_back(y);
                                         nEvapoVector.push_back(z0);
-                                        nEvapoVector.push_back(theta + ((2. * r.Rndm() - 1.) * 0.02));
+                                        nEvapoVector.push_back(theta + ((2. * r.Rndm() - 1.) * 0.02)); // angular distribution for the HE cascade model
                                         nEvapoVector.push_back(phi);
                                         nEvapoVector.push_back(g);
-                                        nEvapoVector.push_back((.95 + r.Rndm() * 0.05) * energy);
+                                        nEvapoVector.push_back((.95 + r.Rndm() * 0.05) * energy); // energy distribution for the HE cascade model
                                         nEvapoVector.push_back(timeNtr);
                                         if (hasBeenInSoil) nEvapoVector.push_back(1); else nEvapoVector.push_back(0);
                                         //n++;
@@ -9406,17 +9503,6 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                 if ((tmpEvapo < evaporationFactor) && (true))
                                 {
-                                    //thetaCMS = TMath::ACos(2.*r.Rndm()-1.);
-                                    //energyNew = getEvaporationEnergy(1.5e6, &r); //changed 24.09.2017 test
-                                    //energyNew = getEvaporationEnergy(2.e6, &r); //changed from 2.5 21.10.2017
-
-                                    //scatteredEvaporating = false;
-                                    //hasbeenEvaporized = true;
-
-                                    //energyAtInterface = energyNew;
-                                    //xAtInterface = x;
-                                    //yAtInterface = y;
-
                                     nEvapoVector.reserve(nEvapoVector.size() + 9);
 
                                     nEvapoVector.push_back(x);
@@ -9452,7 +9538,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                 if (!sAbsorbed)
                                 {
-                                    if (!scatteredInelastic)
+                                    if (!scatteredInelastic)  // that means scatteredElastic
                                     {
                                         temp = r.Rndm();
                                         //temp2 = r.Rndm();
@@ -9594,7 +9680,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         }
 
                                         inelasticEnergyLoss = inelasticEnergyLossVec.at(tempInt);
-                                        angularProb = allInelasticAngulars.at(tempInt);                                       
+                                        angularProb = allInelasticAngulars.at(tempInt);
                                     }
                                 }
 
@@ -9607,10 +9693,10 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 {
                                     if (!dontFillunecessaryPlots) scatElement->Fill(element);
 
-                                    if (!scatteredInelastic)
-                                    {                                        
-                                        if (((energy >= 20.5) && (element > 1)) && (!(((element == 16) || (element == 140) || (element == 39) || (element == 48) || (element == 10) || (element == 155) || (element == 157)) && (energy < 30.5))))                                        
-                                        {
+                                    if (!scatteredInelastic) // that means scatteredElastic
+                                    {
+                                        if (((energy >= 20.5) && (element > 1)) && (!(((element == 16) || (element == 140) || (element == 39) || (element == 48) || (element == 10) || (element == 155) || (element == 157)) && (energy < 30.5))))
+                                        { // elements and energies for which tabulated energy distributions exist
                                             switch (element)
                                             {
                                             case 12: thetaFromTab = getHighEnergyCosTheta(angularHighEnergyC.at(0), angularHighEnergyC.at(1), energy * 1e6, r.Rndm()); break;
@@ -9638,18 +9724,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                                         {
                                             if (((energy > 1e-2) && (element > 2)) || ((energy > 1) && (element == 1)))
                                             {
-                                                //clock_t t; t = clock();             
-
                                                 TF1* angularProbFunc = calcMeanAngularDistribution(*angularProb, energy * 1e6);
 
-                                                //funcMin = angularProbFunc->GetMinimum(0,pi);
-                                                //funcMin = 0;
-                                                funcMax = angularProbFunc->Eval(0) * 1.2; //changed 10.02.2018
+                                                funcMax = angularProbFunc->Eval(0) * 1.2; //changed 10.02.2018 // that is actually an approximation, there are rare cases where this would underestimate the function.
 
                                                 //funcMax = 1;
                                                 //if (funcMax>20*funcMin) useCumulativeCalc = true; else useCumulativeCalc = false;
                                                 useCumulativeCalc = false;
-
 
                                                 if (!useCumulativeCalc)
                                                 {
@@ -9657,7 +9738,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                     gotItCounter = 0;
                                                     while (!gotIt)
                                                     {
-
                                                         xRnd = TMath::ACos(2. * r.Rndm() - 1.);
                                                         yRnd = r.Rndm() * funcMax;
 
@@ -9733,7 +9813,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                             if (energyNew > thermalcutoff) energyNew = getThermalEnergy(spectrumMaxwellPhiLinMod, &r);
                                                         }
 
-                                                        intoThermalization = true;                                                        
+                                                        intoThermalization = true;
                                                     }
                                                     // liquid velocity distribution?  m^3v^5/(kT)^3 * EXP [-mv^2/kT]
                                                     // Reference https://www.physicsforums.com/threads/liquid-molecular-velocity-distribution.231145/
@@ -9747,7 +9827,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     {
                                         TF1* angularProbFunc = calcMeanAngularDistribution(*angularProb, energy * 1e6);
 
-                                        funcMax = angularProbFunc->Eval(0) * 1.5; //changed 10.02.2018
+                                        funcMax = angularProbFunc->Eval(0) * 1.5; //changed 10.02.2018 // that is actually an approximation, there are rare cases where this would underestimate the function.
 
                                         gotIt = false;
                                         gotItCounter = 0;
@@ -9827,10 +9907,10 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                         if (phiScat > 0) phi = phi + TMath::ACos((dcosTheta - theta12 * cos(thetaCalc)) / (sin(theta12) * sin(thetaCalc)));
                                         else phi = phi - TMath::ACos((dcosTheta - theta12 * cos(thetaCalc)) / (sin(theta12) * sin(thetaCalc)));
-                                    }                                    
+                                    }
 
                                     if (theta > pi) { theta = 2. * pi - theta;  phi = phi + 1. * pi; }
-                                    if (theta < 0) { theta = fabs(theta);  phi = phi + 1. * pi; }                                 
+                                    if (theta < 0) { theta = fabs(theta);  phi = phi + 1. * pi; }
 
                                     if (phi < 0) phi = phi + 2. * pi;
                                     if (phi > 2. * pi) phi = phi - 2. * pi;
@@ -9844,7 +9924,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 //if (energyNew < 1.5e-7) energyNew = getThermalEnergy(phiTFunc, &r);
                                 //if (((energyOld < 1.5e-7)&&(energyNew < 9.e-8))||(energyNew < 0) )
 
-                                if (energyNew < 0)
+                                if (energyNew < 0) // that sould not happen (and normally does not)
                                 {
                                     cout << "E";
                                     energyNew = getThermalEnergy(spectrumMaxwellPhiLinMod, &r);
@@ -9894,7 +9974,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                 if (drawSingleNeutronGraphs)
                                 {
-                                    scale = (log10(energyNew) + 7.7) / 12.; if (scale < 0) scale = 0.;                                   
+                                    scale = (log10(energyNew) + 7.7) / 12.; if (scale < 0) scale = 0.;
                                     rgbValues = getRGBfromHCL(getLinearC(scale, 0, 240), getScaledColorValue(scale, 0.4, 0.91, 0.9), getScaledColorValue(scale, 2.2, 0.8, 0.9));
                                     graphs.push_back(new TGraph());
                                     graphN++; graphCounterMG = 0;
@@ -9914,7 +9994,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     else 	nSpeed = 3.9560339 / sqrt(81.81 / 20. / 1e9) * 1000. * 1000.;
                                     if (energyOld < nSpeedEnergyCutoff) nSpeed = 3.9560339 / sqrt(81.81 / nSpeedEnergyCutoff / 1e9) * 1000. * 1000.;
 
-                                    //if ((!scatteredThisLayer)&&(!stillFirstLayer))
                                     timeTemp = fabs((z0Alt - z0) / cos(thetaAlt) / nSpeed);
 
                                     tt = 0; trackTemp = 0;
@@ -9923,7 +10002,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     {
                                         trackTemp = nSpeed * (timeFrame * tt + timeTrans);
 
-                                        //if (!scatteredThisLayer)
                                         if ((!scatteredThisLayer) && (!stillFirstLayer) && (false))
                                         {
                                             if (!reverseDirAlt) tempz = geometries.at(g)[4] + trackTemp * cos(thetaAlt);
@@ -10027,8 +10105,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     else  z0Here = tempzEnd;
                                 }
 
-
-
                                 continueTracking = true;
                                 differentMaterial1 = false;
                                 differentMaterial2 = false;
@@ -10097,7 +10173,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     }
 
                                     if (((differentMaterial1) || (differentMaterial2) || (differentMaterial3)) && (continueTracking))
-                                    {                                        
+                                    {
                                         continueTracking = false;
                                         foundSomething = true;
                                         differentMaterialHit = true;
@@ -10251,7 +10327,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-
                     if ((g == groundLayer - 1) && (!scatteredThisLayer) && (reverseDir) && (!continuedThisLayer))
                     {
 
@@ -10295,7 +10370,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                             }
                         }
                     }
-
 
                     if (((((g == detectorLayer) || (detectorLayerOverride)) || (trackAllLayers)) && ((leaveLayer) || (absorbBreak)) && ((drawDensityMap) && (!noTrackRecording))))
                     {
@@ -10354,7 +10428,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     sinPhiTr = sin(phiTr);
                                     tanThetaTr = tan(thetaTr);
 
-                                    trackMetricFactor = fabs(mapMetricFactor * 1000. / tanThetaTr);
+                                    trackMetricFactor = fabs(mapMetricFactor * 1000. / tanThetaTr)*0.4;
 
                                     continueTracking = true;
                                     ztrCounter = 0;
@@ -10402,22 +10476,23 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                             densityEnergyTrackMap->SetBinContent(densityEnergyTrackMap->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMap->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
 
-                                            if (true)
+                                            if ((!noGUIMode) && (highResCalc))
                                             {
-                                                for (int hr = 0; hr < 2; hr++)
+                                                const short hrmax = 2; // oversampling ratio
+                                                for (int hr = 0; hr < hrmax; hr++)
                                                 {
                                                     //that is because mapMetricFactor is defined for a 500 px map and so is trackMetricFactor and therefore an intermediate value for 1000 px has to be inserted
-                                                    if (hr == 1)
+                                                    if (hr != 0)
                                                     {
                                                         if (thetaTr < piHalf)
                                                         {
-                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr + 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
-                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr + 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
                                                         }
                                                         else
                                                         {
-                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr - 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
-                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr - 0.5 * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
                                                         }
                                                     }
 
@@ -10429,6 +10504,37 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                     if ((energyTr < 100000) && (energyTr > 20)) densityHighEnergyTrackMapHighRes->Fill(xTrack * 0.001, yTrack * 0.001);
 
                                                     densityEnergyTrackMapHighRes->SetBinContent(densityEnergyTrackMapHighRes->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
+                                                }
+                                            }
+
+                                            if ((!noGUIMode) && (highResCalc))
+                                            {
+                                                const short hrmax2 = 6;
+                                                for (int hr = 0; hr < hrmax2; hr++)
+                                                {
+                                                    //that is because mapMetricFactor is defined for a 500 px map and so is trackMetricFactor and therefore an intermediate value for 1000 px has to be inserted
+                                                    if (hr != 0)
+                                                    {
+                                                        if (thetaTr < piHalf)
+                                                        {
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr + 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                        }
+                                                        else
+                                                        {
+                                                            xTrack = cosPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(0 + nt);
+                                                            yTrack = sinPhiTr * fabs(tanThetaTr * ((ztr - 1./(hrmax2*1.) * (hr*1.) * trackMetricFactor) - neutronTrackCoordinates.at(2 + nt))) + neutronTrackCoordinates.at(1 + nt);
+                                                        }
+                                                    }
+
+                                                    if ((energyTr < 2e-7) && (energyTr > 1e-9))  densityThermalTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 0.001) && (energyTr > 0.000001))  densityTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 0.5) && (energyTr > 0.001)) densityIntermediateTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 10) && (energyTr > 0.5)) densityFastTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if (((energyTr < energyhighTHL) && (energyTr > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) densityAlbedoTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+                                                    if ((energyTr < 100000) && (energyTr > 20)) densityHighEnergyTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
+
+                                                    //densityEnergyTrackMapHighRes->SetBinContent(densityEnergyTrackMapHighRes->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
                                                 }
                                             }
                                         }
@@ -10778,7 +10884,10 @@ bool cosmicNSimulator(MainWindow* uiM)
         time(&end);
         Double_t dif = difftime(end, start);
         cout << "\r" << castFloatToString(100., 6) << " % completed ";
-        cout << endl << "Runtime: " << castDoubleToString(dif) << " s" << endl << endl;
+        int secondsEnd = dif;
+        int minutesEnd = dif / 60;
+        int hoursEnd = minutesEnd / 60;
+        cout << endl << "Runtime: " << castDoubleToString(dif) << " s (" << int(hoursEnd) <<" h, "<< int(minutesEnd%60) <<" min, " << int(secondsEnd%60) <<" s)" << endl << endl;
         if (doTheCoastalTransect)
         {
             TString detOutput = castIntToString(detd) + "\t" + castIntToString(detc) + "\t" + castIntToString(detb) + "\t" + castIntToString(deta) + "\t" + castIntToString(det0)
@@ -10805,13 +10914,12 @@ bool cosmicNSimulator(MainWindow* uiM)
                 if (allNeutronCoordinates.at(n).size() > maxRecNeutronCoord) maxRecNeutronCoord = allNeutronCoordinates.at(n).size();
             }
 
-            //TF2  *f2 = new TF2("f2","0*x+0*y",-squareDim/1.85,squareDim/1.85,-squareDim/1.85,squareDim/1.85);
             TF1* fWater = new TF1("fWater", "+0*x", -squareDim / 1.85 / 1000., 0);  fWater->SetFillColorAlpha(kBlue, 0.5); fWater->SetLineColorAlpha(kBlue, 0.8); //fWater->SetLineWidth(150);
             TF1* fSoil = new TF1("fSoil", "0+0*x", 0, squareDim / 1.85 / 1000.);  fSoil->SetFillColorAlpha(kOrange, 0.5); fSoil->SetLineColorAlpha(kOrange, 0.8);
 
             for (int k = 0; ((k < maxRecNeutronCoord) && (k < numberOfFrames)); k++)
             {
-                TGraph* neutronDots = new TGraph();                
+                TGraph* neutronDots = new TGraph();
                 pointcter = 0;
 
                 TMultiGraph* multigraphNeutrons = new TMultiGraph();
@@ -10882,7 +10990,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                 if (k<10) foutName = "NeutronPathSingle_000"+(string)castIntToString(k);
 
                 cGraphSingleN->SaveAs((string)outputFolder+neutronPicSubPath+"/"+foutName+".png");
-            
+
                 delete neutronDots;
                 if (multigraphNeutrons != 0x0) delete multigraphNeutrons;
             }
@@ -10905,14 +11013,16 @@ bool cosmicNSimulator(MainWindow* uiM)
         for (int bn = 0; bn < scatteredSurfaceDepth->GetNbinsX(); bn++) { scatteredSurfaceDepth->SetBinContent(bn, 0); }
         for (int bn = 0; bn < scatteredSurfaceMaxDepth->GetNbinsX(); bn++) { scatteredSurfaceMaxDepth->SetBinContent(bn, 0); }
 
-
-        uiM->setStatus(1, "Clearing Data");
-        cout << "Internal: ";
+        if (!noGUIMode)
+        {
+            uiM->setStatus(1, "Clearing Data");
+            cout << "Internal: ";
+        }
         histoClearUp(&allTHs2);
-        cout << "External: ";
+        if (!noGUIMode) cout << "External: ";
         histoClearUp(&allTHs);
-        cout << "done" << endl;
-        uiM->setStatus(1, "");
+        if (!noGUIMode) cout << "done" << endl;
+        if (!noGUIMode) uiM->setStatus(1, "");
     }
 
     catch (std::out_of_range& e)
@@ -11035,8 +11145,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
         }
     }
 
-    setStatus(1, "Reading Spectrum Parameter Files");
-    delay(5);
+    if (!noGUIMode) {setStatus(1, "Reading Spectrum Parameter Files");    delay(5);}
 
     if (loadParamData((string)endfFolder)) return;
 
@@ -11155,7 +11264,7 @@ void MainWindow::on_sliderSoilMoisture_sliderMoved(int position)
  * @param position
  */
 void MainWindow::on_sliderAirHum_sliderMoved(int position)
-{    
+{
     absHumidityAir = (position * 1.) / 3.;
     absHumidityAirVar = absHumidityAir;
 
@@ -11163,7 +11272,7 @@ void MainWindow::on_sliderAirHum_sliderMoved(int position)
     ui->labelHum->setText(QString::fromStdString(posText));
 
     rLuftWater = absHumidityAir / 1e6;
-    fpHum = 10. / 0.6 * (position * 1.) / 50.;   
+    fpHum = 10. / 0.6 * (position * 1.) / 50.;
 
     if (activateFP) rangeIntegral = -1;
 
@@ -11195,7 +11304,7 @@ void MainWindow::on_sliderAtm1_sliderMoved(int position)
     ui->labelAtm1->setText(QString::fromStdString(posText));
     pressureFac = (position * 1.) / 1020.;
     atmPressure = atmDensity * 100.;
-    rLuft = atmPressure / 287.058 / sysTemperature / 1e3;    
+    rLuft = atmPressure / 287.058 / sysTemperature / 1e3;
 }
 
 
@@ -11208,7 +11317,7 @@ void MainWindow::on_sliderRigidity_sliderMoved(int position)
 {
     rigidity = (position * 1.) / 10.;
     string posText = castFloatToString((position * 1.) / 10., 4);
-    ui->labelrigidity->setText(QString::fromStdString(posText));    
+    ui->labelrigidity->setText(QString::fromStdString(posText));
 }
 
 /**
@@ -11249,7 +11358,7 @@ void MainWindow::on_lineEditRefresh_textChanged(const QString& arg1)
  */
 void dataDelete(QVector<double>* vec)
 {
-    vec->clear();   
+    vec->clear();
 }
 
 /**
@@ -11261,8 +11370,7 @@ void MainWindow::on_pushButton_Clear_clicked()
 {
     if (alreadyStarted)
     {
-        //if (allTHs.size()>1) histoClearUp(&allTHs);
-        setStatus(1, "Clearing Data");
+        if (!noGUIMode) setStatus(1, "Clearing Data");
         delay(15);
         if (liveTHs.size() > 1) histoLiveClearUp(&liveTHs);
 
@@ -11272,14 +11380,12 @@ void MainWindow::on_pushButton_Clear_clicked()
         ui->label_npers->setText("()");
         ui->neutronCountView->setText("");
         ui->label_detectorNs->setText("()");
-        setStatus(1, "");
-        setStatus(2, "");
+        if (!noGUIMode) setStatus(1, "");
+        if (!noGUIMode) setStatus(2, "");
         redrawNeutronMap(-1);
 
         ui->detectorLayerRatioBar->setValue(0);
         ui->detectorRatioBar->setValue(0);
-
-        //dataDelete(&::plotGUIxBinsCutView); dataDelete(&::plotGUIyBinsCutView);
     }
 }
 
@@ -11379,7 +11485,6 @@ void MainWindow::on_beamSquare_clicked()
  */
 void MainWindow::on_lineEditBeamRad_textChanged(const QString& arg1)
 {
-    //int beamRadiusString = arg1.toInt();
     double beamRadiusString = arg1.toDouble();
     ui->lineEditBeamRad->setPalette(*paletteB);
     if ((beamRadiusString > 0) && (beamRadiusString < squareDim / 2.))   beamRadius = beamRadiusString * 1000.;
@@ -11402,10 +11507,7 @@ void MainWindow::on_radioRiver_clicked()
     }
     else
     {
-        //islandSetup = false;
-
     }
-    //ui->lineEdit_Island->setText("AA");
 }
 
 /**
@@ -11424,7 +11526,6 @@ void MainWindow::on_radioCoast_clicked()
     }
     else
     {
-        //coastSetup = false;
     }
 }
 
@@ -11445,7 +11546,6 @@ void MainWindow::on_radioIsland_clicked()
     }
     else
     {
-        //islandSetup = false;
     }
 }
 
@@ -11466,7 +11566,6 @@ void MainWindow::on_radioLake_clicked()
     }
     else
     {
-        //lakeSetup = false;
     }
 
 }
@@ -11517,7 +11616,6 @@ void MainWindow::on_lineEditTHLlow_textChanged(const QString& arg1)
     ui->lineEditTHLlow->setPalette(*paletteB);
     if ((energyString > 0) && (energyString < 20) && (energyString < energyhighTHL))   energylowTHL = energyString;
     else ui->lineEditTHLlow->setPalette(*paletteR);
-
 }
 
 /**
@@ -11591,7 +11689,6 @@ void MainWindow::on_lineEdit_Island_textChanged(const QString& arg1)
 
 void MainWindow::on_lineEdit_Lake_selectionChanged()
 {
-
 }
 
 /**
@@ -11614,7 +11711,6 @@ void MainWindow::on_lineEdit_Lake_textChanged(const QString& arg1)
  */
 void MainWindow::on_checkBoxFileOutput_clicked()
 {
-     
 }
 
 /**
@@ -11643,7 +11739,7 @@ bool MainWindow::eventFilter(QObject* target, QEvent* event)
         float y = ui->customPlot2->yAxis->pixelToCoord(_mouseEvent->pos().y());
 
         xCustomPos = x * 1000.;
-        yCustomPos = y * 1000.;      
+        yCustomPos = y * 1000.;
     }
 
     if (target == ui->customPlot2 && event->type() == QEvent::MouseButtonRelease)
@@ -11922,16 +12018,6 @@ void MainWindow::redrawTopView()
         if (showDensityMapFast) { entryWeight = (densityMapFast->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapFast->GetBinContent(densityMapFast->GetMaximumBin()); }
         if (showDensityMapAlbedo) { entryWeight = (densityMapAlbedo->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapAlbedo->GetBinContent(densityMapAlbedo->GetMaximumBin()); }
 
-        /*
-            allEntriesInt = 0;
-            for (int x=120; x<380; x+=1)
-            {
-                for (int y=120; y<380; y+=1)
-                {
-                    allEntriesInt+=  ::densityMapAlbedo->GetBinContent(x,y);
-                }
-            }
-            */
         allEntriesInt = entryWeight * 250. * 250. * 4.;
         //string numberofDetectorLayerNs = castLongToString(allEntriesInt);
 
@@ -11942,7 +12028,7 @@ void MainWindow::redrawTopView()
         ui->label_detectorLayerNs->setText(QString::fromStdString(numberofDetectorLayerNs));
 
         allEntriesInt = densityMapHighEnergy->GetEntries();
-        if (useExtraCounter) ui->label_detectorLayerNs2->setText(QString::fromStdString((string)castLongToString(allEntriesInt)));       
+        if (useExtraCounter) ui->label_detectorLayerNs2->setText(QString::fromStdString((string)castLongToString(allEntriesInt)));
     }
 
     float colorscaleMax = (ui->horizontalSliderColor->value() * 1.) / 200. * maximumWeight;
@@ -11980,7 +12066,10 @@ void MainWindow::redrawTopView()
     int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorscaleMax;
     int highColorValue = colorscaleMax;
 
-     string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
+    ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
+    ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+
+    string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
     ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
 
     ui->customPlot2->update();
@@ -11991,9 +12080,18 @@ void MainWindow::redrawTopView()
         if (visualization->isVisible()) updateEnlargedView = true;
         else  updateEnlargedView = false;
     }
+    if (visualization2 != 0x0)
+    {
+        if (visualization2->isVisible()) updateEnlargedView2 = true;
+        else  updateEnlargedView2 = false;
+    }
     if (updateEnlargedView)
     {
         redrawEnlargedView();
+    }
+    if (updateEnlargedView2)
+    {
+        redrawEnlargedView2();
     }
 
     if (showDensityTrackMap)            cutView = densityTrackMap->ProjectionX("proj", 240, 260);
@@ -12089,7 +12187,7 @@ void MainWindow::on_radioButton_mapInter_clicked()
  *
  */
 void MainWindow::on_radioButton_mapFast_clicked()
-{   
+{
     if (!showDensityMapFast)
     {
         showDensityTrackMap = false;
@@ -12329,7 +12427,7 @@ void MainWindow::on_radioButton_mapTrackThermal_clicked()
  *
  */
 void MainWindow::on_radioButton_mapTrackEnergy_clicked()
-{     
+{
     if (!showDensityEnergyTrackMap)
     {
         showDensityTrackMap = false;
@@ -12403,8 +12501,6 @@ void MainWindow::on_lineEdit_InputSpectrumFolder_editingFinished()
         inputSpectrumFile = textHere;
         ui->label_16->setText("Input Spectrum Calculation File (ROOT)");
     }
-
-
 }
 
 /**
@@ -12418,7 +12514,7 @@ void MainWindow::on_lineEdit_CrosssectionFolder_editingFinished()
     string textHere = valueString.toStdString();
     std::replace(textHere.begin(), textHere.end(), '\\', '/');
 
-    ifstream input_streamCheck(textHere + "/absorbH1.txt", ios::in);
+    ifstream input_streamCheck(textHere + "absorbH1.txt", ios::in);
 
     ui->lineEdit_CrosssectionFolder->setPalette(*paletteB);
 
@@ -12481,8 +12577,8 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.0&beta;(30.09.2022)<br> ";
-    messageString+=        "<small>Based on QT 5.14.2 (MSVC 2017 32bit), ROOT 6.22.08 and QCustomPlot 2.1.0</small> <br>";
+    messageString+=        "v1.04 (02.01.2023)<br> ";
+    messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
     messageString += "<font color='#e4e4e4'> All your neutrons <br> are belong to us!<\font>";
@@ -12528,8 +12624,6 @@ void MainWindow::on_checkBoxBasicSpectrum_clicked()
         useBasicSpectrum = true; ui->sliderRigidity->setEnabled(false);  ui->labelrigidity->setText("-");
     }
 }
-
-
 
 /**
  * Function to activate sky evaporation.
@@ -12611,6 +12705,15 @@ void MainWindow::activateThermal()
     ui->checkBoxThermalData->setHidden(false);
 }
 
+void MainWindow::setConfigFilePath(string pathtoConfigFile)
+{
+    if (pathtoConfigFile.length() > 1)
+    {
+        configFilePath = pathtoConfigFile;
+        configFilePathConfigured = true;
+    }
+}
+
 /**
  * Function to disable the GUI and run in command line.
  * @param - path to ConfigFile (uranos.cfg)
@@ -12625,6 +12728,7 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
 
     if (pathtoConfigFile.length() > 1)
     {
+        configFilePathConfigured = true;
         cout << "Using Config File " << pathtoConfigFile << endl;
         importSettings();
         //setupImport();
@@ -12639,11 +12743,11 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
 
     setupGeometry();
 
-    cout << "Cosmic Neutron Spectrum Definition..." << endl;
+    //cout << "Cosmic Neutron Spectrum Definition..." << endl;
 
     if (!(loadParamData((string)endfFolder)))
     {
-        cout << endl << "done" << endl;
+        cout << "done" << endl;
         cosmicNSimulator(this);
     }
     else
@@ -12660,6 +12764,7 @@ void MainWindow::activateThermalSkyEvaporation()
 {
     noThermalRegime = false;
     doSkyEvaporation = true;
+    highResCalc = true;
 
     maxScatterings = 1500; // maximum number of scatterings of a neutron until killed
 
@@ -12682,7 +12787,6 @@ void MainWindow::beSilent()
     silentMode = true;
 }
 
-
 /**
  * Function to be called on clicking add layer + button
  * in layer control in the Parameters Tab.
@@ -12692,8 +12796,6 @@ void MainWindow::on_pushButton_AddLayer_clicked()
 {
     if (row > 0)   model->insertRow(row, QModelIndex());
     else  model->insertRow(0, QModelIndex());
-
-    //setupGeometry();
 
     ui->spinBox_StartingLayer->setMaximum(ui->spinBox_StartingLayer->maximum() + 1);
     ui->spinBox_DetectorLayer->setMaximum(ui->spinBox_DetectorLayer->maximum() + 1);
@@ -12857,7 +12959,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     {
         if (!silentMode)
         {
-            if (noGUIMode) cout<<"No Config File"<<endl;
+            if (noGUIMode) { cout<<"No Config File"<<endl; }
         }
         setStatus(1,"No Geometry Config File"); delay(1);
         return;
@@ -12869,7 +12971,8 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
         model->removeRow(0, QModelIndex());
     }
 
-    setStatus(1,"Loading Geometry File"); delay(1);
+    if (!noGUIMode) {setStatus(1,"Loading Geometry File"); delay(1);}
+    if (noGUIMode) { cout<<"Loading Geometry Files"<<endl; }
 
     int a, b, c, i;
     float posInput, heightInput, materialInput;
@@ -12930,7 +13033,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
     {
         ui->checkBox_useImage->setChecked(true);
 
-        setStatus(2,"Loading Input Definitions"); delay(1);
+        if (!noGUIMode) {setStatus(2,"Loading Input Definitions"); delay(1);}
 
         on_checkBox_useImage_clicked();
         checkInputPics();
@@ -12940,7 +13043,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
         ui->checkBox_useImage->setChecked(false);
     }
 
-    setStatus(1,"");
+    if (!noGUIMode) setStatus(1,"");
 }
 
 /**
@@ -13150,7 +13253,6 @@ vector<float> getMaterialVector(string fileString)
         stream >> temp;
         stream >> number;
 
-        //number = atof(temp);
         if ((number > 0) && (number < 100))
         {
             newMaterial.push_back(number);
@@ -13165,7 +13267,7 @@ vector<float> getMaterialVector(string fileString)
 
 /**
  * Function to be called to Check the input material definitions.
- * 
+ *
  */
 void checkInputMaterialDefinitions()
 {
@@ -13200,17 +13302,16 @@ void checkInputMaterialDefinitions()
  * inputpics: material definitions
  * inputpics2: density definitions
  * inputpics3: porosity definitions
- * 
+ *
  */
 void MainWindow::checkInputPics()
 {
-    setStatus(1, "");   setStatus(2, "");
+    if (!noGUIMode) {setStatus(1, "");   setStatus(2, "");}
     ifstream* stream_in;
     bool foundData = false;
     TString add = "";
 
     for (int i = 0; i < maxLayersAllowed; i++) { inputPicSizes[i] = 0; }
-
 
     for (int i = 1; i < maxLayersAllowed; i++)
     {
@@ -13415,11 +13516,11 @@ void MainWindow::checkInputPics()
     {
         QStandardItem* item = model->itemFromIndex(model->index(z, 3, QModelIndex()));
         item->setTextAlignment(Qt::AlignCenter);
-        picLetter = "";        
+        picLetter = "";
 
         temp = z + 1;
         if ((inputPics[z] == 0) && (inputPics2[z] == 0) && (inputPics3[z] == 0))
-        {            
+        {
             item->setText(QString::fromStdString((string)""));
         }
         else
@@ -13459,7 +13560,7 @@ void MainWindow::checkInputPics()
             if (inputMatrixDefsShown) cout<<" ";
 
             item->setText(QString::fromStdString((string)castIntToString(temp) + picLetter + " [" + (string)castIntToString(inputPicSizes[z]) + "]"));
-        }       
+        }
         inputMatrixPixels = inputPicSizes[z]; //doesn't make so much sense
     }
     if (inputMatrixDefsShown) cout<<endl;
@@ -13477,7 +13578,7 @@ void MainWindow::checkInputPics()
 
 /**
  * Function to be called on clicking Use layer maps checkbox in the Parameters tab.
- * 
+ *
  */
 void MainWindow::on_checkBox_useImage_clicked()
 {
@@ -13502,10 +13603,9 @@ void MainWindow::on_checkBox_useImage_clicked()
     }
 }
 
-
 /**
  * Function to be called on clicking view layer maps button in the Parameters tab.
- * 
+ *
  */
 void MainWindow::on_pushButton_Show_clicked()
 {
@@ -13516,10 +13616,9 @@ void MainWindow::on_pushButton_Show_clicked()
     }
 }
 
-
 /**
  * Function to be called on get the T matrix for the input pic definitions.
- * 
+ *
  */
 TMatrixF MainWindow::getTMatrix(int i)
 {
@@ -13558,16 +13657,16 @@ TMatrixF MainWindow::getTMatrix(int i)
                 pixelValue = matrixImage.pixel(i, matrixHeight - 1 - j);
                 matr(i, j) = qGray(pixelValue);
             }
-        }       
+        }
         return matr;
     }
 
-    return      dummyTMatrix;  
+    return      dummyTMatrix;
 }
 
 /**
  * Function to be called on changing the upper bound slider in the Parameters tab.
- * 
+ *
  */
 void MainWindow::on_horizontalSliderColor_sliderMoved(int position)
 {
@@ -13601,11 +13700,10 @@ void MainWindow::on_horizontalSliderColorZero_sliderMoved(int position)
     }
 }
 
-
 /**
- * Function to be called on clicking the radio button Dark Gray Scale 
+ * Function to be called on clicking the radio button Dark Gray Scale
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronNight_clicked()
 {
@@ -13620,9 +13718,9 @@ void MainWindow::on_radioButton_NeutronNight_clicked()
 }
 
 /**
- * Function to be called on clicking the radio button Cold 
+ * Function to be called on clicking the radio button Cold
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronCold_clicked()
 {
@@ -13637,9 +13735,9 @@ void MainWindow::on_radioButton_NeutronCold_clicked()
 }
 
 /**
- * Function to be called on clicking the radio button Polar 
+ * Function to be called on clicking the radio button Polar
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronPolar_clicked()
 {
@@ -13654,9 +13752,9 @@ void MainWindow::on_radioButton_NeutronPolar_clicked()
 }
 
 /**
- * Function to be called on clicking the radio button URANOS 
+ * Function to be called on clicking the radio button URANOS
  * for the Neutron Color Scheme in the Display tab.
- * 
+ *
  */
 void MainWindow::on_radioButton_NeutronRainbow_clicked()
 {
@@ -13753,9 +13851,9 @@ void MainWindow::on_pushButton_ActivateFP_clicked()
 
 
 /**
- * Function to be called on changing the value of Only Record in Material No 
+ * Function to be called on changing the value of Only Record in Material No
  * textbox in the detector layer of detector tab.
- * 
+ *
  */
 void MainWindow::on_lineEditScotoma_editingFinished()
 {
@@ -13839,7 +13937,6 @@ void MainWindow::on_checkBoxThermalData_clicked()
     else exportThermalData = true;
 }
 
-
 /**
  * Function to be called on changing the slider Soil Porosity [Vol%]
  * in the parameters tab.
@@ -13853,7 +13950,6 @@ void MainWindow::on_sliderSoilPorosity_sliderMoved(int position)
     ui->labelSP->setText(QString::fromStdString(text));
 }
 
-
 /**
  * Function to be called on clicking the Advanced Analysis Raw Output (ROOT)
  * checkbox in General Options in the export tab.
@@ -13865,7 +13961,6 @@ void MainWindow::on_checkBoxFileOutputPDF_2_clicked(bool checked)
     else uranosRootOutput = true;
 }
 
-
 /**
  * Function to be called on clicking the Create new folder for every export
  * checkbox in General Options in the export tab.
@@ -13876,7 +13971,6 @@ void MainWindow::on_checkBoxCreateFolder_clicked(bool checked)
     if (!checked) createSeparateFolderEachExport = false;
     else createSeparateFolderEachExport = true;
 }
-
 
 /**
  * Function to be called on clicking the Create new folder for every export
@@ -14028,7 +14122,6 @@ void MainWindow::on_checkBox_clicked()
     else useDetectorSensitiveMaterial = true;
 }
 
-
 /**
  * Function to be called on clicking Record Neutrons only once per Layer checkboxin
  * Exclude Multiple Scatteringin Detector Layer in Detector tab.
@@ -14042,18 +14135,16 @@ void MainWindow::on_checkBox_NoMultipleScattering_toggled(bool checked)
     noMultipleScatteringRecording = false;
 }
 
-
 /**
  * Function to be called on clicking Manual checkbox
  * in Neutron Color Scheme in Display tab.
  * @param checked
  */
 void MainWindow::on_checkBoxManual_toggled(bool checked)
-{     
+{
     redrawTopView();
     //redrawNeutronMap(0);
 }
-
 
 /**
  * Function to be called on clicking Track all Layers checkbox
@@ -14073,8 +14164,11 @@ void MainWindow::on_checkBox_TrackAllLayers_toggled(bool checked)
  */
 void MainWindow::on_checkBoxLogarithmic_toggled(bool checked)
 {
-    if (checked) { plotTopViewLog = true; visualization->setplotTopViewLog(true); }
+    if (checked) {plotTopViewLog = true; visualization->setplotTopViewLog(true); }
     else { plotTopViewLog = false; visualization->setplotTopViewLog(false); }
+
+    if (checked) {visualization2->setplotTopViewLog2(true); }
+    else {visualization2->setplotTopViewLog2(false); }
 
     redrawTopView();
 }
@@ -14182,7 +14276,7 @@ void MainWindow::on_radioButton_Sphere_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_radioButton_detectorLayerEnergyBand_toggled(bool checked)
-{    
+{
     if (checked)
     {
         useRealisticModelLayer = false;
@@ -14195,7 +14289,7 @@ void MainWindow::on_radioButton_detectorLayerEnergyBand_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_radioButton_detectorLayerRealistic_toggled(bool checked)
-{   
+{
     if (checked)
     {
         useRealisticModelLayer = true;
@@ -14208,7 +14302,7 @@ void MainWindow::on_radioButton_detectorLayerRealistic_toggled(bool checked)
  * @param checked
  */
 void MainWindow::on_radioButton_detectorEnergyBand_toggled(bool checked)
-{     
+{
     if (checked)
     {
         useRealisticModelDetector = false;
@@ -14259,7 +14353,7 @@ void MainWindow::on_checkBox_HEModel_toggled(bool checked)
     }
     else
     {
-        useHECascadeModel = false;       
+        useHECascadeModel = false;
     }
 }
 
@@ -14689,6 +14783,7 @@ void MainWindow::on_lineEdit_DetectorFile_textChanged(const QString& arg1)
         {
             ui->label_25->setText("Detector Energy Calibration File (+1)");
             detectorResponseFunctionFile2 = textHere;
+            useAdditionalDetectorModel = true;
         }
     }
 }
@@ -14719,7 +14814,28 @@ void MainWindow::on_checkBoxFileOutput3_toggled(bool checked)
  */
 void MainWindow::on_pushButton_SaveConfig_clicked()
 {
-    exportSettings("");
-    setStatus(1, "Uranos.cfg written");
+    if (configFilePathConfigured)
+    {
+        exportSettings(configFilePath);
+    }
+    else
+    {
+        exportSettings("");
+    }
+    if (!noGUIMode) setStatus(1, "Uranos.cfg written");
+}
+
+
+void MainWindow::on_pushButton_Enlarge2_clicked()
+{
+    delete visualization2;
+    visualization2 = new VisualizationEnlarge2(this);
+    visualization2->show();
+
+    updateEnlargedView2 = true;
+    if (alreadyStarted)
+    {
+        redrawEnlargedView2();
+    }
 }
 

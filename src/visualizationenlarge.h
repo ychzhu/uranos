@@ -5,7 +5,6 @@
 
 #include "qcustomplot.h"
 
-//#include "mainwindow.h"
 #include "Toolkit.h"
 
 namespace Ui {
@@ -20,8 +19,6 @@ class VisualizationEnlarge : public QDialog
 public:
     explicit VisualizationEnlarge(QWidget *parent = 0);
     ~VisualizationEnlarge();
-
-
 
     void setSquareDimSize(float squareDimSize);
 
@@ -56,7 +53,6 @@ private slots:
 
 private:
     Ui::VisualizationEnlarge *ui;
-
 };
 
 #endif // VISUALIZATIONENLARGE_H

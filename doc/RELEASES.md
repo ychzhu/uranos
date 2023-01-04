@@ -1,5 +1,12 @@
 # URANOS Release Notes
 
+## URANOS version 1.05 (January 4, 2023)
+
+### Changelog
+- bugfixes
+- added material: 231 = Polyvinyl chloride (1.45 g/cm^3)
+
+
 ## URANOS version 1.04 (January 2, 2023)
 
 ### Changelog

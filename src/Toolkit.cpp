@@ -1,3 +1,13 @@
+/***************************************************************************
+**                                                                        **
+**  URANOS - Ultra RApid Neutron-Only Simulation                          **
+**  designed for Environmental Research                                   **
+**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Physikalisches Institut, Heidelberg University, Germany               **
+**                                                                        **
+****************************************************************************/
+
+
 #include "Toolkit.h"
 
 #include "TRandom3.h"

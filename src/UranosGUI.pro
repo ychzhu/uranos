@@ -51,8 +51,6 @@ CONFIG += static
 
 win32:QMAKE_LFLAGS +=  /FORCE
 win32:QMAKE_LFLAGS += /INCREMENTAL:NO
-#QMAKE_LFLAGS += -static
-
 
 win32:CXXFLAGS += /O2
 unix: QMAKE_CXXFLAGS += -Wno-sign-compare

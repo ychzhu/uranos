@@ -1,7 +1,15 @@
+/***************************************************************************
+**                                                                        **
+**  URANOS - Ultra RApid Neutron-Only Simulation                          **
+**  designed for Environmental Research                                   **
+**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Physikalisches Institut, Heidelberg University, Germany               **
+**                                                                        **
+****************************************************************************/
+
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
-
-
 
 #include <QMainWindow>
 #include <QMouseEvent>
@@ -19,9 +27,6 @@
 #include "dialogshowpic.h"
 #include "visualizationenlarge.h"
 #include "visualizationenlarge2.h"
-
-
-//extern QVector<double> x(101), y(101);
 
 
 namespace Ui {

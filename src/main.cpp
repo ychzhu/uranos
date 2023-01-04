@@ -1,3 +1,12 @@
+/***************************************************************************
+**                                                                        **
+**  URANOS - Ultra RApid Neutron-Only Simulation                          **
+**  designed for Environmental Research                                   **
+**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Physikalisches Institut, Heidelberg University, Germany               **
+**                                                                        **
+****************************************************************************/
+
 #ifdef _WIN32
     #include <io.h>
     #define access _access
@@ -27,7 +36,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.04 (02.01.2023)";
+string versionString = "v1.05 (04.01.2023)";
 
 class I : public QThread
 {

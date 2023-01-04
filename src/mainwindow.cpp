@@ -1,3 +1,13 @@
+/***************************************************************************
+**                                                                        **
+**  URANOS - Ultra RApid Neutron-Only Simulation                          **
+**  designed for Environmental Research                                   **
+**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Physikalisches Institut, Heidelberg University, Germany               **
+**                                                                        **
+****************************************************************************/
+
+
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
@@ -5673,7 +5683,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         const double  rQuarz = 2.5, rGraphit = 2.2, rAl2O3 = 3.94, rFe = 7.87, rAlMg = 2.66, rEStahl = 8.03, rPb = 11.342, rTNT = 1.654;
         //Float_t rAsphalt = 1.0;
         //double rHDPE2;
-        double rWater = 0.99, rGd2O3 = 7.41, rMethane = 0.000656, rHDPE = 0.95 ; //rLuft = pressureFac*0.0012, rLuftWater = 1.*2.*0.0000177*relHumidityAir;
+        double rWater = 0.99, rGd2O3 = 7.41, rMethane = 0.000656, rHDPE = 0.95, rPVC = 1.45 ; //rLuft = pressureFac*0.0012, rLuftWater = 1.*2.*0.0000177*relHumidityAir;
         double rHe3 = 0.000125, rBF3 = 0.00276, rDiesel = 0.83, rSaltWater = 1., rCellulose = 1.5, rKieferTr = 0.44, rBucheTr = 0.59, rGeneral = 1.;
 
 
@@ -5714,7 +5724,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         const Float_t wWater = 18.015;
         //const Float_t wCu = 63.5, wKapton = 382., wZirkon = 91.2, wBronze = 67.5, wPoly = 226.32, wArCO2 = 40.6, wLiF = 25.94, wBoronNat = 10.8, wB4CNat = 13.8, wB4C = 13.;
         const Float_t wQuarz = 60.1, wAl2O3 = 101.96, wNi = 58.7, wNa = 23., wCl = 35.45, wFe = 55.85, wCr52 = 52., wCr53 = 53., wMn55 = 55., wAr = 39.95, wSulfur = 32., wHe3 = 3., wBF3 = 67.82;
-        const Float_t wGd2O3 = 362.49, wMethane = 16.04, wSalt = 58.5, wGraphit = 12., wDiesel = 167., wPb = 207.2, wPb206 = 206., wPb207 = 207., wPb208 = 208., wTi = 47.867, wTi48 = 48., wKalium = 39.1, wTNT = 11.03, wCellulose = 162.14;
+        const Float_t wGd2O3 = 362.49, wMethane = 16.04, wSalt = 58.5, wGraphit = 12., wDiesel = 167., wPb = 207.2, wPb206 = 206., wPb207 = 207., wPb208 = 208., wTi = 47.867, wTi48 = 48., wKalium = 39.1, wTNT = 11.03, wPVC = 62.5, wCellulose = 162.14;
 
         //rCelluloseFrac = 0.333;
         //rCelluloseWaterFrac = 0*0.25;
@@ -7537,8 +7547,9 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 case 228: material = 28; break; //BF3
                                 case 229: material = 15; break; //Iron
                                 case 230: material = 30; break; //HDPE with approx 3% natural Boron
+                                case 231: material = 31; break; //PVC
                                 case 232: material = 32; break; //Steel 304L
-                                case 233: material = 31; break; //Methane
+                                case 233: material = 33; break; //Methane
                                 case 234: material = 34; break; //Diesel
                                 case 236: material = 36; break; //Graphite
                                 case 237: material = 37; break; //Lead
@@ -7778,12 +7789,15 @@ bool cosmicNSimulator(MainWindow* uiM)
                         csB10 = calcMeanCS(sigmaB10, energy * 1e6); csB11 = calcMeanCS(sigmaB11, energy * 1e6);
                         cs = 2. * csH + csC + 0.04 * (0.2 * csB10 + 0.8 * csB11);
                         break;
-                    case 31: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
-                        cs = 4. * csH + csC;
+                    case 31: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);  csCl = calcMeanCS(sigmaCl35, energy * 1e6);
+                        cs = 3. * csH + 2. * csC + csCl;
                         break;
                     case 32: csFe = calcMeanCS(sigmaFe, energy * 1e6); csCr52 = calcMeanCS(sigmaCr52, energy * 1e6); csCr53 = calcMeanCS(sigmaCr53, energy * 1e6);
                         csNi = calcMeanCS(sigmaNi58, energy * 1e6); csMn55 = calcMeanCS(sigmaMn55, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
                         cs = 0.68 * csFe + 0.19 * (0.86 * csCr52 + 0.14 * csCr53) + 0.09 * csNi + 0.02 * csSi + 0.02 * csMn55;
+                        break;
+                    case 33: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                        cs = 4. * csH + csC;
                         break;
                     case 34: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
                         cs = 23. * csH + 12. * csC;
@@ -7951,7 +7965,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                         break;
                     case 31: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
                         asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
-                        asAll = 4. * asH + 1. * asC;
+                        asCl = calcMeanCS(absorbCl35, energy * 1e6) + calcMeanCS(absorbMt5Cl35, energy * 1e6) + calcMeanCS(absorbMt103Cl35, energy * 1e6) + calcMeanCS(absorbMt107Cl35, energy * 1e6);
+                        asAll = 3. * asH + 2. * asC + asCl;
                         break;
                     case 32: asFe = calcMeanCS(absorbFe, energy * 1e6) + calcMeanCS(absorbMt5Fe, energy * 1e6) + calcMeanCS(absorbMt103Fe, energy * 1e6) + calcMeanCS(absorbMt107Fe, energy * 1e6);
                         asNi = calcMeanCS(absorbNi58, energy * 1e6) + calcMeanCS(absorbMt5Ni58, energy * 1e6) + calcMeanCS(absorbMt103Ni58, energy * 1e6) + calcMeanCS(absorbMt107Ni58, energy * 1e6);
@@ -7960,6 +7975,10 @@ bool cosmicNSimulator(MainWindow* uiM)
                         asMn55 = calcMeanCS(absorbMn55, energy * 1e6) + calcMeanCS(absorbMt5Mn55, energy * 1e6) + calcMeanCS(absorbMt103Mn55, energy * 1e6) + calcMeanCS(absorbMt107Mn55, energy * 1e6);
                         asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asAll = 0.68 * asFe + 0.19 * (0.86 * asCr52 + 0.14 * asCr53) + 0.09 * asNi + 0.02 * asSi + 0.02 * asMn55;
+                        break;
+                    case 33: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        asAll = 4. * asH + 1. * asC;
                         break;
                     case 34: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
                         asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
@@ -7996,12 +8015,12 @@ bool cosmicNSimulator(MainWindow* uiM)
                     if (material == 7)
                     {
                         allMaterials.push_back(csO); allMaterials.push_back(2. * csH); allMaterials.push_back(nSalt * csNa); allMaterials.push_back(nSalt * csCl);
-                        allMaterialsElements.push_back(16); allMaterialsElements.push_back(1); allMaterialsElements.push_back(35); allMaterialsElements.push_back(23);
+                        allMaterialsElements.push_back(16); allMaterialsElements.push_back(1); allMaterialsElements.push_back(23); allMaterialsElements.push_back(35);
                         allMaterials.at(0) = allMaterials.at(0) / cs;
                         for (int k = 1; k < allMaterials.size(); k++) { allMaterials.at(k) = allMaterials.at(k - 1) + allMaterials.at(k) / cs; }
 
-                        allAbsorptionMaterials.push_back(csO); allAbsorptionMaterials.push_back(2. * csH); allAbsorptionMaterials.push_back(nSalt * csNa); allAbsorptionMaterials.push_back(nSalt * csCl);
-                        allAbsorptionMaterialsElements.push_back(16); allAbsorptionMaterialsElements.push_back(1); allAbsorptionMaterialsElements.push_back(35); allAbsorptionMaterialsElements.push_back(23);
+                        allAbsorptionMaterials.push_back(asO); allAbsorptionMaterials.push_back(2. * asH); allAbsorptionMaterials.push_back(nSalt * asNa); allAbsorptionMaterials.push_back(nSalt * asCl);
+                        allAbsorptionMaterialsElements.push_back(16); allAbsorptionMaterialsElements.push_back(1); allAbsorptionMaterialsElements.push_back(23); allAbsorptionMaterialsElements.push_back(35);
                         allAbsorptionMaterials.at(0) = allAbsorptionMaterials.at(0) / asAll;
                         for (int k = 1; k < allAbsorptionMaterials.size(); k++) { allAbsorptionMaterials.at(k) = allAbsorptionMaterials.at(k - 1) + allAbsorptionMaterials.at(k) / asAll; }
                     }
@@ -8232,13 +8251,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                     }
                     if (material == 31)
                     {
-                        allMaterials.push_back(4. * csH); allMaterials.push_back(1. * csC);
-                        allMaterialsElements.push_back(1); allMaterialsElements.push_back(12);
+                        allMaterials.push_back(3. * csH); allMaterials.push_back(2. * csC);  allMaterials.push_back(csCl);
+                        allMaterialsElements.push_back(1); allMaterialsElements.push_back(12); allMaterialsElements.push_back(35);
                         allMaterials.at(0) = allMaterials.at(0) / cs;
                         for (int k = 1; k < allMaterials.size(); k++) { allMaterials.at(k) = allMaterials.at(k - 1) + allMaterials.at(k) / cs; }
 
-                        allAbsorptionMaterials.push_back(4. * asH); allAbsorptionMaterials.push_back(1. * asC);
-                        allAbsorptionMaterialsElements.push_back(1); allAbsorptionMaterialsElements.push_back(12);
+                        allAbsorptionMaterials.push_back(3. * asH); allAbsorptionMaterials.push_back(2. * asC);  allAbsorptionMaterials.push_back(1. * asCl);
+                        allAbsorptionMaterialsElements.push_back(1); allAbsorptionMaterialsElements.push_back(12); allAbsorptionMaterialsElements.push_back(35);
                         allAbsorptionMaterials.at(0) = allAbsorptionMaterials.at(0) / asAll;
                         for (int k = 1; k < allAbsorptionMaterials.size(); k++) { allAbsorptionMaterials.at(k) = allAbsorptionMaterials.at(k - 1) + allAbsorptionMaterials.at(k) / asAll; }
                     }
@@ -8251,6 +8270,18 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                         allAbsorptionMaterials.push_back(0.72 * asFe); allAbsorptionMaterials.push_back(0.19 * 0.86 * asCr52); allAbsorptionMaterials.push_back(0.19 * 0.14 * asCr53);  allAbsorptionMaterials.push_back(0.09 * asNi);
                         allAbsorptionMaterialsElements.push_back(56); allAbsorptionMaterialsElements.push_back(52);  allAbsorptionMaterialsElements.push_back(53);  allAbsorptionMaterialsElements.push_back(58);
+                        allAbsorptionMaterials.at(0) = allAbsorptionMaterials.at(0) / asAll;
+                        for (int k = 1; k < allAbsorptionMaterials.size(); k++) { allAbsorptionMaterials.at(k) = allAbsorptionMaterials.at(k - 1) + allAbsorptionMaterials.at(k) / asAll; }
+                    }
+                    if (material == 33)
+                    {
+                        allMaterials.push_back(4. * csH); allMaterials.push_back(1. * csC);
+                        allMaterialsElements.push_back(1); allMaterialsElements.push_back(12);
+                        allMaterials.at(0) = allMaterials.at(0) / cs;
+                        for (int k = 1; k < allMaterials.size(); k++) { allMaterials.at(k) = allMaterials.at(k - 1) + allMaterials.at(k) / cs; }
+
+                        allAbsorptionMaterials.push_back(4. * asH); allAbsorptionMaterials.push_back(1. * asC);
+                        allAbsorptionMaterialsElements.push_back(1); allAbsorptionMaterialsElements.push_back(12);
                         allAbsorptionMaterials.at(0) = allAbsorptionMaterials.at(0) / asAll;
                         for (int k = 1; k < allAbsorptionMaterials.size(); k++) { allAbsorptionMaterials.at(k) = allAbsorptionMaterials.at(k - 1) + allAbsorptionMaterials.at(k) / asAll; }
                     }
@@ -8395,13 +8426,15 @@ bool cosmicNSimulator(MainWindow* uiM)
                         case 30: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                                 for (int k = 0; k < sigmaInB10Vec.size(); k++) { allInelastics.push_back(0.02 * (0.2 * calcMeanCS(*(sigmaInB10Vec.at(k)), energy * 1e6))); allInelasticAngulars.push_back(&(sigmaInB10AngularVec.at(k))); allInelasticElements.push_back(10); inelasticEnergyLossVec.push_back(inelasticEnergyLossB10.at(k)); }
                                 for (int k = 0; k < sigmaInB11Vec.size(); k++) { allInelastics.push_back(0.02 * (0.8 * calcMeanCS(*(sigmaInB11Vec.at(k)), energy * 1e6))); allInelasticAngulars.push_back(&(sigmaInB11AngularVec.at(k))); allInelasticElements.push_back(11); inelasticEnergyLossVec.push_back(inelasticEnergyLossB11.at(k)); }  break;
-                        case 31: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
+                        case 31: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  ;
+                                for (int k = 0; k < sigmaInCl35Vec.size(); k++) { allInelastics.push_back(nSalt * calcMeanCS(*(sigmaInCl35Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCl35AngularVec.at(k))); allInelasticElements.push_back(35); inelasticEnergyLossVec.push_back(inelasticEnergyLossCl35.at(k)); } break;
                         case 32: for (int k = 0; k < sigmaInFeVec.size(); k++) { allInelastics.push_back(0.68 * calcMeanCS(*(sigmaInFeVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInFeAngularVec.at(k))); allInelasticElements.push_back(56); inelasticEnergyLossVec.push_back(inelasticEnergyLossFe.at(k)); };
                                for (int k = 0; k < sigmaInNi58Vec.size(); k++) { allInelastics.push_back(0.09 * calcMeanCS(*(sigmaInNi58Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInNi58AngularVec.at(k))); allInelasticElements.push_back(58); inelasticEnergyLossVec.push_back(inelasticEnergyLossNi58.at(k)); };
                                for (int k = 0; k < sigmaInCr52Vec.size(); k++) { allInelastics.push_back(0.19 * 0.86 * calcMeanCS(*(sigmaInCr52Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCr52AngularVec.at(k))); allInelasticElements.push_back(52); inelasticEnergyLossVec.push_back(inelasticEnergyLossCr52.at(k)); };
                                for (int k = 0; k < sigmaInCr53Vec.size(); k++) { allInelastics.push_back(0.19 * 0.14 * calcMeanCS(*(sigmaInCr53Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCr53AngularVec.at(k))); allInelasticElements.push_back(53); inelasticEnergyLossVec.push_back(inelasticEnergyLossCr53.at(k)); }
                                for (int k = 0; k < sigmaInSiVec.size(); k++) { allInelastics.push_back(0.02 * calcMeanCS(*(sigmaInSiVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInSiAngularVec.at(k))); allInelasticElements.push_back(28); inelasticEnergyLossVec.push_back(inelasticEnergyLossSi.at(k)); }
                                for (int k = 0; k < sigmaInMn55Vec.size(); k++) { allInelastics.push_back(0.02 * calcMeanCS(*(sigmaInMn55Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInMn55AngularVec.at(k))); allInelasticElements.push_back(55); inelasticEnergyLossVec.push_back(inelasticEnergyLossMn55.at(k)); } break;
+                        case 33: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                         case 34: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                         case 36: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                         case 37: for (int k = 0; k < sigmaInPb206Vec.size(); k++) { allInelastics.push_back(0.241 * calcMeanCS(*(sigmaInPb206Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInPb206AngularVec.at(k))); allInelasticElements.push_back(206); inelasticEnergyLossVec.push_back(inelasticEnergyLossPb206.at(k)); };
@@ -8424,6 +8457,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                             for (int k = 1; k < allInelastics.size(); k++) { allInelastics.at(k) = allInelastics.at(k - 1) + allInelastics.at(k) / csIn; }
                         }
                     }
+                    // in the case of those materials the last energy and cross section assigned to it are stored in order to not calculate it twice when traversing through layers
                     if (material == 11) lastEnergy11 = energy;
                     if (material == 19) lastEnergy19 = energy;
                     if (material == 20) lastEnergy20 = energy;
@@ -8474,8 +8508,9 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 28: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rBF3, wBF3, sumCs, 0);   break;
                     case 29: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rGd2O3, wGd2O3, sumCs, 0);   break;
                     case 30: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rHDPE, wHDPE, sumCs, 0);   break;
-                    case 31: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rMethane, wMethane, sumCs, 0);   break;
+                    case 31: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rPVC, wPVC, sumCs, 0);   break;
                     case 32: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rEStahl, wEStahl, sumCs, 0);   break;
+                    case 33: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rMethane, wMethane, sumCs, 0);   break;
                     case 34: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rDiesel, wDiesel, sumCs, 0);   break;
                     case 36: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rGraphit, wGraphit, sumCs, 0);   break;
                     case 37: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rPb, wPb, sumCs, 0);   break;
@@ -8507,8 +8542,9 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 28:  weightThermal = wBF3;   break;
                     case 29:  weightThermal = wGd2O3;   break;
                     case 30:  weightThermal = wHDPE;   break;
-                    case 31:  weightThermal = wMethane;   break;
+                    case 31:  weightThermal = wPVC;   break;
                     case 32:  weightThermal = wEStahl;   break;
+                    case 33:  weightThermal = wMethane;   break;
                     case 34:  weightThermal = wHDPE;   break; //that is Diesel
                     case 36:  weightThermal = wGraphit;  break;
                     case 37:  weightThermal = wPb;  break;
@@ -9773,7 +9809,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                 else
                                                 {
                                                     //these are gases
-                                                    if ((material == 10) || (material == 11) || (material == 27) || (material == 28) || (material == 31))
+                                                    if ((material == 10) || (material == 11) || (material == 27) || (material == 28) || (material == 33))
                                                     {
                                                         //weightThermal = weight;
                                                         vNeutron = getThermalPDF(energyOld, weightThermal, 300., &r);
@@ -12577,7 +12613,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.04 (02.01.2023)<br> ";
+    messageString+=        "v1.05 (04.01.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 

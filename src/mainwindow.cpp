@@ -13121,7 +13121,7 @@ void MainWindow::on_lineEdit_WorkFolder_editingFinished()
  */
 void MainWindow::on_pushButton_6_clicked()
 {
-    QString messageString = "Available Materials like <br>  7 = Salt Water <br> 8 = Snow (0.03 g/cm<sup>3</sup>) <br> 9 = Water <br> 10 = Dry Air <br> 11 = Air with Humidity <br> 12 = Quarz <br> 20 = Soil with Soil Moisture <br> 21 = Plants <br> 23 = Cat Litter <br> 24 = Asphalt <br> 25 = HDPE  <br> 26 = Aluminum <br> 27 = Helium-3 <br> 28 = BF<sub>3</sub> <br> 29 = Gd<sub>2</sub>O<sub>3</sub> <br> 32 = Stainless Steel     <br><br> See full list in the Manual or in the file MaterialCodes.txt";
+    QString messageString = "Available Materials like <br>  7 = Salt Water <br> 8 = Snow (0.03 g/cm<sup>3</sup>) <br> 9 = Water <br> 10 = Dry Air <br> 11 = Air with Humidity <br> 12 = Quarz <br> 20 = Soil with Soil Moisture <br> 21 = Plants <br> 23 = Cat Litter <br> 24 = Asphalt <br> 25 = HDPE  <br> 26 = Aluminum <br> 27 = Helium-3 <br> 28 = BF<sub>3</sub> <br> 29 = Gd<sub>2</sub>O<sub>3</sub><br>  31 = HDPE   <br> 32 = Stainless Steel     <br>  33 = Methane  <br> <br> See full list in the Manual or in the file MaterialCodes.txt";
     QMessageBox::about(this, tr("Material List"), messageString);
 }
 

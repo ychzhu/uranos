@@ -13,9 +13,9 @@ Key features:
 - graphical user interface (optional) for the command line.
 - 3D voxel engine to allow the generation of complex environments
 
-## Use, discuss, contribute
+## Stay tuned, discuss, contribute
 
-In the **uranos-users mailing list**, users can ask questions, discuss, and contribute to the development of URANOS user community. Any news and updates from the developers will also broadcasted through this mailing list.
+In the **uranos-users mailing list**, users can ask questions, discuss, and contribute to the development of URANOS user community. Any news and updates from the developers will also be broadcasted through this mailing list.
 
 - [Subscribe now!](https://www.ufz.de/index.php?en=41538) (currently 24 recipients)
 

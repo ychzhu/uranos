@@ -15,9 +15,9 @@ Key features:
 
 ## Use, discuss, contribute
 
-In the **uranos-users mailing list**, users can ask questions, discuss, and contribute to the development of URANOS user community.
+In the **uranos-users mailing list**, users can ask questions, discuss, and contribute to the development of URANOS user community. Any news and updates from the developers will also broadcasted through this mailing list.
 
-- [Subscribe now!](https://www.ufz.de/index.php?en=41538)
+- [Subscribe now!](https://www.ufz.de/index.php?en=41538) (currently 24 recipients)
 
 ## Cite as
 

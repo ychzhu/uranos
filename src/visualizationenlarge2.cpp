@@ -15,16 +15,16 @@
 // variables for drawing the enlarged visulization view
 float squareDimV2 = 10;
 
-int horizontalSliderValue = 50;
-int horizontalSliderColorZeroValue = 0;
+int horizontalSliderValueV2 = 50;
+int horizontalSliderColorZeroValueV2 = 0;
 int manualColorZeroV2 = 0;
 int manualColorV2 = 0;
-int colorScheme = 0;
-int screenshotcounter = 1;
+int colorSchemeV2 = 0;
+int screenshotcounterV2 = 1;
 
 bool plotTopViewLogV2 = false;
 bool silderColorMovedV2 = false;
-bool useManualColor = false;
+bool useManualColorV2 = false;
 
 string workFolderV2;
 
@@ -48,12 +48,12 @@ void VisualizationEnlarge2::setSquareDimSize2(float squareDimSize)
 
 void VisualizationEnlarge2::sethorizontalSliderValue2(int value)
 {
-    horizontalSliderValue = value;
+    horizontalSliderValueV2 = value;
 }
 
 void VisualizationEnlarge2::sethorizontalSliderColorZeroValue2(int value)
 {
-    horizontalSliderColorZeroValue = value;
+    horizontalSliderColorZeroValueV2 = value;
 }
 
 void VisualizationEnlarge2::setmanualColorZero2(int value)
@@ -78,12 +78,12 @@ void VisualizationEnlarge2::setplotTopViewLog2(bool value)
 
 void VisualizationEnlarge2::setuseManualColor2(bool value)
 {
-    useManualColor = value;
+    useManualColorV2 = value;
 }
 
 void VisualizationEnlarge2::setColorScheme2(int value)
 {
-    colorScheme = value;
+    colorSchemeV2 = value;
 }
 
 void VisualizationEnlarge2::setWorkFolder2(string text)
@@ -244,16 +244,16 @@ void VisualizationEnlarge2::plotGraph2(TH2F* data, int size, float squareDimSize
         }
     }
 
-    float colorscaleMax = (horizontalSliderValue*1.)/99.*maximumWeight;
+    float colorscaleMax = (horizontalSliderValueV2*1.)/99.*maximumWeight;
     if (colorscaleMax < 1) colorscaleMax = 1;
 
-    if (colorScheme==0) {colorMap->setGradient(QCPColorGradient::gpJet); colorScale->setGradient(QCPColorGradient::gpJet);}
-    if (colorScheme==1) {colorMap->setGradient(QCPColorGradient::gpNight); colorScale->setGradient(QCPColorGradient::gpNight);}
-    if (colorScheme==2) {colorMap->setGradient(QCPColorGradient::gpCold); colorScale->setGradient(QCPColorGradient::gpCold);}
-    if (colorScheme==3) {colorMap->setGradient(QCPColorGradient::gpThermal); colorScale->setGradient(QCPColorGradient::gpThermal);}
-    if (colorScheme==4) {colorMap->setGradient(QCPColorGradient::gpHot); colorScale->setGradient(QCPColorGradient::gpHot);}
-    if (colorScheme==5) {colorMap->setGradient(QCPColorGradient::gpPolar); colorScale->setGradient(QCPColorGradient::gpPolar);}
-    if (colorScheme==6) {colorMap->setGradient(QCPColorGradient::gpGrayscale); colorScale->setGradient(QCPColorGradient::gpGrayscale);}
+    if (colorSchemeV2==0) {colorMap->setGradient(QCPColorGradient::gpJet); colorScale->setGradient(QCPColorGradient::gpJet);}
+    if (colorSchemeV2==1) {colorMap->setGradient(QCPColorGradient::gpNight); colorScale->setGradient(QCPColorGradient::gpNight);}
+    if (colorSchemeV2==2) {colorMap->setGradient(QCPColorGradient::gpCold); colorScale->setGradient(QCPColorGradient::gpCold);}
+    if (colorSchemeV2==3) {colorMap->setGradient(QCPColorGradient::gpThermal); colorScale->setGradient(QCPColorGradient::gpThermal);}
+    if (colorSchemeV2==4) {colorMap->setGradient(QCPColorGradient::gpHot); colorScale->setGradient(QCPColorGradient::gpHot);}
+    if (colorSchemeV2==5) {colorMap->setGradient(QCPColorGradient::gpPolar); colorScale->setGradient(QCPColorGradient::gpPolar);}
+    if (colorSchemeV2==6) {colorMap->setGradient(QCPColorGradient::gpGrayscale); colorScale->setGradient(QCPColorGradient::gpGrayscale);}
 
     colorMap->setInterpolate(true);
 
@@ -266,11 +266,11 @@ void VisualizationEnlarge2::plotGraph2(TH2F* data, int size, float squareDimSize
     }
     else
     {
-        if (horizontalSliderColorZeroValue == 0) { colorMap->setDataRange(QCPRange(minZ , colorscaleMax ));  colorScale->setDataRange(QCPRange(minZ,colorscaleMax));}
-        else { colorMap->setDataRange(QCPRange( (horizontalSliderColorZeroValue*1.)/99.*colorscaleMax , colorscaleMax ));  colorScale->setDataRange(QCPRange((horizontalSliderColorZeroValue*1.)/99.*colorscaleMax,colorscaleMax));}
+        if (horizontalSliderColorZeroValueV2 == 0) { colorMap->setDataRange(QCPRange(minZ , colorscaleMax ));  colorScale->setDataRange(QCPRange(minZ,colorscaleMax));}
+        else { colorMap->setDataRange(QCPRange( (horizontalSliderColorZeroValueV2*1.)/99.*colorscaleMax , colorscaleMax ));  colorScale->setDataRange(QCPRange((horizontalSliderColorZeroValueV2*1.)/99.*colorscaleMax,colorscaleMax));}
     }
 
-    if (useManualColor)
+    if (useManualColorV2)
     {
         colorMap->setDataRange(QCPRange(manualColorZeroV2,manualColorV2));
         colorScale->setDataRange(QCPRange(manualColorZeroV2,manualColorV2));
@@ -346,12 +346,12 @@ void VisualizationEnlarge2::on_pushButtonPNG2_clicked()
 
     originalPixmap = screen->grabWindow(ui->customPlotEnlarge2->winId());
 
-    QString fileName = QString::fromStdString(workFolderV2)+"/neutronHighResExport_"+QString::number(screenshotcounter)+".png";
+    QString fileName = QString::fromStdString(workFolderV2)+"/neutronHighResExport_"+QString::number(screenshotcounterV2)+".png";
 
     if (!originalPixmap.save(fileName))
     {
             QMessageBox::warning(this, tr("Save Error"), tr("The image could not be saved to \"%1\".").arg(QDir::toNativeSeparators(fileName)));
     }
-    screenshotcounter++;
+    screenshotcounterV2++;
 }
 

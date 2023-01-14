@@ -2,7 +2,7 @@
 **                                                                        **
 **  URANOS - Ultra RApid Neutron-Only Simulation                          **
 **  designed for Environmental Research                                   **
-**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Copyright (C) 2015-2023 Markus Koehli,                                **
 **  Physikalisches Institut, Heidelberg University, Germany               **
 **                                                                        **
 ****************************************************************************/
@@ -40,7 +40,6 @@ Double_t errf( Double_t *x, Double_t *par)
 
 
 // configures the ROOT output for plots
-
 void  rootlogon()
 {
     bool largeStyle = false;
@@ -1862,8 +1861,6 @@ double getEvaporationEnergy(double theta, TRandom* r)
 }
 
 
-
-
 /**
  * generates a random number in MeV from a moderated Californium source spectrum
  * pointer to an already seeded Random generator is needed
@@ -1964,7 +1961,7 @@ double getFissionEnergy2(TRandom* r)
  */
 vector<float> getThermalPDF(const double nEnergy, const float massElm, const float temperature, TRandom* r)
 {
-    float xRnd, rnd1 = 0, rnd2 = 0, rnd3 = 0, abszRnd, ordRnd;
+    float rnd1 = 0, rnd2 = 0, rnd3 = 0, abszRnd, ordRnd;
     vector<float> vNeutron;
     bool gotIt = false;
     bool takeTwo = false;
@@ -2637,8 +2634,9 @@ float getIndexPosition(const TMatrixF& matrix, double value, bool doLogSearch)
     return result;
 }
 
-
-
+double lastEnergy = 0;
+TMatrixF* lastMatrix;
+double lastcsInterpolated = 0;
 
 /**
  * searches a matrix for an energy value (first column) and returns a linearly extrapolated cross section value (second column)
@@ -2646,13 +2644,18 @@ float getIndexPosition(const TMatrixF& matrix, double value, bool doLogSearch)
  * @param energy
  * @returns - cross section value
  */
-double calcMeanCS(const TMatrixF& matrix, double energy)
+double calcMeanCS(TMatrixF& matrix, double energy)
 {
-    float position = getIndexPosition(matrix, energy, true);
+    //if ((&matrix == lastMatrix) && (energy == lastEnergy)) { return lastcsInterpolated; } // only works if the same cross section is read twice (which in practice never happens)
+    float position;
+    position = getIndexPosition(matrix, energy, true);
     int index = position;
     float frac = position - index;
-
-    return  (1. - frac) * matrix(index, 1) + frac * matrix(index + 1, 1);
+    double csInterpolated = (1. - frac) * matrix(index, 1) + frac * matrix(index + 1, 1);
+    lastcsInterpolated = csInterpolated;
+    lastMatrix = &matrix;
+    lastEnergy = energy;
+    return  csInterpolated;
 }
 
 /**

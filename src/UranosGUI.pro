@@ -63,7 +63,9 @@ unix: QMAKE_CXXFLAGS += -Wno-unused-function
 unix: QMAKE_CXXFLAGS += -Wno-misleading-indentation
 
 
-#QMAKE_CXXFLAGS += -openmp
+win32: QMAKE_CXXFLAGS += -openmp
+win32: QMAKE_LFLAGS += -fopenmp
+win32: LIBS += -fopenmp
 #unix: QMAKE_CXXFLAGS += -MM
 win32: QMAKE_CXXFLAGS += -MP
 

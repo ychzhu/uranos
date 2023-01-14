@@ -2,7 +2,7 @@
 **                                                                        **
 **  URANOS - Ultra RApid Neutron-Only Simulation                          **
 **  designed for Environmental Research                                   **
-**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Copyright (C) 2015-2023 Markus Koehli,                                **
 **  Physikalisches Institut, Heidelberg University, Germany               **
 **                                                                        **
 ****************************************************************************/

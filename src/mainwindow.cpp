@@ -2,7 +2,7 @@
 **                                                                        **
 **  URANOS - Ultra RApid Neutron-Only Simulation                          **
 **  designed for Environmental Research                                   **
-**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Copyright (C) 2015-2023 Markus Koehli,                                **
 **  Physikalisches Institut, Heidelberg University, Germany               **
 **                                                                        **
 ****************************************************************************/
@@ -15,6 +15,8 @@
 
 #include "TRandom3.h"
 #include "time.h"
+
+#include <omp.h>
 
 #include <vector>
 #include <QImage>
@@ -32,8 +34,10 @@
 #elif __linux_
 #endif
 
-#pragma warning (disable: 4018 4305)
-
+#ifdef _WIN32
+#pragma warning (disable: 4018 4101 4189 4305)
+#elif __linux_
+#endif
 
 //Initialization of Objects for data transfer
 //not yet in order
@@ -1358,7 +1362,7 @@ void MainWindow::setFocus(const QModelIndex& idx)
 }
 
 /**
- * Set up the table
+ * Set up the geometry table
  * @param table
  */
 void MainWindow::setupTable(QTableView* table)
@@ -1657,7 +1661,8 @@ void  MainWindow::redrawNeutronMap(double difftime)
 {
     TCanvas* myDummyCanvas = new TCanvas();
 
-    if (ui->tabWidget->isTabEnabled(3))
+    // detector tab
+    if (ui->tabWidget_live->currentIndex() == 3)
     {
         int elementCount = ui->customPlot10->plotLayout()->elementCount();
 
@@ -1729,7 +1734,6 @@ void  MainWindow::redrawNeutronMap(double difftime)
             float pixX, pixY, sumMatrixX, sumMatrixY, sumMatrixXp1, sumMatrixYp1;
 
             TMatrixF sumMatrix(unitCells, unitCells);
-
 
             for (int x = 0; x < 500; x += 1)
             {
@@ -1820,7 +1824,8 @@ void  MainWindow::redrawNeutronMap(double difftime)
         ui->customPlot10->replot();
     }
 
-    if (ui->tabWidget->isTabEnabled(1))
+    // bird's eye view tab
+    if (ui->tabWidget_live->currentIndex() == 0)
     {
         ui->customPlot2->clearPlottables();
 
@@ -1838,7 +1843,6 @@ void  MainWindow::redrawNeutronMap(double difftime)
         float minZ = 0;
 
         if (plotTopViewLog) minZ = 1;
-
 
         if (true)
         {
@@ -1944,7 +1948,7 @@ void  MainWindow::redrawNeutronMap(double difftime)
         if (ui->radioButton_NeutronThermal->isChecked()) { colorMap->setGradient(QCPColorGradient::gpPolar); }
         if (ui->radioButton_NeutronGrayScale->isChecked()) { colorMap->setGradient(QCPColorGradient::gpGrayscale); }
 
-        if (!silderColorMoved)
+        if ((!silderColorMoved) && ((!ui->checkBoxClearEveryDisplayRefresh->isChecked()) || (!ui->checkBoxSaveEvery_2->isChecked())))
         {
             if (entryWeight * 1.1 < 5) colorMap->setDataRange(QCPRange(minZ, 5));
             else colorMap->setDataRange(QCPRange(minZ, entryWeight * 1.1));
@@ -1956,24 +1960,27 @@ void  MainWindow::redrawNeutronMap(double difftime)
         }
 
         if (manualColorZero < minZ) manualColorZero = minZ;
+
+        int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorScaleMax;
+        int highColorValue = colorScaleMax;
+
         if (ui->checkBoxManual->isChecked())
         {
             useManualColors = true;
             colorMap->setDataRange(QCPRange(manualColorZero, manualColor));
         }
-        else useManualColors = false;
-
-        int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorScaleMax;
-        int highColorValue = colorScaleMax;
-
-        ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
-        ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+        else
+        {
+            useManualColors = false;
+            ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
+            ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+        }
 
         string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
         ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
 
         //colorMap->rescaleDataRange(true);
-        ui->customPlot2->rescaleAxes();
+        ui->customPlot2->rescaleAxes(); // colorMap
         ui->customPlot2->replot();
 
         if (visualization != 0x0)
@@ -1996,8 +2003,9 @@ void  MainWindow::redrawNeutronMap(double difftime)
         if (updateEnlargedView2)
         {
             redrawEnlargedView2();
-        }
+        }    
 
+        // spectrum plots
         ui->customPlot->graph(0)->data()->clear();
 
         bool rebingraph = false;
@@ -2034,8 +2042,11 @@ void  MainWindow::redrawNeutronMap(double difftime)
         ui->customPlot->update();
         ui->customPlot->rescaleAxes();
         ui->customPlot->replot();
+    }
 
-        ui->customPlot3->graph(0)->data()->clear();
+    if (ui->tabWidget_live->currentIndex() == 2)
+    {
+        ui->customPlot3->graph(0)->data()->clear();  // cut view
 
         if (showDensityTrackMap)               cutView = densityTrackMap->ProjectionX("proj", 240, 260);
         if (showDensityIntermediateTrackMap)   cutView = densityIntermediateTrackMap->ProjectionX("proj", 240, 260);
@@ -2063,12 +2074,16 @@ void  MainWindow::redrawNeutronMap(double difftime)
         ui->customPlot3->update();
         ui->customPlot3->rescaleAxes();
         ui->customPlot3->replot();
+    }
 
-        ui->customPlot4->graph(0)->data()->clear();
+    int allDetectorNeutrons = 0;
+    int allDetectorAlbedoNeutrons = 0;
+
+    if (ui->tabWidget_live->currentIndex() == 1)
+    {
+        ui->customPlot4->graph(0)->data()->clear(); // detector range distribution
         ui->customPlot4->graph(1)->data()->clear();
 
-        int allDetectorNeutrons = 0;
-        int allDetectorAlbedoNeutrons = 0;
         for (int i = 0; i < 4000 - 1; ++i)
         {
             ::plotGUIxBinsDistanceAlbedoDet[i] = detectorDistanceBackScattered->GetBinLowEdge(i + 1) * 0.001;
@@ -2105,8 +2120,11 @@ void  MainWindow::redrawNeutronMap(double difftime)
         ui->customPlot4->update();
         ui->customPlot4->rescaleAxes();
         ui->customPlot4->replot();
+    }
 
-        ui->customPlot5->graph(0)->data()->clear();
+    if (ui->tabWidget_live->currentIndex() == 2)
+    {
+        ui->customPlot5->graph(0)->data()->clear();  // depth of interaction
         ui->customPlot5->graph(1)->data()->clear();
 
         float maxDepthCount = 0;
@@ -2153,8 +2171,11 @@ void  MainWindow::redrawNeutronMap(double difftime)
         ui->customPlot5->update();
         ui->customPlot5->rescaleAxes();
         ui->customPlot5->replot();
+    }
 
-        ui->customPlot6->graph(0)->data()->clear();
+    if (ui->tabWidget_live->currentIndex() == 1)
+    {
+        ui->customPlot6->graph(0)->data()->clear();  //detector layer distance
 
         int allDetectorLayerNeutrons = 0;
         int allDetectorLayerAlbedoNeutrons = 0;
@@ -2243,9 +2264,9 @@ void  MainWindow::redrawNeutronMap(double difftime)
 
         if (ui->checkBoxAutoRefreshRate->isChecked())
         {
-            if (((refreshTime * npers) / refreshCycle > 1.2) || ((refreshTime * npers) / refreshCycle < 0.8))
+            if (((refreshTime * npers) / refreshCycle > 1.1) || ((refreshTime * npers) / refreshCycle < 0.9))
             {
-                refreshCycle = refreshTime * npers;
+                refreshCycle = refreshTime * npers; if (refreshCycle < 10) refreshCycle = 10;
                 ui->lineEditRefresh->setText(QString::fromStdString((string)castIntToString(refreshCycle)));
             }
         }
@@ -3712,7 +3733,6 @@ void declareNewData()
  *
  * @param vectorTH .
  */
-
 void histoLiveClearUp(vector< TH1* >* vectorTH)
 {
     for (int k = 0; k < vectorTH->size(); k++)
@@ -3747,7 +3767,6 @@ float oldTemperature = 0;
 double rLuftDensity = 0;
 double rLuftWaterDensity = 0;
 double rLuftWater = 0, rLuft = 0;
-
 
 /**
  *  Formula: ps = exp(-6094.4642/T + 21.1249952 - 0.027245552*T + 1.6853396*10-5*T^2 + 2.4575506*ln(T))
@@ -3784,7 +3803,6 @@ double csMatrixNPpreviousEnergy, csMatrixNPpreviousCS;
 double csMatrixOabsPpreviousEnergy, csMatrixOabsPpreviousCS;
 double csMatrixHabsPpreviousEnergy, csMatrixHabsPpreviousCS;
 double csMatrixNabsPpreviousEnergy, csMatrixNabsPpreviousCS;
-
 
 /**
  * draws a function, mainly used for legendre polynomials
@@ -3842,7 +3860,6 @@ double getAmBeEnergy(TRandom* r)
     }
     return abszRnd;
 }
-
 
 
 /**
@@ -3952,7 +3969,6 @@ void modifyCSmatrix(TMatrixF* sigmaMatrix, float factorLowE, float factorHighE)
         if (energy >= 1E6) (*sigmaMatrix)(l, 1) = sigma + sigma * factorHighE;
     }
 }
-
 
 
 /**
@@ -5318,7 +5334,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                 intSum = 0;
 
                 //ofstream dOutputFile;
-
                 //if (k==0)    dOutputFile.open (outputFolder+"spectrum.dat", ios::out | ios::app);
 
                 for (Int_t l = 0; l < supportPts; l++)
@@ -5406,7 +5421,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             }
         }
 
-        if (!noGUIMode) {uiM->setStatus(1, "Generating Detector Model");        delay(50);}
+        if (!noGUIMode) {uiM->setStatus(1, "Generating Detector Model");        delay(5);}
 
         TSpline3* detectorEnergyModel;
         if (detectorResponseFunctionFile.Length() < 8)
@@ -5744,9 +5759,9 @@ bool cosmicNSimulator(MainWindow* uiM)
         Float_t wCelluloseMix = rCelluloseMix /(nCelluloseMix); if (wCelluloseMix == 0) wCelluloseMix = 1.;
 
 
-        double asHLast = 0, asOLast = 0, asNLast = 0, asArLast = 0, asSiLast = 0, asAlLast = 0, asB10Last = 0;
-        double csHLast = 0, csOLast = 0, csNLast = 0, csArLast = 0, csSiLast = 0, csAlLast = 0, csB10Last = 0;
-        double lastEnergy = 0, lastEnergy11 = 0, lastEnergy19 = 0, lastEnergy20 = 0;
+        double asHLast = 0, asOLast = 0, asNLast = 0, asArLast = 0, asSiLast = 0, asAlLast = 0, asB10Last = 0, asCLast = 0;
+        double csHLast = 0, csOLast = 0, csNLast = 0, csArLast = 0, csSiLast = 0, csAlLast = 0, csB10Last = 0, csCLast = 0;
+        double lastEnergy = 0, lastEnergy11 = 0, lastEnergy19 = 0, lastEnergy20 = 0, lastEnergy25 = 0;
 
         float nSalt = 1.;
         float saltConcentration = 3.5; // %
@@ -6625,7 +6640,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             // //////////////////// MAIN LOOP
             long n;
             // start the simulation
-            // #pragma omp parallel for
+            //#pragma omp parallel for
             for (n = 0; n < neutrons + 1; n++)
             {
                 if (n == 0)
@@ -6648,7 +6663,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     //time (&oldTime);
                 }
 
-                if ((n % (refreshCycle / 10) == 0) && (n > 9))
+                if ((n % (refreshCycle / 5 ) == 0) && (n > 9))
                 {
                     if (!noGUIMode) delay(1);
                 }
@@ -6772,8 +6787,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                             if (useHomogenousSpectrum) gotIt = true;
                             gotItCounter++;
                             if (gotItCounter > 1000) gotIt = true;
-                        }
-                        //
+                        }                        
                     }
                     else
                     {
@@ -7127,16 +7141,16 @@ bool cosmicNSimulator(MainWindow* uiM)
                     {
                         if (!noGUIMode)
                         {
-                            if (n % 10000 == 0) delay(2);
-                            if (n % 50000 == 0) delay(3);
+                            if (n % 10000 == 0) delay(1);
+                            if (n % 50000 == 0) delay(1);
                         }
                     }
                     else
                     {
                         if (!noGUIMode)
                         {
-                            if (n % 2000 == 0) delay(2);
-                            if (n % 10000 == 0) delay(3);
+                            if (n % 2000 == 0) delay(1);
+                            if (n % 10000 == 0) delay(1);
                         }
                     }
 
@@ -7257,10 +7271,10 @@ bool cosmicNSimulator(MainWindow* uiM)
                     allBoden.clear(); allBodenElements.clear(); allPlants.clear(); allPlantsElements.clear(); allMaterials.clear(); allMaterialsElements.clear(); allAbsorptionMaterials.clear(); allAbsorptionMaterialsElements.clear();
                     inelasticEnergyLossVec.clear();
                     scatteredInelastic = false; sAbsorbed = false; scatteredElastic = false; scatteredEvaporating = false; absorbBreak = false;
-                    asAll = 0; csIn = 0; inelasticEnergyLoss = 0; wwRangeIn = 1e9; wwRangeSi = 1e9;
+                    asAll = 0; csIn = 0; inelasticEnergyLoss = 0; //wwRangeIn = 1e9; wwRangeSi = 1e9;
                     weight = 10; element = 15;
 
-                    if (glayerCounter > 30000) { cout << "!"; break; }
+                    if (glayerCounter > 30000) { cout << "-!"; break; }
 
                     if ((pausehere) && (!godzillaMode))
                     {
@@ -7388,7 +7402,6 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if ((domainCutoff || domainCutoff2) && (energy < 20))
                     {
-
                         if (domainCutoff)
                         {
                             if (x < -domainCutoffFactor * squareDim) break;
@@ -7586,7 +7599,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                     materialNotFound = false;
                                 }
 
-                                if ((inputMatrixValue > 239) && (inputMatrixValue < 240))
+                                if ((inputMatrixValue > 239) && (inputMatrixValue < 240)) // deprecated for now
                                 {
                                     material = inputMatrixValue; materialNotFound = false;
                                 }
@@ -7710,16 +7723,16 @@ bool cosmicNSimulator(MainWindow* uiM)
                         cs = 2. * (0.78 * csN + 0.21 * csO) + 0.0093 * csAr;
                         break;
                     case 11: if (energy == lastEnergy11) { csH = csHLast; csO = csOLast; csN = csNLast; csAr = csArLast; }
-                           else
-                           {
+                        else
+                        {
                            csN = calcMeanCS(sigmaN, energy * 1e6);  csH = calcMeanCS(sigmaH, energy * 1e6);  csO = calcMeanCS(sigmaO, energy * 1e6); csAr = calcMeanCS(sigmaAr, energy * 1e6);
                            csHLast = csH; csOLast = csO; csNLast = csN; csArLast = csAr;
-                           }
-                           csLuft = 2. * (0.78 * csN + 0.21 * csO) + 0.0093 * csAr;
-                           csW = csO + 2. * csH;
-                           rLuftWater = absHumidityAir / 1e6;
-                           cs = csLuft * rLuft / wLuft + csW * rLuftWater / wWater;
-                           break;
+                        }
+                        csLuft = 2. * (0.78 * csN + 0.21 * csO) + 0.0093 * csAr;
+                        csW = csO + 2. * csH;
+                        rLuftWater = absHumidityAir / 1e6;
+                        cs = csLuft * rLuft / wLuft + csW * rLuftWater / wWater;
+                        break;
                     case 12: csSi = calcMeanCS(sigmaSi, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         cs = 2. * csO + csSi;
                         break;
@@ -7740,17 +7753,19 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 19: //if (energy==lastEnergy19){csH = csHLast; csO = csOLast; csAl = csAlLast; csSi = csSiLast;}
                              //else{
                         csAl = calcMeanCS(sigmaAl, energy * 1e6);  csSi = calcMeanCS(sigmaSi, energy * 1e6); csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); //csB10 = calcMeanCS(sigmaB10,energy*1e6);
-                        csHLast = csH; csOLast = csO; csAlLast = csAl; csSiLast = csSi; //csB10Last = csB10; //lastEnergy20 = energy;
+                        csHLast = csH; csOLast = csO; csAlLast = csAl; csSiLast = csSi; //csB10Last = csB10;
                         //}
                         //cs = (soilSiFrac*csSi+2.*soilAlFrac*csAl)*soilSolidFracVar+csO*(2.25*soilSolidFracVar+soilWaterFrac)+2.*csH*soilWaterFrac;
                         csSolids = (soilSiFrac * csSi + 2. * soilAlFrac * csAl) * soilSolidFracVar + ((soilSiFrac * 2. + 3. * soilAlFrac) * csO) * soilSolidFracVar;
                         csW = (2. * csH + csO) * soilWaterFrac;
                         cs = csSolids + csW * soilStrechFactor;
                         break;
-                    case 20: //if (energy==lastEnergy20){csH = csHLast; csO = csOLast; csAl = csAlLast; csSi = csSiLast;}
-                             //else{
-                        csAl = calcMeanCS(sigmaAl, energy * 1e6);  csSi = calcMeanCS(sigmaSi, energy * 1e6); csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
-                        csHLast = csH; csOLast = csO; csAlLast = csAl; csSiLast = csSi; //lastEnergy20 = energy;
+                    case 20: if (energy == lastEnergy20){csH = csHLast; csO = csOLast; csAl = csAlLast; csSi = csSiLast;}
+                        else
+                        {
+                            csAl = calcMeanCS(sigmaAl, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6); csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                        }
+                        csHLast = csH; csOLast = csO; csAlLast = csAl; csSiLast = csSi;
                         //}
                         //cs = (soilSiFrac*csSi+2.*soilAlFrac*csAl)*soilSolidFracVar+csO*(2.25*soilSolidFracVar+soilWaterFrac)+2.*csH*soilWaterFrac;
                         csSolids = (soilSiFrac * csSi + 2. * soilAlFrac * csAl) * soilSolidFracVar + ((soilSiFrac * 2. + 3. * soilAlFrac) * csO) * soilSolidFracVar;
@@ -7772,7 +7787,11 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 24: csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
                         cs = 0.14 * csH + 0.5 * csO + 0.11 * csC + 0.25 * csSi;
                         break;
-                    case 25: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                    case 25:
+                        if (energy == lastEnergy25){csH = csHLast; csC = csCLast;}
+                        else
+                        {csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);}
+                        csHLast = csH; csCLast = csC;
                         cs = 2. * csH + csC;
                         break;
                     case 26: csAl = calcMeanCS(sigmaAl, energy * 1e6);
@@ -7848,13 +7867,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                                  */
                     case 11: if (energy == lastEnergy11) { asH = asHLast; asO = asOLast; asN = asNLast; asAr = asArLast; }
                            else
-                            {
+                           {
                             asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
                             asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                             asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
                             asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
                             asHLast = asH; asOLast = asO; asNLast = asN; asArLast = asAr;
-                            }
+                           }
                            asLuft = 0.78 * 2. * asN + 0.21 * 2. * asO + 0.0093 * asAr;
                            asWater = asO + 2. * asH;
                            asAll = asLuft * rLuft / wLuft + asWater * rLuftWater / wWater;
@@ -7893,7 +7912,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                         asAll = asSolids + asWater * soilWaterFrac * soilStrechFactor + wBoden / rBoden * 1e-6 * asAdd;
                         break;
                     case 19: if (energy == lastEnergy19) { asH = asHLast; asO = asOLast; asAl = asAlLast; asSi = asSiLast; asB10Last = asB10; }
-                           else {
+                        else
+                        {
                         asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
                         asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
@@ -7907,7 +7927,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                            asAll = asSolids + asWater * soilWaterFrac * soilStrechFactor + asB10 * rBoronInSoil * 1e-6 * wBoden / rBoden / wBoron;
                            break;
                     case 20: if (energy == lastEnergy20) { asH = asHLast; asO = asOLast; asAl = asAlLast; asSi = asSiLast; }
-                           else {
+                        else
+                        {
                         asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
                         asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
@@ -7940,8 +7961,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                         asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asAll = 0.5 * asO + 0.14 * asH + 0.11 * asC + 0.25 * asSi;
                         break;
-                    case 25: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                    case 25: if (energy == lastEnergy25) { asH = asHLast; asC = asCLast; }
+                        else
+                        {
+                            asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                            asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        }
+                        asHLast = asH; asCLast = asC;
                         asAll = 2. * asH + 1. * asC;
                         break;
                     case 26: asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
@@ -8368,10 +8394,9 @@ bool cosmicNSimulator(MainWindow* uiM)
                               for (int k = 0; k < sigmaInNaVec.size(); k++) { allInelastics.push_back(nSalt * calcMeanCS(*(sigmaInNaVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInNaAngularVec.at(k))); allInelasticElements.push_back(23); inelasticEnergyLossVec.push_back(inelasticEnergyLossNa.at(k)); };
                               for (int k = 0; k < sigmaInCl35Vec.size(); k++) { allInelastics.push_back(nSalt * calcMeanCS(*(sigmaInCl35Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCl35AngularVec.at(k))); allInelasticElements.push_back(35); inelasticEnergyLossVec.push_back(inelasticEnergyLossCl35.at(k)); } break;
                         case 9: {for (int  k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16); inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); }; } break;
-
-                        case 10: {for (int k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back(0.21 * 2. * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16); inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); };
+                        case 10: for (int k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back(0.21 * 2. * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16); inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); };
                                for (int k = 0; k < sigmaInNVec.size(); k++) { allInelastics.push_back(0.78 * 2. * calcMeanCS(*(sigmaInNVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInNAngularVec.at(k))); allInelasticElements.push_back(14); inelasticEnergyLossVec.push_back(inelasticEnergyLossN.at(k)); };
-                               for (int k = 0; k < sigmaInArVec.size(); k++) { allInelastics.push_back(0.0093 * calcMeanCS(*(sigmaInArVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInArAngularVec.at(k))); allInelasticElements.push_back(40); inelasticEnergyLossVec.push_back(inelasticEnergyLossAr.at(k)); }; } break;
+                               for (int k = 0; k < sigmaInArVec.size(); k++) { allInelastics.push_back(0.0093 * calcMeanCS(*(sigmaInArVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInArAngularVec.at(k))); allInelasticElements.push_back(40); inelasticEnergyLossVec.push_back(inelasticEnergyLossAr.at(k)); };  break;
                         case 11: if (energy == lastEnergy11) { allInelastics = allInelastics11; allInelasticAngulars = allInelasticAngulars11; allInelasticElements = allInelasticElements11; inelasticEnergyLossVec = inelasticEnergyLossVec11; }
                                else {
                                for (int k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back((0.21 * 2. * rLuft / wLuft + rLuftWater / wWater) * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16); inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); };
@@ -8383,7 +8408,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         case 12: { for (int  k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back(2. * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16); inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); }; }
                                for (int k = 0; k < sigmaInSiVec.size(); k++) { allInelastics.push_back(calcMeanCS(*(sigmaInSiVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInSiAngularVec.at(k))); allInelasticElements.push_back(28); inelasticEnergyLossVec.push_back(inelasticEnergyLossSi.at(k)); } break;
                         case 13: { for (int  k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back(3. * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16); inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); }; }
-                        { for (int  k = 0; k < sigmaInAlVec.size(); k++) { allInelastics.push_back(2. * calcMeanCS(*(sigmaInAlVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInAlAngularVec.at(k))); allInelasticElements.push_back(27); inelasticEnergyLossVec.push_back(inelasticEnergyLossAl.at(k)); }; } break;
+                                { for (int  k = 0; k < sigmaInAlVec.size(); k++) { allInelastics.push_back(2. * calcMeanCS(*(sigmaInAlVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInAlAngularVec.at(k))); allInelasticElements.push_back(27); inelasticEnergyLossVec.push_back(inelasticEnergyLossAl.at(k)); }; } break;
                         case 15: { for (int  k = 0; k < sigmaInFeVec.size(); k++) { allInelastics.push_back(calcMeanCS(*(sigmaInFeVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInFeAngularVec.at(k))); allInelasticElements.push_back(56); inelasticEnergyLossVec.push_back(inelasticEnergyLossFe.at(k)); }; } break;
                         case 18: for (int k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back((2.25 * soilSolidFracVar + soilStrechFactor * soilWaterFrac) * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16);  inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); }
                                for (int k = 0; k < sigmaInSiVec.size(); k++) { allInelastics.push_back(soilSiFrac * soilSolidFracVar * calcMeanCS(*(sigmaInSiVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInSiAngularVec.at(k))); allInelasticElements.push_back(28); inelasticEnergyLossVec.push_back(inelasticEnergyLossSi.at(k)); }
@@ -8400,13 +8425,13 @@ bool cosmicNSimulator(MainWindow* uiM)
                                for (int k = 0; k < sigmaInSiVec.size(); k++) { allInelastics.push_back(soilSiFrac * soilSolidFracVar * calcMeanCS(*(sigmaInSiVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInSiAngularVec.at(k))); allInelasticElements.push_back(28); inelasticEnergyLossVec.push_back(inelasticEnergyLossSi.at(k)); }
                                for (int k = 0; k < sigmaInAlVec.size(); k++) { allInelastics.push_back(2. * soilAlFrac * soilSolidFracVar * calcMeanCS(*(sigmaInAlVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInAlAngularVec.at(k))); allInelasticElements.push_back(27); inelasticEnergyLossVec.push_back(inelasticEnergyLossAl.at(k)); }
                                break;
-                        case 20: //if (energy == lastEnergy20){allInelastics = allInelastics20; allInelasticAngulars = allInelasticAngulars20; allInelasticElements = allInelasticElements20; inelasticEnergyLossVec = inelasticEnergyLossVec20;}
-                                 //else {
+                        case 20: if (energy == lastEnergy20){allInelastics = allInelastics20; allInelasticAngulars = allInelasticAngulars20; allInelasticElements = allInelasticElements20; inelasticEnergyLossVec = inelasticEnergyLossVec20;}
+                                else {
                                 for (int k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back((2.25 * soilSolidFracVar + soilStrechFactor * soilWaterFrac) * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16);  inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); }
                                 for (int k = 0; k < sigmaInSiVec.size(); k++) { allInelastics.push_back(soilSiFrac * soilSolidFracVar * calcMeanCS(*(sigmaInSiVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInSiAngularVec.at(k))); allInelasticElements.push_back(28); inelasticEnergyLossVec.push_back(inelasticEnergyLossSi.at(k)); }
                                 for (int k = 0; k < sigmaInAlVec.size(); k++) { allInelastics.push_back(2. * soilAlFrac * soilSolidFracVar * calcMeanCS(*(sigmaInAlVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInAlAngularVec.at(k))); allInelasticElements.push_back(27); inelasticEnergyLossVec.push_back(inelasticEnergyLossAl.at(k)); }
-                                //allInelastics20 = allInelastics; allInelasticAngulars20 = allInelasticAngulars; allInelasticElements20 = allInelasticElements; inelasticEnergyLossVec20 = inelasticEnergyLossVec;
-                                //}
+                                allInelastics20 = allInelastics; allInelasticAngulars20 = allInelasticAngulars; allInelasticElements20 = allInelasticElements; inelasticEnergyLossVec20 = inelasticEnergyLossVec;
+                                }
                             break;
                         case 21: for (int k = 0; k < sigmaInOVec.size(); k++) { allInelastics.push_back((0.21 * 2. * rLuft / wLuft + rLuftWater / wWater + rPlants / wPlants) * calcMeanCS(*(sigmaInOVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInOAngularVec.at(k))); allInelasticElements.push_back(16);  inelasticEnergyLossVec.push_back(inelasticEnergyLossO.at(k)); };
                                for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(0.2 * rPlants / wPlants * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }
@@ -8458,9 +8483,11 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
                     // in the case of those materials the last energy and cross section assigned to it are stored in order to not calculate it twice when traversing through layers
+                    lastEnergy11 = 0; lastEnergy19 = 0; lastEnergy20 = 0; lastEnergy25 = 0;
                     if (material == 11) lastEnergy11 = energy;
                     if (material == 19) lastEnergy19 = energy;
                     if (material == 20) lastEnergy20 = energy;
+                    if (material == 25) lastEnergy25 = energy;
 
                     lastEnergy = energy;
 
@@ -8625,8 +8652,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-
-                    if (((drawDensityMap) && (g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride))
+                   if (((drawDensityMap) && (g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride))
                    {
                         if (((useDetectorSensitiveMaterial) && (material == detectorSensitiveMaterial)) || (!useDetectorSensitiveMaterial))
                         {
@@ -8830,7 +8856,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 {
                                     tValue = intersectCylinderMantle(x, y, z0, theta, phi, detPosX[lCounter], detPosY[lCounter], detectorHeight, detRad);
 
-                                    if ((z0 + tValue * cos(theta) < tempzEnd) && (z0 + tValue * cos(theta) > tempz))
+                                    if (((z0 + tValue * cosTheta) < tempzEnd) && ((z0 + tValue * cosTheta) > tempz))
                                     {
                                         xIs = x + tValue * sin(theta) * cosPhi;
                                         yIs = y + tValue * sin(theta) * sinPhi;
@@ -8922,7 +8948,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                             if (hasPassedSurface) detectorDistanceEnergy->Fill(xySqrt, energy);
                             if (hasPassedSurface) detectorSpectrumOriginMoisture->Fill(moistureAtInterface);
                         }
-
 
                         if (detFileOutput)
                         {
@@ -9826,14 +9851,6 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                     }
                                                     else
                                                     {
-                                                        /*
-                                                        vNeutron = getThermalPDF(energyOld, weightThermal, 300., &r);
-                                                        thetaCMS = TMath::ACos(vNeutron.at(1));
-                                                        //energyNew = vNeutron.at(0)/1e6;
-                                                        alpha = TMath::Power( (weightThermal-1.) / (weightThermal+1.),2);
-                                                        energyNew = 0.5*(1.+alpha+(1.-alpha)*TMath::Cos(thetaCMS))*vNeutron.at(0)/1e6;
-                                                        */
-
                                                         thetaCMS = TMath::ACos(2. * r.Rndm() - 1.);
                                                         if (false)
                                                         {
@@ -9842,7 +9859,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                         }
                                                         else
                                                         {
-                                                            //energyNew = getThermalEnergyFromSource(spectrumMaxwellPhiTempModMod, &r)/1e6*1.0;
+                                                            //energyNew = getThermalEnergyFromSource(spectrumMaxwellPhiTempModMod, &r)/1e6*1.0; // deprecated
                                                             energyNew = getThermalEnergy(spectrumMaxwellPhiLinMod, &r);
                                                             if (energyNew > thermalcutoff) energyNew = getThermalEnergy(spectrumMaxwellPhiLinMod, &r);
                                                             if (energyNew > thermalcutoff) energyNew = getThermalEnergy(spectrumMaxwellPhiLinMod, &r);
@@ -10454,6 +10471,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                             try
                             {
+                                //#pragma omp for
                                 for (int nt = 0; nt < (neutronTrackCoordinates.size() - 9); nt += 9)
                                 {
                                     thetaTr = neutronTrackCoordinates.at(3 + nt);
@@ -10924,6 +10942,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         int minutesEnd = dif / 60;
         int hoursEnd = minutesEnd / 60;
         cout << endl << "Runtime: " << castDoubleToString(dif) << " s (" << int(hoursEnd) <<" h, "<< int(minutesEnd%60) <<" min, " << int(secondsEnd%60) <<" s)" << endl << endl;
+
         if (doTheCoastalTransect)
         {
             TString detOutput = castIntToString(detd) + "\t" + castIntToString(detc) + "\t" + castIntToString(detb) + "\t" + castIntToString(deta) + "\t" + castIntToString(det0)
@@ -11808,7 +11827,7 @@ void MainWindow::redrawSideView()
  */
 void MainWindow::redrawTopView()
 {
-    if (ui->tabWidget->isTabEnabled(3))
+    if (ui->tabWidget_live->currentIndex() == 3)
     {
         int elementCount = ui->customPlot10->plotLayout()->elementCount();
 
@@ -11971,190 +11990,197 @@ void MainWindow::redrawTopView()
         ui->customPlot10->replot();
     }
 
-    ui->customPlot2->clearPlottables();
-
-    QCPColorMap* colorMap = new QCPColorMap(ui->customPlot2->xAxis, ui->customPlot2->yAxis);
-
-    if (plotTopViewLog) { colorMap->setDataScaleType(QCPAxis::stLogarithmic); }
-
-    colorMap->data()->setSize(250, 250);
-    colorMap->data()->setRange(QCPRange(-::squareDim * 0.5 * 0.001, ::squareDim * 0.5 * 0.001), QCPRange(-::squareDim * 0.5 * 0.001, ::squareDim * 0.5 * 0.001));
-
-    double allEntries = 0;
-    long allEntriesInt = 0;
-    double allEntriesMaximum = 0;
-    float actualEntry = 0;
-    float minZ = 0;
-
-    if (plotTopViewLog) minZ = 1;
-
-    if (ui->checkBoxGradient2->isChecked())
+    if (ui->tabWidget_live->currentIndex() == 0)
     {
-        TH2F* densityMapCopy = new TH2F();
-        TH2F* densityMapRed = new TH2F();
+        ui->customPlot2->clearPlottables();
 
-        if (showDensityMap) { densityMapRed = (TH2F*)densityMap->Clone(""); densityMapCopy = (TH2F*)densityMap->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
-        if (showDensityMapIntermediate) { densityMapRed = (TH2F*)densityMapIntermediate->Clone(""); densityMapCopy = (TH2F*)densityMapIntermediate->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
-        if (showDensityMapFast) { densityMapRed = (TH2F*)densityMapFast->Clone(""); densityMapCopy = (TH2F*)densityMapFast->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
-        if (showDensityMapAlbedo) { densityMapRed = (TH2F*)densityMapAlbedo->Clone(""); densityMapCopy = (TH2F*)densityMapAlbedo->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
+        QCPColorMap* colorMap = new QCPColorMap(ui->customPlot2->xAxis, ui->customPlot2->yAxis);
 
-        for (int x = 0; x < 250; x += 1)
+        if (plotTopViewLog) { colorMap->setDataScaleType(QCPAxis::stLogarithmic); }
+
+        colorMap->data()->setSize(250, 250);
+        colorMap->data()->setRange(QCPRange(-::squareDim * 0.5 * 0.001, ::squareDim * 0.5 * 0.001), QCPRange(-::squareDim * 0.5 * 0.001, ::squareDim * 0.5 * 0.001));
+
+        double allEntries = 0;
+        long allEntriesInt = 0;
+        double allEntriesMaximum = 0;
+        float actualEntry = 0;
+        float minZ = 0;
+
+        if (plotTopViewLog) minZ = 1;
+
+        if (ui->checkBoxGradient2->isChecked())
         {
-            for (int y = 0; y < 250; y += 1)
+            TH2F* densityMapCopy = new TH2F();
+            TH2F* densityMapRed = new TH2F();
+
+            if (showDensityMap) { densityMapRed = (TH2F*)densityMap->Clone(""); densityMapCopy = (TH2F*)densityMap->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
+            if (showDensityMapIntermediate) { densityMapRed = (TH2F*)densityMapIntermediate->Clone(""); densityMapCopy = (TH2F*)densityMapIntermediate->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
+            if (showDensityMapFast) { densityMapRed = (TH2F*)densityMapFast->Clone(""); densityMapCopy = (TH2F*)densityMapFast->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
+            if (showDensityMapAlbedo) { densityMapRed = (TH2F*)densityMapAlbedo->Clone(""); densityMapCopy = (TH2F*)densityMapAlbedo->Clone(""); densityMapCopy->RebinX(2); densityMapCopy->RebinY(2); densityMapRed->RebinX(2); densityMapRed->RebinY(2); getGradientMatrixFromTH2(densityMapRed, densityMapCopy); }
+
+            for (int x = 0; x < 250; x += 1)
             {
-                actualEntry = densityMapCopy->GetBinContent(x, y);
-                colorMap->data()->setCell((int)x, (int)y, actualEntry);
-                allEntries += actualEntry;
-                if (actualEntry > allEntriesMaximum) allEntriesMaximum = actualEntry;
+                for (int y = 0; y < 250; y += 1)
+                {
+                    actualEntry = densityMapCopy->GetBinContent(x, y);
+                    colorMap->data()->setCell((int)x, (int)y, actualEntry);
+                    allEntries += actualEntry;
+                    if (actualEntry > allEntriesMaximum) allEntriesMaximum = actualEntry;
+                }
             }
+
+            entryWeight = (allEntries * 1.) / 250. / 250. * 2.; maximumWeight = 2. * allEntriesMaximum;
+
+            delete densityMapCopy;
+            delete densityMapRed;
+        }
+        else
+        {
+            for (int x = 0; x < 500; x += 2)
+            {
+                for (int y = 0; y < 500; y += 2)
+                {
+                    if (showDensityTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityTrackMap->GetBinContent(x, y) + ::densityTrackMap->GetBinContent(x + 1, y) + ::densityTrackMap->GetBinContent(x, y + 1) + ::densityTrackMap->GetBinContent(x + 1, y + 1));
+                    if (showDensityIntermediateTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityIntermediateTrackMap->GetBinContent(x, y) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y) + ::densityIntermediateTrackMap->GetBinContent(x, y + 1) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y + 1));
+                    if (showDensityFastTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityFastTrackMap->GetBinContent(x, y) + ::densityFastTrackMap->GetBinContent(x + 1, y) + ::densityFastTrackMap->GetBinContent(x, y + 1) + ::densityFastTrackMap->GetBinContent(x + 1, y + 1));
+                    if (showDensityAlbedoTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityAlbedoTrackMap->GetBinContent(x, y) + ::densityAlbedoTrackMap->GetBinContent(x + 1, y) + ::densityAlbedoTrackMap->GetBinContent(x, y + 1) + ::densityAlbedoTrackMap->GetBinContent(x + 1, y + 1));
+
+                    if (showDensityEnergyTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityEnergyTrackMap->GetBinContent(x, y) + ::densityEnergyTrackMap->GetBinContent(x + 1, y) + ::densityEnergyTrackMap->GetBinContent(x, y + 1) + ::densityEnergyTrackMap->GetBinContent(x + 1, y + 1));
+
+                    if (showDensityThermalTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityThermalTrackMap->GetBinContent(x, y) + ::densityThermalTrackMap->GetBinContent(x + 1, y) + ::densityThermalTrackMap->GetBinContent(x, y + 1) + ::densityThermalTrackMap->GetBinContent(x + 1, y + 1));
+                    if (showDensityMapThermal)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapThermal->GetBinContent(x, y) + ::densityMapThermal->GetBinContent(x + 1, y) + ::densityMapThermal->GetBinContent(x, y + 1) + ::densityMapThermal->GetBinContent(x + 1, y + 1));
+
+                    if (showDensityMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMap->GetBinContent(x, y) + ::densityMap->GetBinContent(x + 1, y) + ::densityMap->GetBinContent(x, y + 1) + ::densityMap->GetBinContent(x + 1, y + 1));
+                    if (showDensityMapIntermediate)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapIntermediate->GetBinContent(x, y) + ::densityMapIntermediate->GetBinContent(x + 1, y) + ::densityMapIntermediate->GetBinContent(x, y + 1) + ::densityMapIntermediate->GetBinContent(x + 1, y + 1));
+                    if (showDensityMapFast)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapFast->GetBinContent(x, y) + ::densityMapFast->GetBinContent(x + 1, y) + ::densityMapFast->GetBinContent(x, y + 1) + ::densityMapFast->GetBinContent(x + 1, y + 1));
+                    if (showDensityMapAlbedo)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapAlbedo->GetBinContent(x, y) + ::densityMapAlbedo->GetBinContent(x + 1, y) + ::densityMapAlbedo->GetBinContent(x, y + 1) + ::densityMapAlbedo->GetBinContent(x + 1, y + 1));
+
+                }
+            }
+
+            if (showDensityTrackMap) { entryWeight = (densityTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityTrackMap->GetBinContent(densityTrackMap->GetMaximumBin()); }
+            if (showDensityIntermediateTrackMap) { entryWeight = (densityIntermediateTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityIntermediateTrackMap->GetBinContent(densityIntermediateTrackMap->GetMaximumBin()); }
+            if (showDensityFastTrackMap) { entryWeight = (densityFastTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityFastTrackMap->GetBinContent(densityFastTrackMap->GetMaximumBin()); }
+            if (showDensityAlbedoTrackMap) { entryWeight = (densityAlbedoTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityAlbedoTrackMap->GetBinContent(densityAlbedoTrackMap->GetMaximumBin()); }
+
+            if (showDensityEnergyTrackMap) { entryWeight = (densityEnergyTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityEnergyTrackMap->GetBinContent(densityEnergyTrackMap->GetMaximumBin()); }
+
+            if (showDensityThermalTrackMap) { entryWeight = (densityThermalTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityThermalTrackMap->GetBinContent(densityThermalTrackMap->GetMaximumBin()); }
+            if (showDensityMapThermal) { entryWeight = (densityMapThermal->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapThermal->GetBinContent(densityMapThermal->GetMaximumBin()); }
+
+            if (showDensityMap) { entryWeight = (densityMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMap->GetBinContent(densityMap->GetMaximumBin()); }
+            if (showDensityMapIntermediate) { entryWeight = (densityMapIntermediate->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapIntermediate->GetBinContent(densityMapIntermediate->GetMaximumBin()); }
+            if (showDensityMapFast) { entryWeight = (densityMapFast->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapFast->GetBinContent(densityMapFast->GetMaximumBin()); }
+            if (showDensityMapAlbedo) { entryWeight = (densityMapAlbedo->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapAlbedo->GetBinContent(densityMapAlbedo->GetMaximumBin()); }
+
+            allEntriesInt = entryWeight * 250. * 250. * 4.;
+            //string numberofDetectorLayerNs = castLongToString(allEntriesInt);
+
+            totalRealTime = (allEntriesInt*1.)/neutronRealScalingFactor;
+            string numberofDetectorLayerNs;
+            if (totalRealTime < 1)  numberofDetectorLayerNs = castDoubleToString(totalRealTime*1000.,6)+" ms";
+            else  numberofDetectorLayerNs = castDoubleToString(totalRealTime,6)+" s";
+            ui->label_detectorLayerNs->setText(QString::fromStdString(numberofDetectorLayerNs));
+
+            allEntriesInt = densityMapHighEnergy->GetEntries();
+            if (useExtraCounter) ui->label_detectorLayerNs2->setText(QString::fromStdString((string)castLongToString(allEntriesInt)));
         }
 
-        entryWeight = (allEntries * 1.) / 250. / 250. * 2.; maximumWeight = 2. * allEntriesMaximum;
+        float colorscaleMax = (ui->horizontalSliderColor->value() * 1.) / 200. * maximumWeight;
+        if (colorscaleMax < 1) colorscaleMax = 1;
 
-        delete densityMapCopy;
-        delete densityMapRed;
-    }
-    else
-    {
-        //#pragma omp parallel for
-        for (int x = 0; x < 500; x += 2)
+        colorMap->setGradient(QCPColorGradient::gpJet);
+
+        if (ui->radioButton_NeutronNight->isChecked()) colorMap->setGradient(QCPColorGradient::gpNight);
+        if (ui->radioButton_NeutronCold->isChecked()) colorMap->setGradient(QCPColorGradient::gpCold);
+        if (ui->radioButton_NeutronPolar->isChecked()) colorMap->setGradient(QCPColorGradient::gpThermal);
+        if (ui->radioButton_NeutronHot->isChecked()) colorMap->setGradient(QCPColorGradient::gpHot);
+        if (ui->radioButton_NeutronThermal->isChecked()) colorMap->setGradient(QCPColorGradient::gpPolar);
+        if (ui->radioButton_NeutronGrayScale->isChecked()) colorMap->setGradient(QCPColorGradient::gpGrayscale);
+
+        if ((!silderColorMoved) && ((!ui->checkBoxClearEveryDisplayRefresh->isChecked()) || (!ui->checkBoxSaveEvery_2->isChecked())))
         {
-            for (int y = 0; y < 500; y += 2)
-            {
-                if (showDensityTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityTrackMap->GetBinContent(x, y) + ::densityTrackMap->GetBinContent(x + 1, y) + ::densityTrackMap->GetBinContent(x, y + 1) + ::densityTrackMap->GetBinContent(x + 1, y + 1));
-                if (showDensityIntermediateTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityIntermediateTrackMap->GetBinContent(x, y) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y) + ::densityIntermediateTrackMap->GetBinContent(x, y + 1) + ::densityIntermediateTrackMap->GetBinContent(x + 1, y + 1));
-                if (showDensityFastTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityFastTrackMap->GetBinContent(x, y) + ::densityFastTrackMap->GetBinContent(x + 1, y) + ::densityFastTrackMap->GetBinContent(x, y + 1) + ::densityFastTrackMap->GetBinContent(x + 1, y + 1));
-                if (showDensityAlbedoTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityAlbedoTrackMap->GetBinContent(x, y) + ::densityAlbedoTrackMap->GetBinContent(x + 1, y) + ::densityAlbedoTrackMap->GetBinContent(x, y + 1) + ::densityAlbedoTrackMap->GetBinContent(x + 1, y + 1));
-
-                if (showDensityEnergyTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityEnergyTrackMap->GetBinContent(x, y) + ::densityEnergyTrackMap->GetBinContent(x + 1, y) + ::densityEnergyTrackMap->GetBinContent(x, y + 1) + ::densityEnergyTrackMap->GetBinContent(x + 1, y + 1));
-
-                if (showDensityThermalTrackMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityThermalTrackMap->GetBinContent(x, y) + ::densityThermalTrackMap->GetBinContent(x + 1, y) + ::densityThermalTrackMap->GetBinContent(x, y + 1) + ::densityThermalTrackMap->GetBinContent(x + 1, y + 1));
-                if (showDensityMapThermal)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapThermal->GetBinContent(x, y) + ::densityMapThermal->GetBinContent(x + 1, y) + ::densityMapThermal->GetBinContent(x, y + 1) + ::densityMapThermal->GetBinContent(x + 1, y + 1));
-
-                if (showDensityMap)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMap->GetBinContent(x, y) + ::densityMap->GetBinContent(x + 1, y) + ::densityMap->GetBinContent(x, y + 1) + ::densityMap->GetBinContent(x + 1, y + 1));
-                if (showDensityMapIntermediate)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapIntermediate->GetBinContent(x, y) + ::densityMapIntermediate->GetBinContent(x + 1, y) + ::densityMapIntermediate->GetBinContent(x, y + 1) + ::densityMapIntermediate->GetBinContent(x + 1, y + 1));
-                if (showDensityMapFast)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapFast->GetBinContent(x, y) + ::densityMapFast->GetBinContent(x + 1, y) + ::densityMapFast->GetBinContent(x, y + 1) + ::densityMapFast->GetBinContent(x + 1, y + 1));
-                if (showDensityMapAlbedo)    colorMap->data()->setCell((int)x / 2, (int)y / 2, ::densityMapAlbedo->GetBinContent(x, y) + ::densityMapAlbedo->GetBinContent(x + 1, y) + ::densityMapAlbedo->GetBinContent(x, y + 1) + ::densityMapAlbedo->GetBinContent(x + 1, y + 1));
-
-            }
+            if (entryWeight * 1.1 < 5) colorMap->setDataRange(QCPRange(minZ, 5));
+            else colorMap->setDataRange(QCPRange(minZ, entryWeight * 1.1));
+        }
+        else
+        {
+            if (ui->horizontalSliderColorZero->value() == 0) colorMap->setDataRange(QCPRange(minZ, colorscaleMax));
+            else colorMap->setDataRange(QCPRange((ui->horizontalSliderColorZero->value() * 1.) / 200. * colorscaleMax, colorscaleMax));
         }
 
-        if (showDensityTrackMap) { entryWeight = (densityTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityTrackMap->GetBinContent(densityTrackMap->GetMaximumBin()); }
-        if (showDensityIntermediateTrackMap) { entryWeight = (densityIntermediateTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityIntermediateTrackMap->GetBinContent(densityIntermediateTrackMap->GetMaximumBin()); }
-        if (showDensityFastTrackMap) { entryWeight = (densityFastTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityFastTrackMap->GetBinContent(densityFastTrackMap->GetMaximumBin()); }
-        if (showDensityAlbedoTrackMap) { entryWeight = (densityAlbedoTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityAlbedoTrackMap->GetBinContent(densityAlbedoTrackMap->GetMaximumBin()); }
+        if (manualColorZero < minZ) manualColorZero = minZ;
 
-        if (showDensityEnergyTrackMap) { entryWeight = (densityEnergyTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityEnergyTrackMap->GetBinContent(densityEnergyTrackMap->GetMaximumBin()); }
+        int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorscaleMax;
+        int highColorValue = colorscaleMax;
 
-        if (showDensityThermalTrackMap) { entryWeight = (densityThermalTrackMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityThermalTrackMap->GetBinContent(densityThermalTrackMap->GetMaximumBin()); }
-        if (showDensityMapThermal) { entryWeight = (densityMapThermal->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapThermal->GetBinContent(densityMapThermal->GetMaximumBin()); }
+        if (ui->checkBoxManual->isChecked())
+        {
+            useManualColors = true;
+            colorMap->setDataRange(QCPRange(manualColorZero, manualColor));
+        }
+        else
+        {
+            useManualColors = false;
+            ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
+            ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
+        }
 
-        if (showDensityMap) { entryWeight = (densityMap->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMap->GetBinContent(densityMap->GetMaximumBin()); }
-        if (showDensityMapIntermediate) { entryWeight = (densityMapIntermediate->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapIntermediate->GetBinContent(densityMapIntermediate->GetMaximumBin()); }
-        if (showDensityMapFast) { entryWeight = (densityMapFast->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapFast->GetBinContent(densityMapFast->GetMaximumBin()); }
-        if (showDensityMapAlbedo) { entryWeight = (densityMapAlbedo->GetEntries()) / 250. / 250. * 4.; maximumWeight = 4. * densityMapAlbedo->GetBinContent(densityMapAlbedo->GetMaximumBin()); }
+        string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
+        ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
 
-        allEntriesInt = entryWeight * 250. * 250. * 4.;
-        //string numberofDetectorLayerNs = castLongToString(allEntriesInt);
+        ui->customPlot2->update();
+        ui->customPlot2->replot();
 
-        totalRealTime = (allEntriesInt*1.)/neutronRealScalingFactor;
-        string numberofDetectorLayerNs;
-        if (totalRealTime < 1)  numberofDetectorLayerNs = castDoubleToString(totalRealTime*1000.,6)+" ms";
-        else  numberofDetectorLayerNs = castDoubleToString(totalRealTime,6)+" s";
-        ui->label_detectorLayerNs->setText(QString::fromStdString(numberofDetectorLayerNs));
-
-        allEntriesInt = densityMapHighEnergy->GetEntries();
-        if (useExtraCounter) ui->label_detectorLayerNs2->setText(QString::fromStdString((string)castLongToString(allEntriesInt)));
+        if (visualization != 0x0)
+        {
+            if (visualization->isVisible()) updateEnlargedView = true;
+            else  updateEnlargedView = false;
+        }
+        if (visualization2 != 0x0)
+        {
+            if (visualization2->isVisible()) updateEnlargedView2 = true;
+            else  updateEnlargedView2 = false;
+        }
+        if (updateEnlargedView)
+        {
+            redrawEnlargedView();
+        }
+        if (updateEnlargedView2)
+        {
+            redrawEnlargedView2();
+        }
     }
 
-    float colorscaleMax = (ui->horizontalSliderColor->value() * 1.) / 200. * maximumWeight;
-    if (colorscaleMax < 1) colorscaleMax = 1;
-
-    colorMap->setGradient(QCPColorGradient::gpJet);
-
-    if (ui->radioButton_NeutronNight->isChecked()) colorMap->setGradient(QCPColorGradient::gpNight);
-    if (ui->radioButton_NeutronCold->isChecked()) colorMap->setGradient(QCPColorGradient::gpCold);
-    if (ui->radioButton_NeutronPolar->isChecked()) colorMap->setGradient(QCPColorGradient::gpThermal);
-    if (ui->radioButton_NeutronHot->isChecked()) colorMap->setGradient(QCPColorGradient::gpHot);
-    if (ui->radioButton_NeutronThermal->isChecked()) colorMap->setGradient(QCPColorGradient::gpPolar);
-    if (ui->radioButton_NeutronGrayScale->isChecked()) colorMap->setGradient(QCPColorGradient::gpGrayscale);
-
-    if (!silderColorMoved)
+    if (ui->tabWidget_live->currentIndex() == 2)
     {
-        if (entryWeight * 1.1 < 5) colorMap->setDataRange(QCPRange(minZ, 5));
-        else colorMap->setDataRange(QCPRange(minZ, entryWeight * 1.1));
+        if (showDensityTrackMap)            cutView = densityTrackMap->ProjectionX("proj", 240, 260);
+        if (showDensityIntermediateTrackMap)cutView = densityIntermediateTrackMap->ProjectionX("proj", 240, 260);
+        if (showDensityFastTrackMap)        cutView = densityFastTrackMap->ProjectionX("proj", 240, 260);
+        if (showDensityAlbedoTrackMap)      cutView = densityAlbedoTrackMap->ProjectionX("proj", 240, 260);
+
+        if (showDensityEnergyTrackMap)      cutView = densityEnergyTrackMap->ProjectionX("proj", 240, 260);
+
+        if (showDensityThermalTrackMap)     cutView = densityThermalTrackMap->ProjectionX("proj", 240, 260);
+        if (showDensityMapThermal)          cutView = densityMapThermal->ProjectionX("proj", 240, 260);
+
+        if (showDensityMap)                 cutView = densityMap->ProjectionX("proj", 240, 260);
+        if (showDensityMapIntermediate)     cutView = densityMapIntermediate->ProjectionX("proj", 240, 260);
+        if (showDensityMapFast)             cutView = densityMapFast->ProjectionX("proj", 240, 260);
+        if (showDensityMapAlbedo)           cutView = densityMapAlbedo->ProjectionX("proj", 240, 260);
+
+        for (int i = 0; (i < cutView->GetNbinsX()) && (i < 500); ++i)
+        {
+            ::plotGUIxBinsCutView[i] = cutView->GetBinCenter(i + 1);
+            ::plotGUIyBinsCutView[i] = cutView->GetBinContent(i + 1);
+        }
+
+        ui->customPlot3->graph(0)->setData(::plotGUIxBinsCutView, ::plotGUIyBinsCutView);
+        ui->customPlot3->update();
+        ui->customPlot3->rescaleAxes();
+        ui->customPlot3->replot();
     }
-    else
-    {
-        if (ui->horizontalSliderColorZero->value() == 0) colorMap->setDataRange(QCPRange(minZ, colorscaleMax));
-        else colorMap->setDataRange(QCPRange((ui->horizontalSliderColorZero->value() * 1.) / 200. * colorscaleMax, colorscaleMax));
-    }
-
-    if (manualColorZero < minZ) manualColorZero = minZ;
-
-    if (ui->checkBoxManual->isChecked())
-    {
-        useManualColors = true;
-        colorMap->setDataRange(QCPRange(manualColorZero, manualColor));
-    }
-    else useManualColors = false;
-
-    int lowColorValue = (ui->horizontalSliderColorZero->value() * 1.) / 200. * colorscaleMax;
-    int highColorValue = colorscaleMax;
-
-    ui->lineEditManualColorZero->setText(QString::fromStdString((string)castIntToString(lowColorValue)));
-    ui->lineEditManualColor->setText(QString::fromStdString((string)castIntToString(highColorValue)));
-
-    string colorLabelText = "["+(string)castIntToString(lowColorValue)+"-"+(string)castIntToString(highColorValue)+"]";
-    ui->label_ColorRange->setText(QString::fromStdString(colorLabelText));
-
-    ui->customPlot2->update();
-    ui->customPlot2->replot();
-
-    if (visualization != 0x0)
-    {
-        if (visualization->isVisible()) updateEnlargedView = true;
-        else  updateEnlargedView = false;
-    }
-    if (visualization2 != 0x0)
-    {
-        if (visualization2->isVisible()) updateEnlargedView2 = true;
-        else  updateEnlargedView2 = false;
-    }
-    if (updateEnlargedView)
-    {
-        redrawEnlargedView();
-    }
-    if (updateEnlargedView2)
-    {
-        redrawEnlargedView2();
-    }
-
-    if (showDensityTrackMap)            cutView = densityTrackMap->ProjectionX("proj", 240, 260);
-    if (showDensityIntermediateTrackMap)cutView = densityIntermediateTrackMap->ProjectionX("proj", 240, 260);
-    if (showDensityFastTrackMap)        cutView = densityFastTrackMap->ProjectionX("proj", 240, 260);
-    if (showDensityAlbedoTrackMap)      cutView = densityAlbedoTrackMap->ProjectionX("proj", 240, 260);
-
-    if (showDensityEnergyTrackMap)      cutView = densityEnergyTrackMap->ProjectionX("proj", 240, 260);
-
-    if (showDensityThermalTrackMap)     cutView = densityThermalTrackMap->ProjectionX("proj", 240, 260);
-    if (showDensityMapThermal)          cutView = densityMapThermal->ProjectionX("proj", 240, 260);
-
-    if (showDensityMap)                 cutView = densityMap->ProjectionX("proj", 240, 260);
-    if (showDensityMapIntermediate)     cutView = densityMapIntermediate->ProjectionX("proj", 240, 260);
-    if (showDensityMapFast)             cutView = densityMapFast->ProjectionX("proj", 240, 260);
-    if (showDensityMapAlbedo)           cutView = densityMapAlbedo->ProjectionX("proj", 240, 260);
-
-    for (int i = 0; (i < cutView->GetNbinsX()) && (i < 500); ++i)
-    {
-        ::plotGUIxBinsCutView[i] = cutView->GetBinCenter(i + 1);
-        ::plotGUIyBinsCutView[i] = cutView->GetBinContent(i + 1);
-    }
-
-    ui->customPlot3->graph(0)->setData(::plotGUIxBinsCutView, ::plotGUIyBinsCutView);
-    ui->customPlot3->update();
-    ui->customPlot3->rescaleAxes();
-    ui->customPlot3->replot();
 }
 
 /**
@@ -12613,7 +12639,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.05 (04.01.2023)<br> ";
+    messageString+=        "v1.05b (14.01.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13397,7 +13423,8 @@ void MainWindow::checkInputPics()
         {
             inputPics3[i - 1] = 2; // this is a png porosity definition map
         }
-        //delete matrixImageHere;
+
+        //matrixImageHere;
     }
     int temp;
 
@@ -13543,7 +13570,6 @@ void MainWindow::checkInputPics()
         }
     }
 
-
     string picLetter = "";
     inputMatrixDefsShown = false;
     if (inputMatrixDefsShown) cout<<"Input Matrix definitions: ";
@@ -13679,7 +13705,7 @@ TMatrixF MainWindow::getTMatrix(int i)
     if ((inputPics[i] == 2) || ((inputPics2[i] == 2)) || (inputPics3[i] == 2))
     {
         QRgb pixelValue;
-       string imageStr = (string)workFolder+(string)str+".png";
+        string imageStr = (string)workFolder+(string)str+".png";
         QImage matrixImage;
         matrixImage.load(QString::fromStdString(imageStr));
         int matrixWidth = matrixImage.width();
@@ -13697,7 +13723,7 @@ TMatrixF MainWindow::getTMatrix(int i)
         return matr;
     }
 
-    return      dummyTMatrix;
+    return  dummyTMatrix;
 }
 
 /**
@@ -14089,7 +14115,7 @@ void MainWindow::on_lineEditManualColorZero_textChanged(const QString& arg1)
 {
     int valueString = arg1.toInt();
     ui->lineEditManualColorZero->setPalette(*paletteB);
-    if ((valueString > -1) && (valueString < 100000000))  manualColorZero = valueString;
+    if ((valueString > -100000) && (valueString < 100000000))  manualColorZero = valueString;
     else ui->lineEditManualColorZero->setPalette(*paletteR);
 
     redrawTopView();
@@ -14104,7 +14130,7 @@ void MainWindow::on_lineEditManualColor_textChanged(const QString& arg1)
 {
     int valueString = arg1.toInt();
     ui->lineEditManualColor->setPalette(*paletteB);
-    if ((valueString > -1) && (valueString < 100000000))  manualColor = valueString;
+    if ((valueString > -1000000) && (valueString < 100000000))  {manualColor = valueString; if (manualColor <= manualColorZero) manualColor = manualColorZero + 1;}
     else ui->lineEditManualColor->setPalette(*paletteR);
 
     redrawTopView();

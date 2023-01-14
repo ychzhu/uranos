@@ -354,4 +354,3 @@ void VisualizationEnlarge2::on_pushButtonPNG2_clicked()
     }
     screenshotcounterV2++;
 }
-

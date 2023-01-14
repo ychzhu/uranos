@@ -2,7 +2,7 @@
 **                                                                        **
 **  URANOS - Ultra RApid Neutron-Only Simulation                          **
 **  designed for Environmental Research                                   **
-**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Copyright (C) 2015-2023 Markus Koehli,                                **
 **  Physikalisches Institut, Heidelberg University, Germany               **
 **                                                                        **
 ****************************************************************************/
@@ -215,7 +215,7 @@ using namespace std;
     float endfNumberConv(string str);
     float getIndexHorizontalPosition(const TMatrixF& matrix, int line, double value, bool doLogSearch);
     float getIndexPosition(const TMatrixF& matrix, double value, bool doLogSearch);
-    double calcMeanCS(const TMatrixF& matrix, double energy);
+    double calcMeanCS(TMatrixF& matrix, double energy);
     double getHighEnergyCosTheta(const TMatrixF& angleMatrix, const TMatrixF& cumulatedProbMatrix, double energy, double prob);
     double getAngleFromCumulativeFunction(const TF1* spectrumFunc, float min, float max, TRandom* r);
     TF1* calcMeanAngularDistribution(const TMatrixF& matrix, double energy);

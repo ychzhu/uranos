@@ -1,5 +1,12 @@
 # URANOS Release Notes
 
+## URANOS version 1.05b (January 14, 2023)
+
+### Changelog
+- bugfixes
+- improved performance for the GUI data display
+
+
 ## URANOS version 1.05 (January 4, 2023)
 
 ### Changelog

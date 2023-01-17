@@ -16,7 +16,6 @@
 #include "TRandom3.h"
 #include "time.h"
 
-#include <omp.h>
 
 #include <vector>
 #include <QImage>
@@ -30,6 +29,7 @@
 
 #ifdef _WIN32
     #include <io.h>
+    #include <omp.h>
     #define access _access
 #elif __linux_
 #endif
@@ -490,6 +490,7 @@ bool inputMatrixDefsShown = false;
 double oldDiffTime = 0;
 long nTotalOld = 0;
 bool newDataComes = false;
+string timeRemainString, timeRemainHoursString, timeRemainMinutesString, timeRemainSecondsString;
 
 float fpSoilMoist = 0.1;
 float fpHum = 10;
@@ -2271,7 +2272,6 @@ void  MainWindow::redrawNeutronMap(double difftime)
             }
         }
 
-        string timeRemainString, timeRemainHoursString, timeRemainMinutesString, timeRemainSecondsString;
         int timeRemainHours = ((neutrons - nTotal) / npers) / 3600;
         int timeRemainMinutes = (((neutrons - nTotal) / npers) - timeRemainHours * 3600) / 60;
         int timeRemainSeconds = ((neutrons - nTotal) / npers) - timeRemainHours * 3600 - timeRemainMinutes * 60;
@@ -3648,16 +3648,106 @@ void MainWindow::on_pushButton_2_clicked()
     delete precalculatedSpectrumC;
 }
 
+/**
+ * Gets the splined detector response function energy model from a matrix.
+ *
+ * @param matrix - matrix name
+ * @return splineEnergy - spline function with logarithmic energy and detection probability normalized to 1.
+ */
+TSpline3* MainWindow::getSplinedEnergyModelFromMatrix(TMatrixF* matrix, bool logXValues, bool normalize)
+{
+    const int nData = matrix->GetNrows();
+
+    double xMin = 0, xMax = 0;
+
+    //double xVal[nData] = {0};
+    //double yVal[nData] = {0};
+
+    double* xVal = new double[nData+6];
+    double* yVal = new double[nData+6];
+
+    for (int i = 0; i < nData; i++)
+    {
+        xVal[i+3] = (*matrix)(i,0);
+        yVal[i+3] = (*matrix)(i,1);
+
+        if (i == 0) xMin = xVal[i+3];
+        xMax = xVal[i+3];
+
+        if (logXValues)
+        {
+            xVal[i+3] = TMath::Log10(xVal[i+3]);        //probably easier to spline?
+            if (xVal[i+3] < - 15) xVal[i+3] = -15;
+            if (xVal[i+3] > 1000) xVal[i+3] = 1000;
+        }
+        /*
+        if (normalize)
+        {
+            if ((ymax > 1) || (ymax < 0.01)) yVal[i] = yVal[i] / ymax;  //scale to 1 maximum value //only normalize if values are larger than 1
+        }
+        */
+    }
+
+    if (logXValues)
+    {
+        if (xMin > -4.8)
+        {
+            xVal[0] = -5.5;
+            xVal[1] = xVal[3]-0.1;
+            xVal[2] = xVal[3]-0.05;
+            yVal[0] = 0;
+            yVal[1] = 0;
+            yVal[2] = 0;
+        }
+        else
+        {
+            xVal[0] = -5.5;
+            xVal[1] = -5.3;
+            xVal[2] = -5.1;
+            yVal[0] = yVal[3];
+            yVal[1] = yVal[3];
+            yVal[2] = yVal[3];
+        }
+        if (xMax < 9)
+        {
+            xVal[nData+3] = xVal[nData+2] + 0.1;
+            xVal[nData+4] = xVal[nData+2] + 0.2;
+            xVal[nData+5] = 9;
+            yVal[nData+3] = 0;
+            yVal[nData+4] = 0;
+            yVal[nData+5] = 0;
+        }
+        else
+        {
+            xVal[nData+3] = 9.1;
+            xVal[nData+4] = 9.2;
+            xVal[nData+5] = 9.3;
+            yVal[nData+3] = yVal[nData+2];
+            yVal[nData+4] = yVal[nData+2];
+            yVal[nData+5] = yVal[nData+2];
+        }
+    }
+
+    TGraph* graphEnergyFromFile = new TGraph(nData, xVal, yVal);
+
+    TString name = "Spline" + castFloatToString(yVal[nData/2],6);
+
+    TSpline3* splineEnergy = new TSpline3(name, graphEnergyFromFile, "");
+
+    delete graphEnergyFromFile;
+
+    return splineEnergy;
+}
 
 /**
- * Gets the splined detector response function energy model from the file.
+ * Gets the splined detector response function energy model from a file.
  *
  * @param dname - file name
  * @return splineEnergy - spline function with logarithmic energy and detection probability normalized to 1.
  */
-TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname)
+TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname, int linesToSkip, bool logXValues, bool normalize)
 {
-    const int nData = getNumberOfFileEntries(dname);
+    const int nData = getNumberOfFileEntries(dname) - linesToSkip;
 
     TString curLine;
 
@@ -3672,32 +3762,42 @@ TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname)
     double ymax = 0;
 
     ifstream input_stream(dname, ios::in);
+
     while (curLine.ReadLine(input_stream))
     {
-        istrstream stream(curLine.Data());
+        istrstream stream(curLine.Data());        
 
-        if (lineCounter >= 0)
+        if (lineCounter >= linesToSkip)
         {
             stream >> temp;
-            xVal[lineCounter] = temp;
+            xVal[lineCounter - linesToSkip] = temp;
             if (temp < 0) { if (!noGUIMode) { setStatus(2, "Det. Energy File: Neg. x-Value"); delay(1500); } temp = 0; }
             stream >> temp;
-            yVal[lineCounter] = temp;
+            yVal[lineCounter - linesToSkip] = temp;
             if (temp > ymax) ymax = temp;
-            if (temp < 0) { if (!noGUIMode) { setStatus(2, "Det. Energy File: Neg. y-Value"); delay(1500); } temp = 0; }
+            if (temp < 0) { if (!noGUIMode) { setStatus(2, "Det. Energy File: Neg. y-Value"); delay(1500); } temp = 0; }           
         }
+
         lineCounter++;
     }
     input_stream.close();
 
-    if (true)
+    if (logXValues || normalize)
     {
         for (int i = 0; i < nData; i++)
         {
-            xVal[i] = TMath::Log10(xVal[i]);        //probably easier to spline?
-            if ((ymax > 1) || (ymax < 0.01)) yVal[i] = yVal[i] / ymax;  //scale to 1 maximum value //only normalize if values are larger than 1
+            if (logXValues)
+            {
+                xVal[i] = TMath::Log10(xVal[i]);        //probably easier to spline?
+                if (xVal[i] < - 15) xVal[i] = -15;
+                if (xVal[i] > 1000) xVal[i] = 1000;
+            }
+            if (normalize)
+            {
+                if ((ymax > 1) || (ymax < 0.01)) yVal[i] = yVal[i] / ymax;  //scale to 1 maximum value //only normalize if values are larger than 1
+            }
         }
-    }
+    }    
 
     TGraph* graphEnergyFromFile = new TGraph(nData, xVal, yVal);
 
@@ -3876,7 +3976,7 @@ TMatrixF readSigmaEnergy(TString folder, TString filename)
     //string dname = (string)folder + "/" + (string)filename;
     string dname = (string)folder + (string)filename;
 
-    float minDeviation = 1.001;
+    float minDeviation = 1.002;
 
     if (outputCSfilenames) cout << "Reading Energy Cross Sections from " << dname;
 
@@ -3918,7 +4018,7 @@ TMatrixF readSigmaEnergy(TString folder, TString filename)
     for (int l = 1; l < matrixSize; l++)
     {
         actualValue = sigmaMatrix(l, 0);
-        if (actualValue > minDeviation * lastValue)
+        if ((actualValue > minDeviation * lastValue) || (l == matrixSize - 1) ||  (l == matrixSize - 2) ||  (l == matrixSize - 3))
         {
             for (int m = 0; m < 2; m++)
             {
@@ -5139,7 +5239,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
         // these are all variables which are used in one way or another, mainly in the calculation routine, some are deprecated (from the time when this simulation was called CosmicNeutronSimulator and was stripped down to URANOS)
         double xRnd, yRnd;
-        double length, lengthZ, distToDet, distToCyl, energy, energyInitial, energyAtInterface, absDepth, energyNew, energyOld, maxgenerationHeight, generationHeight;
+        double length, lengthZ, distToDet, distToCyl, energy, energy1e6, energy1e6Log, energyInitial, energyAtInterface, absDepth, energyNew, energyOld, maxgenerationHeight, generationHeight;
         double theta, thetaScat, thetaCMS, thetaFromTab, thetaAlt, thetaCalc, thetaOld, phiAlt, phi, phiScat, phiOld, nSpeed, timeTemp, trackTemp, timeTrans, timeNtr, pauseTime;
         double dcosTheta, theta12;
         double lambda, wwRangeAbs, wwRange, wwRangeSi, wwRangeIn, probSi, xTrack, xHere, yHere, zTrack, z0Here, yTrack, thetaTr, phiTr, energyTr, batchVar, trackMetricFactor, trackMetricFactorTemp, aspectRatioSide;
@@ -5234,6 +5334,9 @@ bool cosmicNSimulator(MainWindow* uiM)
         // changed back to 0.77 for 1250m attenuation length 19.12.2018 //0.6 leads to an attenuation length of 830m //0.77 leads to an attenuation length of 1350 m
         int evaporationAdditions = 1;
 
+        const int satoArrayLength = 500;
+        double satoEnergyArray[satoArrayLength] = {0};
+        int satoCounter = satoArrayLength;
 
         //for drawing
         bool drawSingleNeutronGraphs = false;   // draw neutron paths
@@ -5244,6 +5347,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         const float nSpeedEnergyCutoff = 0.05;
         const int numberOfFrames = 1000;
         nDetectedNeutrons = 0;
+        int timeRunRemainHours, timeRunRemainMinutes, timeRunRemainSeconds, nRunPerS;
+        double nRPerS;
 
         attenuationLength = 148;                // for artificial source in the material
         killedThermal = 0;
@@ -5255,7 +5360,6 @@ bool cosmicNSimulator(MainWindow* uiM)
         float DetectorCylinderRadius = 1000;    // in mm
         detectorHeight = geometries.at(detectorLayer)[4] + 0.5 * geometries.at(detectorLayer)[5]; // sets the detector height to the vertical center of the detector layer
 
-
         // for error estimations: very cross sections by number of standard deviations
         /*
         bool varyCrosssections = false;
@@ -5265,7 +5369,6 @@ bool cosmicNSimulator(MainWindow* uiM)
         float sigmaHeFactor = -2.;
         float sigmaHeEstimator = .1;
         */
-
 
         // for single detector counts
         int det1 = 0, det2 = 0, det3 = 0, det4 = 0, det5 = 0, det6 = 0, det7 = 0, det8 = 0, det9 = 0, det10 = 0, det11 = 0, det0 = 0, deta = 0, detb = 0, detc = 0, detd = 0, dete = 0;
@@ -5280,7 +5383,6 @@ bool cosmicNSimulator(MainWindow* uiM)
         if ((soilSolidFracVar > 0.49) && (soilSolidFracVar < 0.51)); else soilSolidFrac = soilSolidFracVar;
 
         bool useFastCutOff = false;     // cuts of high energy calculation
-
 
         // output streams
         ofstream detOutputFile;
@@ -5408,7 +5510,7 @@ bool cosmicNSimulator(MainWindow* uiM)
             TFile testFile(inputSpectrumFile, "READ");
             if (testFile.IsZombie())
             {
-                spectrumModel = uiM->getSplinedDetectorEnergyModelFromFile(inputSpectrumFile);
+                spectrumModel = uiM->getSplinedDetectorEnergyModelFromFile(inputSpectrumFile, 0, true, true);
                 cout << "Using spectrum model from: " << inputSpectrumFile << endl;
                 usePrecalculatedAsciiSpectrum = true;       // use spectrum from source file
                 useSato2016 = false;                        // use spectrum from Sato 2016
@@ -5430,7 +5532,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         }
         else
         {
-            detectorEnergyModel = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile);
+            detectorEnergyModel = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile, 0, true, true);
             cout << "Using energy model from: " << detectorResponseFunctionFile << endl;
         }
 
@@ -5439,7 +5541,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         {
             if (useAdditionalDetectorModel)
             {
-                detectorEnergyModel2 = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile2);
+                detectorEnergyModel2 = uiM->getSplinedDetectorEnergyModelFromFile(detectorResponseFunctionFile2, 0, true, true);
                 cout << "Using additional energy model from: " << detectorResponseFunctionFile2 << endl;
                 //useAdditionalDetectorModel = true;
             }
@@ -5856,6 +5958,63 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF sigmaK39 = readSigmaEnergy(endfFolder, "elasticK39.txt");
         static TMatrixF sigmaTi48 = readSigmaEnergy(endfFolder, "elasticTi48.txt");
 
+
+        TSpline3* sigmaSiSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaSi, true, false);
+        TSpline3* sigmaNSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaN, true, false);
+        TSpline3* sigmaOSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaO, true, false);
+        TSpline3* sigmaHSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaH, true, false);
+        TSpline3* sigmaAlSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaAl, true, false);
+        TSpline3* sigmaCSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaC, true, false);
+        TSpline3* sigmaArSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaAr, true, false);
+        TSpline3* sigmaFeSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaFe, true, false);
+        TSpline3* sigmaHe3Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaHe3, true, false);
+        TSpline3* sigmaSSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaS, true, false);
+        TSpline3* sigmaB10Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaB10, true, false);
+        TSpline3* sigmaB11Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaB11, true, false);
+        TSpline3* sigmaFSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaF, true, false);
+        TSpline3* sigmaGd155Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaGd155, true, false);
+        TSpline3* sigmaGd157Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaGd157, true, false);
+        TSpline3* sigmaNaSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaNa, true, false);
+        TSpline3* sigmaClSpline = uiM->getSplinedEnergyModelFromMatrix(&sigmaCl35, true, false);
+        TSpline3* sigmaCr52Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaCr52, true, false);
+        TSpline3* sigmaCr53Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaCr53, true, false);
+        TSpline3* sigmaNi58Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaNi58, true, false);
+        TSpline3* sigmaMn55Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaMn55, true, false);
+        TSpline3* sigmaPb206Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaPb206, true, false);
+        TSpline3* sigmaPb207Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaPb207, true, false);
+        TSpline3* sigmaPb208Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaPb208, true, false);
+        TSpline3* sigmaK39Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaK39, true, false);
+        TSpline3* sigmaTi48Spline = uiM->getSplinedEnergyModelFromMatrix(&sigmaTi48, true, false);
+
+        /*
+         time(&start);
+        for (int i = 2; i < 30000000; i+=1)
+        {
+            sigmaOSpline->Eval( TMath::Log10(i));
+            sigmaOSpline->Eval( TMath::Log10(i/2));
+            sigmaOSpline->Eval( TMath::Log10(i/3));
+            sigmaOSpline->Eval( TMath::Log10(i/4));
+            sigmaOSpline->Eval( TMath::Log10(i/5));
+            sigmaOSpline->Eval( TMath::Log10(i/6));
+        }
+         time(&oldTime);
+        cout<<difftime(oldTime, start) <<endl;
+
+        time(&start);
+       for (int i = 2; i < 30000000; i+=1)
+       {
+          sigmaOSpline2->Eval( TMath::Log10(i));
+          sigmaOSpline2->Eval( TMath::Log10(i/2));
+          sigmaOSpline2->Eval( TMath::Log10(i/3));
+          sigmaOSpline2->Eval( TMath::Log10(i/4));
+          sigmaOSpline2->Eval( TMath::Log10(i/5));
+          sigmaOSpline2->Eval( TMath::Log10(i/6));
+       }
+        time(&oldTime);
+       cout<<difftime(oldTime, start) <<endl;
+        */
+
+
         csMatrixHP = &sigmaH;
         csMatrixOP = &sigmaO;
         csMatrixNP = &sigmaN;
@@ -5891,6 +6050,35 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF absorbPb208 = readSigmaEnergy(endfFolder, "absorbPb208.txt");
         static TMatrixF absorbK39 = readSigmaEnergy(endfFolder, "absorbK39.txt");
         static TMatrixF absorbTi48 = readSigmaEnergy(endfFolder, "absorbTi48.txt");
+
+        TSpline3* absorbSiSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbSi, true, false);
+        TSpline3* absorbNSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbN, true, false);
+        TSpline3* absorbNbSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbNb, true, false);
+        TSpline3* absorbOSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbO, true, false);
+        TSpline3* absorbHSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbH, true, false);
+        TSpline3* absorbAlSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbAl, true, false);
+        TSpline3* absorbCSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbC, true, false);
+        TSpline3* absorbArSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbAr, true, false);
+        TSpline3* absorbFeSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbFe, true, false);
+        TSpline3* absorbSSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbS, true, false);
+        TSpline3* absorbHe3Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbHe3, true, false);
+        TSpline3* absorbB10bSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbB10b, true, false);
+        TSpline3* absorbB10Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbB10, true, false);
+        TSpline3* absorbB11Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbB11, true, false);
+        TSpline3* absorbFSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbF, true, false);
+        TSpline3* absorbGd155Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbGd155, true, false);
+        TSpline3* absorbGd157Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbGd157, true, false);
+        TSpline3* absorbNaSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbNa, true, false);
+        TSpline3* absorbCl35Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbCl35, true, false);
+        TSpline3* absorbCr52Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbCr52, true, false);
+        TSpline3* absorbCr53Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbCr53, true, false);
+        TSpline3* absorbNi58Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbNi58, true, false);
+        TSpline3* absorbMn55Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbMn55, true, false);
+        TSpline3* absorbPb206Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbPb206, true, false);
+        TSpline3* absorbPb207Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbPb207, true, false);
+        TSpline3* absorbPb208Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbPb208, true, false);
+        TSpline3* absorbK39Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbK39, true, false);
+        TSpline3* absorbTi48Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbTi48, true, false);
 
         csMatrixHabsP = &absorbH;
         csMatrixOabsP = &absorbO;
@@ -5974,6 +6162,44 @@ bool cosmicNSimulator(MainWindow* uiM)
         static TMatrixF absorbMt104Ti48 = readSigmaEnergy(endfFolder, "absorbMt104Ti48.txt");
         static TMatrixF absorbMt107Ti48 = readSigmaEnergy(endfFolder, "absorbMt107Ti48.txt");
         static TMatrixF absorbMt207Ti48 = readSigmaEnergy(endfFolder, "absorbMt207Ti48.txt");
+
+        TSpline3* absorbMt103Cl35Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103Cl35, true, false);
+        TSpline3* absorbMt107Cl35Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt107Cl35, true, false);
+        TSpline3* absorbMt103He3Spline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103He3, true, false);
+
+        /*
+        TSpline3* absorbMt209HSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt209H, true, false);
+        TSpline3* absorbMt5HSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt5H, true, false);
+        TSpline3* absorbMt5NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt5N, true, false);
+        TSpline3* absorbMt103NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103N, true, false);
+
+        TSpline3* absorbMt104NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt104N, true, false);
+        TSpline3* absorbMt105NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt105N, true, false);
+        TSpline3* absorbMt107NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt107N, true, false);
+        TSpline3* absorbMt108NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt108N, true, false);
+        TSpline3* absorbMt209NSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt209N, true, false);
+
+        TSpline3* absorbMt5OSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt5O, true, false);
+        TSpline3* absorbMt103OSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103O, true, false);
+        TSpline3* absorbMt105OSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt105O, true, false);
+        TSpline3* absorbMt107OSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt107O, true, false);
+        TSpline3* absorbMt209OSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt209O, true, false);
+
+        TSpline3* absorbMt5AlSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt5Al, true, false);
+        TSpline3* absorbMt103AlSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103Al, true, false);
+        TSpline3* absorbMt107AlSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt107Al, true, false);
+        TSpline3* absorbMt209AlSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt209Al, true, false);
+
+        TSpline3* absorbMt5SiSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt5Si, true, false);
+        TSpline3* absorbMt103SiSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103Si, true, false);
+        TSpline3* absorbMt107SiSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt107Si, true, false);
+        TSpline3* absorbMt209SiSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt209Si, true, false);
+
+        TSpline3* absorbMt5ArSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt5Ar, true, false);
+        TSpline3* absorbMt103ArSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt103Ar, true, false);
+        TSpline3* absorbMt107ArSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt107Ar, true, false);
+        TSpline3* absorbMt209ArSpline = uiM->getSplinedEnergyModelFromMatrix(&absorbMt209Ar, true, false);
+        */
 
         if (!noGUIMode) {uiM->setStatus(1, "Reading Inelastic Cross Sections");        delay(5);}
 
@@ -6530,11 +6756,11 @@ bool cosmicNSimulator(MainWindow* uiM)
         //double snowHeights[arrayLength] = {0.0001,1,5,10,15,20,30,60,80,100,150,250,400,500,1000};
 
         //double soilWaterFracs[arrayLength] = {0.04001,0.08001,0.10001, 0.12001,0.15001,0.20001, 0.25001,0.30001,0.35001,0.50};
-        double snowHeights[arrayLength] = { 0.0001,2,4,6,8,10,12,14,16,18 };
+        double snowHeights[arrayLength] = {0.0001,2,4,6,8,10,12,14,16,18 };
 
         double soilWaterFracs[arrayLength] = { 0.01001, 0.03001,0.06001,0.10001, 0.12001,0.15001,0.20001, 0.25001,0.30001,0.40001,0.50001 };
         //double soilWaterFracs[arrayLength] = {0.70001, 0.90001,10.0001,0.000, 0.0,0.0,0.0, 0.0,0.0,0.0000,0.0};
-        double airhums[arrayLength] = { 1,2,4,7,10,12,15,18,21,27,35 };
+        double airhums[arrayLength] = {1,2,4,7,10,12,15,18,21,27,35 };
 
         // this for loop around the whole simulation is the parameter-defined batch run
         for (param = paramMin; param < paramMax; param += 1)
@@ -6623,6 +6849,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
             // start the timer
             time(&start);
+            time(&diffmean);
             time(&oldTime);
             pauseTime = 0;
 
@@ -6812,14 +7039,33 @@ bool cosmicNSimulator(MainWindow* uiM)
                             {
                                 double evalValue;
                                 int aa;
-                                for (aa = 0; aa < supportAngles; aa++)
-                                {
-                                    if (tAngleSplVec.at(aa) > theta) break;
-                                }
-                                if (aa > 0) aa--;
 
-                                evalValue = tGrSplVec.at(aa)->Eval(r.Rndm());
-                                xRnd = TMath::Power(10, evalValue);
+                                if (satoCounter < satoArrayLength)
+                                {
+                                    xRnd = satoEnergyArray[satoCounter];
+                                    satoCounter++;
+                                }
+                                else
+                                {
+                                    #pragma omp for
+                                    for (int sp = 0; sp < satoArrayLength; sp++)
+                                    {
+                                        for (aa = 0; aa < supportAngles; aa++)
+                                        {
+                                            if (tAngleSplVec.at(aa) > theta) break;
+                                        }
+                                        if (aa > 0) aa--;
+
+                                        evalValue = tGrSplVec.at(aa)->Eval(r.Rndm());
+                                        xRnd = TMath::Power(10, evalValue);
+
+                                        satoEnergyArray[sp] = xRnd;
+                                    }
+
+                                    xRnd = satoEnergyArray[0];
+                                    satoCounter = 1;
+                                }
+
                             }
                             else
                             {
@@ -7127,7 +7373,20 @@ bool cosmicNSimulator(MainWindow* uiM)
                         if (((nTotal <= 100000) && (n % 500 == 0)) || ((nTotal > 100000) && (n % 5000 == 0)))
                         {
                             //progressN = 50 * (nTotal) / (neutrons);
-                            cout << "\r" << castFloatToString(100. * (nTotal * 1.) / (neutrons * 1.), 6) << " % completed";
+                            nRPerS = double (difftime(diffmean, start) - pauseTime);
+                            if (nRPerS > 0)
+                            {
+                                nRunPerS = (nTotal * 1.) / (nRPerS);
+                                timeRunRemainHours = ((neutrons - nTotal) / nRunPerS) / 3600;
+                                timeRunRemainMinutes = (((neutrons - nTotal) / nRunPerS) - timeRunRemainHours * 3600) / 60;
+                                timeRunRemainSeconds = ((neutrons - nTotal) / nRunPerS) - timeRunRemainHours * 3600 - timeRunRemainMinutes * 60;
+                            }
+
+                            cout << "\r" << castFloatToString(100. * (nTotal * 1.) / (neutrons * 1.), 6) << " % completed ";
+                            if (nRPerS > 0)
+                            {
+                                cout<< " (" << timeRunRemainHours << ":"; if (timeRunRemainMinutes < 10) cout<<"0"; cout<<timeRunRemainMinutes << ":"; if (timeRunRemainSeconds < 10) cout<<"0"; cout<<timeRunRemainSeconds <<")";
+                            }
                             cout.flush();
                         }
                     }
@@ -7304,6 +7563,9 @@ bool cosmicNSimulator(MainWindow* uiM)
                     xtEnd = cosPhi * fabs(tanTheta * (tempzEnd - z0)) + x;
                     ytEnd = sinPhi * fabs(tanTheta * (tempzEnd - z0)) + y;
                     //}
+
+                    energy1e6 = energy * 1e6;
+                    energy1e6Log = TMath::Log10(energy1e6);
 
                     if (calcNeutronTime)
                     {
@@ -7711,21 +7973,25 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     switch (material)
                     {
-                    case 7:  csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csNa = calcMeanCS(sigmaNa, energy * 1e6); csCl = calcMeanCS(sigmaCl35, energy * 1e6);
+                    case 7:   csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log); csNa = sigmaNaSpline->Eval(energy1e6Log);  csCl = sigmaClSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csNa = calcMeanCS(sigmaNa, energy * 1e6); csCl = calcMeanCS(sigmaCl35, energy * 1e6);
                         csW = csO + 2. * csH + nSalt * (csNa + csCl);
                         cs = csW;
                         break;
-                    case 9:  csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                    case 9:  csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         csW = csO + 2. * csH;
                         cs = csW;
                         break;
-                    case 10: csN = calcMeanCS(sigmaN, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csAr = calcMeanCS(sigmaAr, energy * 1e6);
+                    case 10: csN = sigmaNSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log);  csAr = sigmaArSpline->Eval(energy1e6Log);
+                        //csN = calcMeanCS(sigmaN, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csAr = calcMeanCS(sigmaAr, energy * 1e6);
                         cs = 2. * (0.78 * csN + 0.21 * csO) + 0.0093 * csAr;
                         break;
                     case 11: if (energy == lastEnergy11) { csH = csHLast; csO = csOLast; csN = csNLast; csAr = csArLast; }
                         else
                         {
-                           csN = calcMeanCS(sigmaN, energy * 1e6);  csH = calcMeanCS(sigmaH, energy * 1e6);  csO = calcMeanCS(sigmaO, energy * 1e6); csAr = calcMeanCS(sigmaAr, energy * 1e6);
+                           csN = sigmaNSpline->Eval(energy1e6Log); csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log);   csAr = sigmaArSpline->Eval(energy1e6Log);
+                           //csN = calcMeanCS(sigmaN, energy * 1e6);  csH = calcMeanCS(sigmaH, energy * 1e6);  csO = calcMeanCS(sigmaO, energy * 1e6); csAr = calcMeanCS(sigmaAr, energy * 1e6);
                            csHLast = csH; csOLast = csO; csNLast = csN; csArLast = csAr;
                         }
                         csLuft = 2. * (0.78 * csN + 0.21 * csO) + 0.0093 * csAr;
@@ -7733,13 +7999,16 @@ bool cosmicNSimulator(MainWindow* uiM)
                         rLuftWater = absHumidityAir / 1e6;
                         cs = csLuft * rLuft / wLuft + csW * rLuftWater / wWater;
                         break;
-                    case 12: csSi = calcMeanCS(sigmaSi, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                    case 12:  csSi = sigmaSiSpline->Eval(energy1e6Log); csO = sigmaOSpline->Eval(energy1e6Log);
+                        //csSi = calcMeanCS(sigmaSi, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         cs = 2. * csO + csSi;
                         break;
-                    case 13: csAl = calcMeanCS(sigmaAl, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                    case 13:  csAl = sigmaAlSpline->Eval(energy1e6Log); csO = sigmaOSpline->Eval(energy1e6Log);
+                        //csAl = calcMeanCS(sigmaAl, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         cs = 3. * csO + 2. * csAl;
                         break;
-                    case 15: csFe = calcMeanCS(sigmaFe, energy * 1e6);
+                    case 15: csFe = sigmaFeSpline->Eval(energy1e6Log);
+                        //csFe = calcMeanCS(sigmaFe, energy * 1e6);
                         cs = csFe; break;
                     case 18: csAl = calcMeanCS(sigmaAl, energy * 1e6);  csSi = calcMeanCS(sigmaSi, energy * 1e6); csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         csB10 = calcMeanCS(sigmaB10, energy * 1e6); csGd155 = calcMeanCS(sigmaGd155, energy * 1e6); csGd157 = calcMeanCS(sigmaGd157, energy * 1e6);
@@ -7763,17 +8032,18 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 20: if (energy == lastEnergy20){csH = csHLast; csO = csOLast; csAl = csAlLast; csSi = csSiLast;}
                         else
                         {
-                            csAl = calcMeanCS(sigmaAl, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6); csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                            csAl = sigmaAlSpline->Eval(energy1e6Log);  csSi = sigmaSiSpline->Eval(energy1e6Log); csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log);
+                            //csAl = calcMeanCS(sigmaAl, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6); csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         }
                         csHLast = csH; csOLast = csO; csAlLast = csAl; csSiLast = csSi;
-                        //}
                         //cs = (soilSiFrac*csSi+2.*soilAlFrac*csAl)*soilSolidFracVar+csO*(2.25*soilSolidFracVar+soilWaterFrac)+2.*csH*soilWaterFrac;
                         csSolids = (soilSiFrac * csSi + 2. * soilAlFrac * csAl) * soilSolidFracVar + ((soilSiFrac * 2. + 3. * soilAlFrac) * csO) * soilSolidFracVar;
                         csW = (2. * csH + csO) * soilWaterFrac;
                         //cs = csSolids + csW*soilWaterFrac*soilStrechFactor; break; //error here
                         cs = csSolids + csW * soilStrechFactor;
                         break;
-                    case 21: csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6); csN = calcMeanCS(sigmaN, energy * 1e6);
+                    case 21: csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log); csC = sigmaCSpline->Eval(energy1e6Log); csN = sigmaNSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6); csN = calcMeanCS(sigmaN, energy * 1e6);
                         csLuft = 2. * (0.78 * csN + 0.22 * csO);
                         csPlants = csO + 2. * csH + 0.2 * csC;
                         csW = csO + 2. * csH;
@@ -7781,82 +8051,110 @@ bool cosmicNSimulator(MainWindow* uiM)
                         rLuftWater = absHumidityAir / 1e6;
                         cs = csLuft * rLuft / wLuft + csW * rLuftWater / wWater + csPlants * rPlants / wPlants;
                         break;
-                    case 23: csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
+                    case 23: csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log); csSi = sigmaSiSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
                         cs = 0.44 * csH + 0.44 * csO + 0.12 * csSi;
                         break;
-                    case 24: csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
+                    case 24: csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log); csC = sigmaCSpline->Eval(energy1e6Log); csSi = sigmaSiSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
                         cs = 0.14 * csH + 0.5 * csO + 0.11 * csC + 0.25 * csSi;
                         break;
                     case 25:
                         if (energy == lastEnergy25){csH = csHLast; csC = csCLast;}
                         else
-                        {csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);}
+                        {
+                            csH = sigmaHSpline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log);
+                            //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                        }
                         csHLast = csH; csCLast = csC;
                         cs = 2. * csH + csC;
                         break;
-                    case 26: csAl = calcMeanCS(sigmaAl, energy * 1e6);
+                    case 26:  csAl = sigmaAlSpline->Eval(energy1e6Log);
+                        //csAl = calcMeanCS(sigmaAl, energy * 1e6);
                         cs = csAl;  break;
-                    case 27: csHe3 = calcMeanCS(sigmaHe3, energy * 1e6);
+                    case 27: csHe3 = sigmaHe3Spline->Eval(energy1e6Log); //csHe3 = calcMeanCS(sigmaHe3, energy * 1e6);
                         cs = csHe3;  break;
-                    case 28: csB10 = calcMeanCS(sigmaB10, energy * 1e6); csF = calcMeanCS(sigmaF, energy * 1e6);
+                    case 28: csB10 = sigmaB10Spline->Eval(energy1e6Log);  csF = sigmaFSpline->Eval(energy1e6Log);
+                        //csB10 = calcMeanCS(sigmaB10, energy * 1e6); csF = calcMeanCS(sigmaF, energy * 1e6);
                         cs = csB10 + 3. * csF;
                         break;
-                    case 29: csGd155 = calcMeanCS(sigmaGd155, energy * 1e6);  csGd157 = calcMeanCS(sigmaGd157, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                    case 29:  csGd155 = sigmaGd155Spline->Eval(energy1e6Log);  csGd157 = sigmaGd157Spline->Eval(energy1e6Log);  csO = sigmaOSpline->Eval(energy1e6Log);
+                        //csGd155 = calcMeanCS(sigmaGd155, energy * 1e6);  csGd157 = calcMeanCS(sigmaGd157, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         cs = 3. * csO + 2. * 0.148 * csGd155 + 2. * 0.1565 * csGd157;
                         break;
-                    case 30: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                    case 30: csB10 = sigmaB10Spline->Eval(energy1e6Log); csB11 = sigmaB11Spline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
                         csB10 = calcMeanCS(sigmaB10, energy * 1e6); csB11 = calcMeanCS(sigmaB11, energy * 1e6);
                         cs = 2. * csH + csC + 0.04 * (0.2 * csB10 + 0.8 * csB11);
                         break;
-                    case 31: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);  csCl = calcMeanCS(sigmaCl35, energy * 1e6);
+                    case 31: csH = sigmaHSpline->Eval(energy1e6Log);  csC = sigmaCSpline->Eval(energy1e6Log);  csCl = sigmaClSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);  csCl = calcMeanCS(sigmaCl35, energy * 1e6);
                         cs = 3. * csH + 2. * csC + csCl;
                         break;
-                    case 32: csFe = calcMeanCS(sigmaFe, energy * 1e6); csCr52 = calcMeanCS(sigmaCr52, energy * 1e6); csCr53 = calcMeanCS(sigmaCr53, energy * 1e6);
-                        csNi = calcMeanCS(sigmaNi58, energy * 1e6); csMn55 = calcMeanCS(sigmaMn55, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
+                    case 32: csFe = sigmaFeSpline->Eval(energy1e6Log); csCr52 = sigmaCr52Spline->Eval(energy1e6Log); csCr53 = sigmaCr53Spline->Eval(energy1e6Log);
+                        csNi = sigmaNi58Spline->Eval(energy1e6Log); csMn55 = sigmaMn55Spline->Eval(energy1e6Log);  csSi = sigmaSiSpline->Eval(energy1e6Log);
+                        //csFe = calcMeanCS(sigmaFe, energy * 1e6); csCr52 = calcMeanCS(sigmaCr52, energy * 1e6); csCr53 = calcMeanCS(sigmaCr53, energy * 1e6);
+                        //csNi = calcMeanCS(sigmaNi58, energy * 1e6); csMn55 = calcMeanCS(sigmaMn55, energy * 1e6); csSi = calcMeanCS(sigmaSi, energy * 1e6);
                         cs = 0.68 * csFe + 0.19 * (0.86 * csCr52 + 0.14 * csCr53) + 0.09 * csNi + 0.02 * csSi + 0.02 * csMn55;
                         break;
-                    case 33: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                    case 33: csH = sigmaHSpline->Eval(energy1e6Log); csC = sigmaCSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
                         cs = 4. * csH + csC;
                         break;
-                    case 34: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                    case 34:  csH = sigmaHSpline->Eval(energy1e6Log); csC = sigmaCSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
                         cs = 23. * csH + 12. * csC;
                         break;
-                    case 36: csC = calcMeanCS(sigmaC, energy * 1e6);
+                    case 36:  csC = sigmaCSpline->Eval(energy1e6Log);
+                        //csC = calcMeanCS(sigmaC, energy * 1e6);
                         cs = csAl;  break;
-                    case 37: csPb206 = calcMeanCS(sigmaPb206, energy * 1e6); csPb207 = calcMeanCS(sigmaPb207, energy * 1e6); csPb208 = calcMeanCS(sigmaPb208, energy * 1e6);
+                    case 37: csPb206 = sigmaPb206Spline->Eval(energy1e6Log); csPb207 = sigmaPb207Spline->Eval(energy1e6Log); csPb208 = sigmaPb208Spline->Eval(energy1e6Log);
+                        //csPb206 = calcMeanCS(sigmaPb206, energy * 1e6); csPb207 = calcMeanCS(sigmaPb207, energy * 1e6); csPb208 = calcMeanCS(sigmaPb208, energy * 1e6);
                         cs = 0.241 * csPb206 + 0.221 * csPb207 + 0.524 * csPb208;
                         break;
-                    case 38: csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
-                        csN = calcMeanCS(sigmaN, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                    case 38:  csH = sigmaHSpline->Eval(energy1e6Log); csC = sigmaCSpline->Eval(energy1e6Log);
+                        csN = sigmaNSpline->Eval(energy1e6Log); csO = sigmaOSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
+                        //csN = calcMeanCS(sigmaN, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         cs = 0.35 * csC + 0.238 * csH + 0.144 * csN + 0.286 * csO;
                         break;
-                    case 41: csH = calcMeanCS(sigmaH,energy*1e6); csC = calcMeanCS(sigmaC,energy*1e6);
-                        csO = calcMeanCS(sigmaO,energy*1e6);
+                    case 41: csH = sigmaHSpline->Eval(energy1e6Log); csC = sigmaCSpline->Eval(energy1e6Log); csO = sigmaOSpline->Eval(energy1e6Log);
+                        //csH = calcMeanCS(sigmaH,energy*1e6); csC = calcMeanCS(sigmaC,energy*1e6); csO = calcMeanCS(sigmaO,energy*1e6);
                         csW = csO + 2.*csH;
-                        cs = ((6.*csC + 10.*csH + 5.*csO)*nCellulose + csW * nCelluloseWater) / nCelluloseMix;
+                        cs = ((6. * csC + 10. * csH + 5. * csO) * nCellulose + csW * nCelluloseWater) / nCelluloseMix;
                         break;
-                    case 100:csN = calcMeanCS(sigmaN, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
+                    case 100: csN = sigmaNSpline->Eval(energy1e6Log); csO = sigmaOSpline->Eval(energy1e6Log);
+                        // csN = calcMeanCS(sigmaN, energy * 1e6); csO = calcMeanCS(sigmaO, energy * 1e6);
                         cs = 2. * (0.78 * csN + 0.22 * csO);
                         break;
                     }
 
                     switch (material)
                     {
-                    case 7:  asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3 * calcMeanCS(absorbMt209O, energy * 1e6);
+                    case 7: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3 * calcMeanCS(absorbMt209O, energy * 1e6);
+                        if (energy1e6 < 2e7) {asCl = absorbCl35Spline->Eval(energy1e6Log) + absorbMt103Cl35Spline->Eval(energy1e6Log) + absorbMt107Cl35Spline->Eval(energy1e6Log); } else {asCl = calcMeanCS(absorbCl35, energy1e6);} if (energy1e6 > 2e7) {asCl += calcMeanCS(absorbMt5Cl35, energy1e6);}
+                        if (energy1e6 < 2e7) {asNa = absorbNaSpline->Eval(energy1e6Log);} else {asNa = calcMeanCS(absorbNa, energy1e6);} if (energy1e6 > 3e6) { asNa += calcMeanCS(absorbMt5Na, energy * 1e6) + calcMeanCS(absorbMt103Na, energy * 1e6) + calcMeanCS(absorbMt107Na, energy1e6);}
+                        //asNa = calcMeanCS(absorbNa, energy * 1e6) + calcMeanCS(absorbMt5Na, energy * 1e6) + calcMeanCS(absorbMt103Na, energy * 1e6) + calcMeanCS(absorbMt107Na, energy * 1e6);
+                        //asCl = calcMeanCS(absorbCl35, energy * 1e6) + calcMeanCS(absorbMt5Cl35, energy * 1e6) + calcMeanCS(absorbMt103Cl35, energy * 1e6) + calcMeanCS(absorbMt107Cl35, energy * 1e6);
                         asWater = 2. * asH + asO;
-                        asNa = calcMeanCS(absorbNa, energy * 1e6) + calcMeanCS(absorbMt5Na, energy * 1e6) + calcMeanCS(absorbMt103Na, energy * 1e6) + calcMeanCS(absorbMt107Na, energy * 1e6);
-                        asCl = calcMeanCS(absorbCl35, energy * 1e6) + calcMeanCS(absorbMt5Cl35, energy * 1e6) + calcMeanCS(absorbMt103Cl35, energy * 1e6) + calcMeanCS(absorbMt107Cl35, energy * 1e6);
                         asAll = asWater + nSalt * (asNa + asCl);
                         break;
-                    case 9:  asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3 * calcMeanCS(absorbMt209O, energy * 1e6);
+                    case 9:  asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3 * calcMeanCS(absorbMt209O, energy * 1e6);
                         asWater = 2. * asH + asO;
                         asAll = asWater;
                         break;
-                    case 10: asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
-                        asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
+                    case 10: if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asN = absorbNSpline->Eval(energy1e6Log) + absorbNbSpline->Eval(energy1e6Log);} else {asN += calcMeanCS(absorbN, energy1e6) + calcMeanCS(absorbNb, energy1e6);} if (energy1e6 > 1e6) {asN += calcMeanCS(absorbMt5N, energy1e6) + calcMeanCS(absorbMt104N,energy1e6) + calcMeanCS(absorbMt105N, energy1e6) + calcMeanCS(absorbMt107N,energy1e6) + calcMeanCS(absorbMt108N, energy1e6) + 3. * calcMeanCS(absorbMt209N,energy1e6);}
+                        if (energy1e6 < 2e7) {asAr = absorbArSpline->Eval(energy1e6Log);} else {asAr = calcMeanCS(absorbAr, energy1e6);} if (energy1e6 > 3e6) {asAr += calcMeanCS(absorbMt5Ar, energy1e6) + calcMeanCS(absorbMt103Ar, energy1e6) + calcMeanCS(absorbMt107Ar, energy1e6) + 3. * calcMeanCS(absorbMt209Ar,energy1e6);}
+                        //asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                        //asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
                         asLuft = 0.78 * 2. * asN + 0.21 * 2. * asO + 0.0093 * asAr;
                         asAll = asLuft;
                         break;
@@ -7868,37 +8166,46 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 11: if (energy == lastEnergy11) { asH = asHLast; asO = asOLast; asN = asNLast; asAr = asArLast; }
                            else
                            {
-                            asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                            asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
-                            asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
-                            asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
+                            asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                            if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                            if (energy1e6 < 2e7) {asN = absorbNSpline->Eval(energy1e6Log) + absorbNbSpline->Eval(energy1e6Log);} else {asN += calcMeanCS(absorbN, energy1e6) + calcMeanCS(absorbNb, energy1e6);} if (energy1e6 > 1e6) {asN += calcMeanCS(absorbMt5N, energy1e6) + calcMeanCS(absorbMt104N,energy1e6) + calcMeanCS(absorbMt105N, energy1e6) + calcMeanCS(absorbMt107N,energy1e6) + calcMeanCS(absorbMt108N, energy1e6) + 3. * calcMeanCS(absorbMt209N,energy1e6);}
+                            if (energy1e6 < 2e7) {asAr = absorbArSpline->Eval(energy1e6Log);} else {asAr = calcMeanCS(absorbAr, energy1e6);} if (energy1e6 > 3e6) {asAr += calcMeanCS(absorbMt5Ar, energy1e6) + calcMeanCS(absorbMt103Ar, energy1e6) + calcMeanCS(absorbMt107Ar, energy1e6) + 3. * calcMeanCS(absorbMt209Ar,energy1e6);}
+                            //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                            //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                            //asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
+                            //asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
                             asHLast = asH; asOLast = asO; asNLast = asN; asArLast = asAr;
                            }
                            asLuft = 0.78 * 2. * asN + 0.21 * 2. * asO + 0.0093 * asAr;
                            asWater = asO + 2. * asH;
                            asAll = asLuft * rLuft / wLuft + asWater * rLuftWater / wWater;
                            break;
-                    case 12: asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                    case 12: if (energy1e6 < 2e7) {asSi = absorbSiSpline->Eval(energy1e6Log);} else {asSi = calcMeanCS(absorbSi, energy1e6);} if (energy1e6 > 2e6) { asSi += calcMeanCS(absorbMt5Si, energy1e6) + calcMeanCS(absorbMt103Si, energy1e6) + calcMeanCS(absorbMt107Si, energy1e6) + 3. * calcMeanCS(absorbMt209Si, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        //asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                         asQuarz = 2. * asO + asSi;
                         asAll = asQuarz;
                         break;
-                    case 13: asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                    case 13:  if (energy1e6 < 2e7) {asAl = absorbAlSpline->Eval(energy1e6Log);} else {asAl = calcMeanCS(absorbAl, energy1e6);} if (energy1e6 > 2e6) { asAl += calcMeanCS(absorbMt5Al, energy1e6) + calcMeanCS(absorbMt103Al, energy1e6) + calcMeanCS(absorbMt107Al, energy1e6) + 3. * calcMeanCS(absorbMt209Al, energy1e6); }
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        //asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                         asAl2O3 = 3. * asO + 2. * asAl;
                         asAll = asAl2O3;
                         break;
-                    case 15: asFe = 1. * (calcMeanCS(absorbFe, energy * 1e6) + calcMeanCS(absorbMt5Fe, energy * 1e6) + calcMeanCS(absorbMt103Fe, energy * 1e6) + calcMeanCS(absorbMt107Fe, energy * 1e6) + 3. * calcMeanCS(absorbMt209Fe, energy * 1e6));
+                    case 15: if (energy1e6 < 2e7) {asFe = absorbFeSpline->Eval(energy1e6Log);} else {asFe = calcMeanCS(absorbFe, energy1e6);} if (energy1e6 > 1e6) { asFe += calcMeanCS(absorbMt5Fe, energy1e6) + calcMeanCS(absorbMt103Fe, energy1e6) + calcMeanCS(absorbMt107Fe, energy1e6) + 3. * calcMeanCS(absorbMt209Fe, energy1e6);}
+                        //asFe = 1. * (calcMeanCS(absorbFe, energy * 1e6) + calcMeanCS(absorbMt5Fe, energy * 1e6) + calcMeanCS(absorbMt103Fe, energy * 1e6) + calcMeanCS(absorbMt107Fe, energy * 1e6) + 3. * calcMeanCS(absorbMt209Fe, energy * 1e6));
                         asAll = asFe;
                         break;
-                    case 18: asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
-                        asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
+                    case 18: asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy1e6);
+                        asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy1e6);
                         asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
                         asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                         asB10 = calcMeanCS(absorbB10, energy * 1e6);
                         asMn55 = calcMeanCS(absorbMn55, energy * 1e6) + calcMeanCS(absorbMt5Mn55, energy * 1e6) + calcMeanCS(absorbMt103Mn55, energy * 1e6) + calcMeanCS(absorbMt107Mn55, energy * 1e6);
                         asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
-                        asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
+                        asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy1e6) + calcMeanCS(absorbMt107N, energy1e6) + calcMeanCS(absorbMt108N, energy1e6) + 3. * calcMeanCS(absorbMt209N, energy1e6);
                         asFe = 1. * (calcMeanCS(absorbFe, energy * 1e6) + calcMeanCS(absorbMt5Fe, energy * 1e6) + calcMeanCS(absorbMt103Fe, energy * 1e6) + calcMeanCS(absorbMt107Fe, energy * 1e6) + 3. * calcMeanCS(absorbMt209Fe, energy * 1e6));
                         asGd155 = calcMeanCS(absorbGd155, energy * 1e6); asGd157 = calcMeanCS(absorbGd157, energy * 1e6);
                         asNa = calcMeanCS(absorbNa, energy * 1e6) + calcMeanCS(absorbMt5Na, energy * 1e6) + calcMeanCS(absorbMt103Na, energy * 1e6) + calcMeanCS(absorbMt107Na, energy * 1e6);
@@ -7929,10 +8236,14 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 20: if (energy == lastEnergy20) { asH = asHLast; asO = asOLast; asAl = asAlLast; asSi = asSiLast; }
                         else
                         {
-                        asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
-                        asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
-                        asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                        asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asAl = absorbAlSpline->Eval(energy1e6Log);} else {asAl = calcMeanCS(absorbAl, energy1e6);} if (energy1e6 > 2e6) { asAl += calcMeanCS(absorbMt5Al, energy1e6) + calcMeanCS(absorbMt103Al, energy1e6) + calcMeanCS(absorbMt107Al, energy1e6) + 3. * calcMeanCS(absorbMt209Al, energy1e6); }
+                        if (energy1e6 < 2e7) {asSi = absorbSiSpline->Eval(energy1e6Log);} else {asSi = calcMeanCS(absorbSi, energy1e6);} if (energy1e6 > 2e6) { asSi += calcMeanCS(absorbMt5Si, energy1e6) + calcMeanCS(absorbMt103Si, energy1e6) + calcMeanCS(absorbMt107Si, energy1e6) + 3. * calcMeanCS(absorbMt209Si, energy1e6);}
+                        //asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
+                        //asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                         asHLast = asH; asOLast = asO; asAlLast = asAl; asSiLast = asSi;
                         }
                            asBoden = (soilSiFrac * asSi + 2. * soilAlFrac * asAl) * soilSolidFracVar + asO * (2.25 * soilSolidFracVar + soilWaterFrac) + 2. * asH * soilWaterFrac; //asAll = asBoden;
@@ -7940,103 +8251,153 @@ bool cosmicNSimulator(MainWindow* uiM)
                            asSolids = (soilSiFrac * asSi + 2. * soilAlFrac * asAl) * soilSolidFracVar + asO * ((soilSiFrac * 2. + 3. * soilAlFrac) * asO * soilSolidFracVar);
                            asAll = asSolids + asWater * soilWaterFrac * soilStrechFactor;
                            break;
-                    case 21: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
-                        asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
-                        asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
+                    case 21: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asN = absorbNSpline->Eval(energy1e6Log) + absorbNbSpline->Eval(energy1e6Log);} else {asN += calcMeanCS(absorbN, energy1e6) + calcMeanCS(absorbNb, energy1e6);} if (energy1e6 > 1e6) {asN += calcMeanCS(absorbMt5N, energy1e6) + calcMeanCS(absorbMt104N,energy1e6) + calcMeanCS(absorbMt105N, energy1e6) + calcMeanCS(absorbMt107N,energy1e6) + calcMeanCS(absorbMt108N, energy1e6) + 3. * calcMeanCS(absorbMt209N,energy1e6);}
+                        if (energy1e6 < 2e7) {asAr = absorbArSpline->Eval(energy1e6Log);} else {asAr = calcMeanCS(absorbAr, energy1e6);} if (energy1e6 > 3e6) {asAr += calcMeanCS(absorbMt5Ar, energy1e6) + calcMeanCS(absorbMt103Ar, energy1e6) + calcMeanCS(absorbMt107Ar, energy1e6) + 3. * calcMeanCS(absorbMt209Ar,energy1e6);}
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        //asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
+                        //asAr = calcMeanCS(absorbAr, energy * 1e6) + calcMeanCS(absorbMt5Ar, energy * 1e6) + calcMeanCS(absorbMt103Ar, energy * 1e6) + calcMeanCS(absorbMt107Ar, energy * 1e6) + 3. * calcMeanCS(absorbMt209Ar, energy * 1e6);
                         asLuft = 0.78 * 2. * asN + 0.21 * 2. * asO + 0.0093 * asAr;
                         asWater = asO + 2. * asH;
                         asPlants = asO + 2. * asH + 0.2 * asC;
                         asAll = asLuft * rLuft / wLuft + asWater * rLuftWater / wWater + asPlants * rPlants / wPlants;
                         break;
-                    case 23: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
-                        asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
+                    case 23: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asSi = absorbSiSpline->Eval(energy1e6Log);} else {asSi = calcMeanCS(absorbSi, energy1e6);} if (energy1e6 > 2e6) { asSi += calcMeanCS(absorbMt5Si, energy1e6) + calcMeanCS(absorbMt103Si, energy1e6) + calcMeanCS(absorbMt107Si, energy1e6) + 3. * calcMeanCS(absorbMt209Si, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                        //asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asAll = 0.44 * asO + 0.44 * asH + 0.12 * asSi;
                         break;
-                    case 24: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
-                        asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
+                    case 24: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asSi = absorbSiSpline->Eval(energy1e6Log);} else {asSi = calcMeanCS(absorbSi, energy1e6);} if (energy1e6 > 2e6) { asSi += calcMeanCS(absorbMt5Si, energy1e6) + calcMeanCS(absorbMt103Si, energy1e6) + calcMeanCS(absorbMt107Si, energy1e6) + 3. * calcMeanCS(absorbMt209Si, energy1e6);}
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        //asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asAll = 0.5 * asO + 0.14 * asH + 0.11 * asC + 0.25 * asSi;
                         break;
                     case 25: if (energy == lastEnergy25) { asH = asHLast; asC = asCLast; }
                         else
                         {
-                            asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                            asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                            //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                            //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                            asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);} // absorbMt5HSpline->Eval(energy1e6Log) + 3. * absorbMt209HSpline->Eval(energy1e6Log);
+                            if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);} //absorbMt5OSpline->Eval(energy1e6Log) + absorbMt103OSpline->Eval(energy1e6Log) + absorbMt105OSpline->Eval(energy1e6Log) + absorbMt107OSpline->Eval(energy1e6Log) + 3. * absorbMt209OSpline->Eval(energy1e6Log);
                         }
                         asHLast = asH; asCLast = asC;
                         asAll = 2. * asH + 1. * asC;
                         break;
-                    case 26: asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
+                    case 26: if (energy1e6 < 2e7) {asAl = absorbAlSpline->Eval(energy1e6Log);} else {asAl = calcMeanCS(absorbAl, energy1e6);} if (energy1e6 > 2e6) { asAl += calcMeanCS(absorbMt5Al, energy1e6) + calcMeanCS(absorbMt103Al, energy1e6) + calcMeanCS(absorbMt107Al, energy1e6) + 3. * calcMeanCS(absorbMt209Al, energy1e6); }
+                        //asAl = calcMeanCS(absorbAl, energy * 1e6) + calcMeanCS(absorbMt5Al, energy * 1e6) + calcMeanCS(absorbMt103Al, energy * 1e6) + calcMeanCS(absorbMt107Al, energy * 1e6) + 3. * calcMeanCS(absorbMt209Al, energy * 1e6);
                         asAll = asAl;
                         break;
-                    case 27: asHe3 = calcMeanCS(absorbMt104He3, energy * 1e6) + calcMeanCS(absorbMt103He3, energy * 1e6);
+                    case 27: if (energy1e6 < 2e7) {asHe3 = absorbMt103He3Spline->Eval(energy1e6Log);} else {asHe3 = calcMeanCS(absorbMt103He3, energy1e6);} if (energy1e6 > 4e6) { asHe3 += calcMeanCS(absorbMt104He3, energy1e6) ; }
+                        //asHe3 = + calcMeanCS(absorbMt103He3, energy * 1e6);
                         asAll = asHe3;
                         break;
-                    case 28: asF = calcMeanCS(absorbF, energy * 1e6) + calcMeanCS(absorbMt103F, energy * 1e6) + calcMeanCS(absorbMt107F, energy * 1e6);
-                        asB10 = calcMeanCS(absorbB10, energy * 1e6);
+                    case 28: if (energy1e6 < 2e7) {asF = absorbFSpline->Eval(energy1e6Log);} else {asF = calcMeanCS(absorbF, energy1e6);} if (energy1e6 > 3e6) { asF += calcMeanCS(absorbMt103F, energy1e6) + calcMeanCS(absorbMt107F, energy1e6); }
+                        if (energy1e6 < 2e7) {asB10 = absorbB10Spline->Eval(energy1e6Log);} else {asB10 = 0;}
+                        //asF = calcMeanCS(absorbF, energy * 1e6) +
+                        //asB10 = calcMeanCS(absorbB10, energy * 1e6);
                         asAll = asB10 + 3. * asF;
                         break;
-                    case 29: asGd155 = calcMeanCS(absorbGd155, energy * 1e6); asGd157 = calcMeanCS(absorbGd157, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                    case 29: if (energy1e6 < 2e7) {asGd155 = absorbGd155Spline->Eval(energy1e6Log);} else {asGd155 = 0;}
+                        if (energy1e6 < 2e7) {asGd157 = absorbGd157Spline->Eval(energy1e6Log);} else {asGd157 = 0;}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        //asGd155 = calcMeanCS(absorbGd155, energy * 1e6); asGd157 = calcMeanCS(absorbGd157, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                         asAll = 3. * asO + 2. * 0.148 * asGd155 + 2. * 0.1565 * asGd157;
                         break;
-                    case 30: asB10 = calcMeanCS(absorbB10, energy * 1e6); asB11 = calcMeanCS(absorbB11, energy * 1e6);
-                        asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                    case 30: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asB10 = absorbB10Spline->Eval(energy1e6Log);} else {asB10 = 0;}
+                        if (energy1e6 < 2e7) {asB11 = absorbB10Spline->Eval(energy1e6Log);} else {asB11 = 0;}
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        //asB10 = calcMeanCS(absorbB10, energy * 1e6); asB11 = calcMeanCS(absorbB11, energy * 1e6);
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
                         asAll = 2. * asH + 1. * asC + 0.04 * (0.2 * asB10 + 0.8 * asB11);
                         break;
-                    case 31: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
-                        asCl = calcMeanCS(absorbCl35, energy * 1e6) + calcMeanCS(absorbMt5Cl35, energy * 1e6) + calcMeanCS(absorbMt103Cl35, energy * 1e6) + calcMeanCS(absorbMt107Cl35, energy * 1e6);
+                    case 31: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        if (energy1e6 < 2e7) {asCl = absorbCl35Spline->Eval(energy1e6Log) + absorbMt103Cl35Spline->Eval(energy1e6Log) + absorbMt107Cl35Spline->Eval(energy1e6Log); } else {asCl = calcMeanCS(absorbCl35, energy1e6);} if (energy1e6 > 2e7) {asCl += calcMeanCS(absorbMt5Cl35, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        //asCl = calcMeanCS(absorbCl35, energy * 1e6) + calcMeanCS(absorbMt5Cl35, energy * 1e6) + calcMeanCS(absorbMt103Cl35, energy * 1e6) + calcMeanCS(absorbMt107Cl35, energy * 1e6);
                         asAll = 3. * asH + 2. * asC + asCl;
                         break;
-                    case 32: asFe = calcMeanCS(absorbFe, energy * 1e6) + calcMeanCS(absorbMt5Fe, energy * 1e6) + calcMeanCS(absorbMt103Fe, energy * 1e6) + calcMeanCS(absorbMt107Fe, energy * 1e6);
-                        asNi = calcMeanCS(absorbNi58, energy * 1e6) + calcMeanCS(absorbMt5Ni58, energy * 1e6) + calcMeanCS(absorbMt103Ni58, energy * 1e6) + calcMeanCS(absorbMt107Ni58, energy * 1e6);
-                        asCr52 = calcMeanCS(absorbCr52, energy * 1e6) + calcMeanCS(absorbMt5Cr52, energy * 1e6) + calcMeanCS(absorbMt103Cr52, energy * 1e6) + calcMeanCS(absorbMt107Cr52, energy * 1e6);
-                        asCr53 = calcMeanCS(absorbCr53, energy * 1e6) + calcMeanCS(absorbMt5Cr53, energy * 1e6) + calcMeanCS(absorbMt103Cr53, energy * 1e6) + calcMeanCS(absorbMt107Cr53, energy * 1e6);
-                        asMn55 = calcMeanCS(absorbMn55, energy * 1e6) + calcMeanCS(absorbMt5Mn55, energy * 1e6) + calcMeanCS(absorbMt103Mn55, energy * 1e6) + calcMeanCS(absorbMt107Mn55, energy * 1e6);
-                        asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
+                    case 32: if (energy1e6 < 2e7) {asFe = absorbFeSpline->Eval(energy1e6Log);} else {asFe = calcMeanCS(absorbFe, energy1e6);} if (energy1e6 > 1e6) { asFe += calcMeanCS(absorbMt5Fe, energy1e6) + calcMeanCS(absorbMt103Fe, energy1e6) + calcMeanCS(absorbMt107Fe, energy1e6) + 3. * calcMeanCS(absorbMt209Fe, energy1e6);}
+                        if (energy1e6 < 2e7) {asNi = absorbNi58Spline->Eval(energy1e6Log);} else {asNi = calcMeanCS(absorbNi58, energy1e6);} if (energy1e6 > 1e6) { asNi += calcMeanCS(absorbMt5Ni58, energy1e6) + calcMeanCS(absorbMt103Ni58, energy1e6) + calcMeanCS(absorbMt107Ni58, energy1e6);}
+                        if (energy1e6 < 2e7) {asCr52 = absorbCr52Spline->Eval(energy1e6Log);} else {asCr52 = calcMeanCS(absorbCr52, energy1e6);} if (energy1e6 > 1e6) { asCr52 += calcMeanCS(absorbMt5Cr52, energy1e6) + calcMeanCS(absorbMt103Cr52, energy1e6) + calcMeanCS(absorbMt107Cr52, energy1e6);}
+                        if (energy1e6 < 2e7) {asCr53 = absorbCr53Spline->Eval(energy1e6Log);} else {asCr53 = calcMeanCS(absorbCr53, energy1e6);} if (energy1e6 > 1e6) { asCr53 += calcMeanCS(absorbMt5Cr53, energy1e6) + calcMeanCS(absorbMt103Cr53, energy1e6) + calcMeanCS(absorbMt107Cr53, energy1e6);}
+                        if (energy1e6 < 2e7) {asMn55 = absorbMn55Spline->Eval(energy1e6Log);} else {asMn55 = calcMeanCS(absorbMn55, energy1e6);} if (energy1e6 > 3e6) { asMn55 += calcMeanCS(absorbMt5Mn55, energy1e6) + calcMeanCS(absorbMt103Mn55, energy1e6) + calcMeanCS(absorbMt107Mn55, energy1e6);}
+                        if (energy1e6 < 2e7) {asSi = absorbSiSpline->Eval(energy1e6Log);} else {asSi = calcMeanCS(absorbSi, energy1e6);} if (energy1e6 > 2e6) { asSi += calcMeanCS(absorbMt5Si, energy1e6) + calcMeanCS(absorbMt103Si, energy1e6) + calcMeanCS(absorbMt107Si, energy1e6) + 3. * calcMeanCS(absorbMt209Si, energy1e6);}
+                        //asFe = calcMeanCS(absorbFe, energy * 1e6) + calcMeanCS(absorbMt5Fe, energy * 1e6) + calcMeanCS(absorbMt103Fe, energy * 1e6) + calcMeanCS(absorbMt107Fe, energy * 1e6);
+                        //asNi = calcMeanCS(absorbNi58, energy * 1e6) + calcMeanCS(absorbMt5Ni58, energy * 1e6) + calcMeanCS(absorbMt103Ni58, energy * 1e6) + calcMeanCS(absorbMt107Ni58, energy * 1e6);
+                        //asCr52 = calcMeanCS(absorbCr52, energy * 1e6) + calcMeanCS(absorbMt5Cr52, energy * 1e6) + calcMeanCS(absorbMt103Cr52, energy * 1e6) + calcMeanCS(absorbMt107Cr52, energy * 1e6);
+                        //asCr53 = calcMeanCS(absorbCr53, energy * 1e6) + calcMeanCS(absorbMt5Cr53, energy * 1e6) + calcMeanCS(absorbMt103Cr53, energy * 1e6) + calcMeanCS(absorbMt107Cr53, energy * 1e6);
+                        //asMn55 = calcMeanCS(absorbMn55, energy * 1e6) + calcMeanCS(absorbMt5Mn55, energy * 1e6) + calcMeanCS(absorbMt103Mn55, energy * 1e6) + calcMeanCS(absorbMt107Mn55, energy * 1e6);
+                        //asSi = calcMeanCS(absorbSi, energy * 1e6) + calcMeanCS(absorbMt5Si, energy * 1e6) + calcMeanCS(absorbMt103Si, energy * 1e6) + calcMeanCS(absorbMt107Si, energy * 1e6) + 3. * calcMeanCS(absorbMt209Si, energy * 1e6);
                         asAll = 0.68 * asFe + 0.19 * (0.86 * asCr52 + 0.14 * asCr53) + 0.09 * asNi + 0.02 * asSi + 0.02 * asMn55;
                         break;
-                    case 33: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                    case 33: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
                         asAll = 4. * asH + 1. * asC;
                         break;
-                    case 34: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                    case 34: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
                         asAll = 23. * asH + 12. * asC;
                         break;
-                    case 36: asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                    case 36: if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
                         asAll = asC;
                         break;
-                    case 37: asPb206 = calcMeanCS(absorbPb206, energy * 1e6) + calcMeanCS(absorbMt5Pb206, energy * 1e6) + calcMeanCS(absorbMt103Pb206, energy * 1e6) + calcMeanCS(absorbMt107Pb206, energy * 1e6) + 3. * calcMeanCS(absorbMt209Pb206, energy * 1e6);
-                        asPb207 = calcMeanCS(absorbPb207, energy * 1e6) + calcMeanCS(absorbMt5Pb207, energy * 1e6) + calcMeanCS(absorbMt103Pb207, energy * 1e6) + calcMeanCS(absorbMt107Pb207, energy * 1e6) + 3. * calcMeanCS(absorbMt209Pb207, energy * 1e6);
-                        asPb206 = calcMeanCS(absorbPb208, energy * 1e6) + calcMeanCS(absorbMt5Pb208, energy * 1e6) + calcMeanCS(absorbMt103Pb208, energy * 1e6) + calcMeanCS(absorbMt107Pb208, energy * 1e6) + 3. * calcMeanCS(absorbMt209Pb208, energy * 1e6);
+                    case 37: if (energy1e6 < 2e7) {asPb206 = absorbPb206Spline->Eval(energy1e6Log);} else {asPb206 = calcMeanCS(absorbPb206, energy1e6);} if (energy1e6 > 3e6) { asPb206 += calcMeanCS(absorbMt5Pb206, energy1e6) + calcMeanCS(absorbMt103Pb206, energy1e6) + calcMeanCS(absorbMt107Pb206, energy1e6) + 3. * calcMeanCS(absorbMt209Pb206, energy1e6); }
+                        if (energy1e6 < 2e7) {asPb207 = absorbPb207Spline->Eval(energy1e6Log);} else {asPb207 = calcMeanCS(absorbPb207, energy1e6);} if (energy1e6 > 3e6) { asPb207 += calcMeanCS(absorbMt5Pb207, energy1e6) + calcMeanCS(absorbMt103Pb207, energy1e6) + calcMeanCS(absorbMt107Pb207, energy1e6) + 3. * calcMeanCS(absorbMt209Pb207, energy1e6); }
+                        if (energy1e6 < 2e7) {asPb208 = absorbPb208Spline->Eval(energy1e6Log);} else {asPb208 = calcMeanCS(absorbPb208, energy1e6);} if (energy1e6 > 3e6) { asPb208 += calcMeanCS(absorbMt5Pb208, energy1e6) + calcMeanCS(absorbMt103Pb208, energy1e6) + calcMeanCS(absorbMt107Pb208, energy1e6) + 3. * calcMeanCS(absorbMt209Pb208, energy1e6); }
+                        //asPb206 = calcMeanCS(absorbPb206, energy * 1e6) + calcMeanCS(absorbMt5Pb206, energy * 1e6) + calcMeanCS(absorbMt103Pb206, energy * 1e6) + calcMeanCS(absorbMt107Pb206, energy * 1e6) + 3. * calcMeanCS(absorbMt209Pb206, energy * 1e6);
+                        //asPb207 = calcMeanCS(absorbPb207, energy * 1e6) + calcMeanCS(absorbMt5Pb207, energy * 1e6) + calcMeanCS(absorbMt103Pb207, energy * 1e6) + calcMeanCS(absorbMt107Pb207, energy * 1e6) + 3. * calcMeanCS(absorbMt209Pb207, energy * 1e6);
+                        //asPb206 = calcMeanCS(absorbPb208, energy * 1e6) + calcMeanCS(absorbMt5Pb208, energy * 1e6) + calcMeanCS(absorbMt103Pb208, energy * 1e6) + calcMeanCS(absorbMt107Pb208, energy * 1e6) + 3. * calcMeanCS(absorbMt209Pb208, energy * 1e6);
                         asAll = 0.241 * asPb206 + 0.221 * asPb207 + 0.524 * asPb208;
                         break;
                     case 38: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
-                        asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
-                        asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asN = absorbNSpline->Eval(energy1e6Log) + absorbNbSpline->Eval(energy1e6Log);} else {asN += calcMeanCS(absorbN, energy1e6) + calcMeanCS(absorbNb, energy1e6);} if (energy1e6 > 1e6) {asN += calcMeanCS(absorbMt5N, energy1e6) + calcMeanCS(absorbMt104N,energy1e6) + calcMeanCS(absorbMt105N, energy1e6) + calcMeanCS(absorbMt107N,energy1e6) + calcMeanCS(absorbMt108N, energy1e6) + 3. * calcMeanCS(absorbMt209N,energy1e6);}
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        //asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
                         asAll = 0.35 * asC + 0.238 * asH + 0.144 * asN + 0.286 * asO;
                         break;
-                    case 41: asH = calcMeanCS(absorbH,energy*1e6)+calcMeanCS(absorbMt5H,energy*1e6)+3.*calcMeanCS(absorbMt209H,energy*1e6);
-                        asO = calcMeanCS(absorbO,energy*1e6)+calcMeanCS(absorbMt5O,energy*1e6)+calcMeanCS(absorbMt103O,energy*1e6)+calcMeanCS(absorbMt105O,energy*1e6)+calcMeanCS(absorbMt107O,energy*1e6)+3.*calcMeanCS(absorbMt209O,energy*1e6);
-                        asC = calcMeanCS(absorbC,energy*1e6)+calcMeanCS(absorbMt5C,energy*1e6)+calcMeanCS(absorbMt103C,energy*1e6)+calcMeanCS(absorbMt107C,energy*1e6)+3.*calcMeanCS(absorbMt209C,energy*1e6);
-                        asWater = asH + 2.*asO;
-                        asAll = ((6.*asC + 10.*asH + 5.*csO)*nCellulose + asWater * nCelluloseWater) / nCelluloseMix;
+                    case 41: asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        if (energy1e6 < 2e7) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        //asH = calcMeanCS(absorbH,energy*1e6)+calcMeanCS(absorbMt5H,energy*1e6)+3.*calcMeanCS(absorbMt209H,energy*1e6);
+                        //asO = calcMeanCS(absorbO,energy*1e6)+calcMeanCS(absorbMt5O,energy*1e6)+calcMeanCS(absorbMt103O,energy*1e6)+calcMeanCS(absorbMt105O,energy*1e6)+calcMeanCS(absorbMt107O,energy*1e6)+3.*calcMeanCS(absorbMt209O,energy*1e6);
+                        //asC = calcMeanCS(absorbC,energy*1e6)+calcMeanCS(absorbMt5C,energy*1e6)+calcMeanCS(absorbMt103C,energy*1e6)+calcMeanCS(absorbMt107C,energy*1e6)+3.*calcMeanCS(absorbMt209C,energy*1e6);
+                        asWater = asH + 2. * asO;
+                        asAll = ((6. * asC + 10. * asH + 5. * csO) * nCellulose + asWater * nCelluloseWater) / nCelluloseMix;
                         break;
-                    case 100:asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
-                        asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
+                    case 100: if (energy1e6 < 2e7) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
+                        if (energy1e6 < 2e7) {asN = absorbNSpline->Eval(energy1e6Log) + absorbNbSpline->Eval(energy1e6Log);} else {asN += calcMeanCS(absorbN, energy1e6) + calcMeanCS(absorbNb, energy1e6);} if (energy1e6 > 1e6) {asN += calcMeanCS(absorbMt5N, energy1e6) + calcMeanCS(absorbMt104N,energy1e6) + calcMeanCS(absorbMt105N, energy1e6) + calcMeanCS(absorbMt107N,energy1e6) + calcMeanCS(absorbMt108N, energy1e6) + 3. * calcMeanCS(absorbMt209N,energy1e6);}
+                        //asN = calcMeanCS(absorbN, energy * 1e6) + calcMeanCS(absorbNb, energy * 1e6) + calcMeanCS(absorbMt5N, energy * 1e6) + calcMeanCS(absorbMt104N, energy * 1e6) + calcMeanCS(absorbMt105N, energy * 1e6) + calcMeanCS(absorbMt107N, energy * 1e6) + calcMeanCS(absorbMt108N, energy * 1e6) + 3. * calcMeanCS(absorbMt209N, energy * 1e6);
+                        //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt105O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3. * calcMeanCS(absorbMt209O, energy * 1e6);
                         asLuft = 0.78 * 2. * asN + 0.22 * 2. * asO;
                         asAll = asLuft;
                         break;
                     }
-
 
                     if (material == 7)
                     {
@@ -12639,7 +13000,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.05b (14.01.2023)<br> ";
+    messageString+=        "v1.06 (17.01.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 

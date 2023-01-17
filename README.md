@@ -37,13 +37,17 @@ Explanations and instructions can be found in the [URANOS Wiki](https://github.c
 
 <img src="https://user-images.githubusercontent.com/7942719/179392637-f9db7458-2c2b-41e6-8117-d7ad1062a96a.png" alt="URANOS interface" style="width:50%; max-width: 100px">
 
-### Prerequisites
+### Prerequisites Windows
 
 - [Visual Studio 2019 community version](https://my.visualstudio.com/Downloads?q=visual%20studio%202019&wt.mc_id=o~msft~vscom~older-downloads) (prerequisite for ROOT6). Install with the development option: ` desktop development with C++ application` (Microsoft-account required, > 8 GB disk space)
 - [ROOT 6.22.08](https://root.cern/download/root_v6.22.08.win32.vc16.exe) (prerequisite for running URANOS)
 - Basic libraries (possibly missing on some systems):
     - Microsoft Visual C++ 2015-2022 redistributional package
     - Windows 10/11 SDK (With C++ development files)
+    
+### Prerequisites Linux
+- [ROOT 6.22.08](https://root.cern/releases/release-62208/) (or the version bundeled with the respective binary)
+- [QT5] (the version bundeled with the respective binary, typically the latest LTS)
 
 ### Preparation
 

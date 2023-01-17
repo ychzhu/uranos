@@ -1,5 +1,12 @@
 # URANOS Release Notes
 
+## URANOS version 1.06 (January 17, 2023)
+
+### Changelog
+- bugfixes for the cross sections
+- improved performance
+
+
 ## URANOS version 1.05b (January 14, 2023)
 
 ### Changelog

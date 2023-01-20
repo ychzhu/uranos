@@ -51,10 +51,10 @@ Explanations and instructions can be found in the [URANOS Wiki](https://github.c
 
 ### Preparation
 
-1. Download the zipped binary package as well as the ENDF data and IncomingSpectrum zip files. The binaries can be found in this repository in the /binaries folder and the ENDF data and the Incoming Spectrum files can be found in the /data folder.
+1. Download the zipped binary package as well as the ENDF data and IncomingSpectrum zip files. The binaries can be found in this repository in the /binaries folder and the ENDF data and the Incoming Spectrum files can be found in the /data folder in the repository folder tree. The binaries/executables are located in the .zip packages URANOSxxx.zip with the Windows version URANOS.zip and xxx versions for individual Linux distributions. 
 2. Unzip the URANOS files into a folder of your choice.
 3. Unzip the ENDF data files and the `Input Spectrum Calibration File` into a folder of your choice, preferably both into the same folder, preferably called /ENDF. 
-4. Run `URANOSGUI.exe`. When running URANOS for the first time you will see an error message that relevant data files are missing, this can then be corrected in the next step.
+4. Run `URANOSGUI.exe` for Windows or './URANOSGUI' for Linux. When running URANOS for the first time you will see an error message that relevant data files are missing, this can then be corrected in the next step.
 5. Insert the full path and filename of the `IncomingSpectrum.root` into `Input Spectrum Calibration File` under URANOS' *Setup* tab. If the destination path you entered turns red, it is not recognized by the system. Black or grey indicate valid folders or files.
 6. Insert the full path to the ENDF files into `Cross Section Folder` under URANOS' *Setup* tab. 
 7. Set a `work directory` where the configuration files of your scenario are to be stored. Mind a trailing slash. 

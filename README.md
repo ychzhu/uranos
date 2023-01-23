@@ -1,5 +1,5 @@
 # URANOS - Ultra Rapid Neutron-Only Simulation
-[![URANOS at Zenodo](https://img.shields.io/static/v1?label=Code&message=10.5281/zenodo.6578668&color=blue)](https://doi.org/10.5281/zenodo.6578668) [![URANOS at the Geoscientific Model Development](https://img.shields.io/static/v1?label=Manuscript&message=10.5194/gmd-2022-93&color=yellow)](https://doi.org/10.5194/gmd-2022-93)
+[![URANOS at Zenodo](https://img.shields.io/static/v1?label=Code&message=10.5281/zenodo.6578668&color=blue)](https://doi.org/10.5281/zenodo.6578668) [![URANOS at the Geoscientific Model Development](https://img.shields.io/static/v1?label=Manuscript&message=10.5194/gmd-16-449-2023&color=yellow)](https://doi.org/10.5194/gmd-16-449-2023)
 
 ![splashScreenUranos](https://user-images.githubusercontent.com/106179070/170102368-93e66f49-12ab-44a9-860a-2bd1977f715c.jpg)
 
@@ -22,8 +22,8 @@ In the **uranos-users mailing list**, users can ask questions, discuss, and cont
 ## Cite as
 
 - **The software code** is available [on GitHub](https://github.com/mkoehli/uranos) and has been released by [Zenodo, doi:10.5281/zenodo.6578668](https://doi.org/10.5281/zenodo.6578668).
-- **A manuscript** on URANOS has been published as a preprint in the journal *Geoscientific Model Development*:
-    > Köhli, M., Schrön, M., Zacharias, S., and Schmidt, U.: URANOS v1.0 – the Ultra Rapid Adaptable Neutron-Only Simulation for Environmental Research, Geosci. Model Dev. Discuss. [preprint], [doi:10.5194/gmd-2022-93](https://doi.org/10.5194/gmd-2022-93), *in review*, 2022. 
+- **An article** on URANOS has been published in the journal of *Geoscientific Model Development*:
+    > Köhli, M., Schrön, M., Zacharias, S., and Schmidt, U.: URANOS v1.0 – the Ultra Rapid Adaptable Neutron-Only Simulation for Environmental Research, Geosci. Model Dev., 16, 449–477, [doi:10.5194/gmd-16-449-2023](https://doi.org/10.5194/gmd-16-449-2023), 2023. 
 
 ## Publications using URANOS
 

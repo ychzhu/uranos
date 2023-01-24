@@ -124,6 +124,12 @@ int main(int argc, char *argv[])
             disableGUI = true;
         }
 
+        // starts URANOS with the source control panel
+        if ((std::string(argv[1])=="tnw"))
+        {
+            w.activateThermalSkyEvaporation();
+        }
+
         // starts the batch run for n monoenergetic runs with neutrons directly downward
         if ((std::string(argv[1])=="detectorBatchRun"))
         {

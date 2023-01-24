@@ -65,8 +65,8 @@ void DialogShowPic::replotGraph()
      ui->widget->yAxis->setRange(QCPRange(0, matrix.GetColUpb()));
      QCPColorMap *colorMap = new QCPColorMap( ui->widget->xAxis,  ui->widget->yAxis);
 
-    Int_t a = matrix.GetColUpb();
-    Int_t b = matrix.GetNcols();
+    //Int_t a = matrix.GetColUpb();
+    //Int_t b = matrix.GetNcols();
 
     colorMap->data()->setSize(matrix.GetNcols(), matrix.GetNcols());
     colorMap->data()->setRange(QCPRange(0, matrix.GetColUpb()), QCPRange(0, matrix.GetColUpb()));

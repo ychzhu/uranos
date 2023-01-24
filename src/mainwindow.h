@@ -119,6 +119,7 @@ public:
     void checkInputPics();
 
     TSpline3* getSplinedEnergyModelFromMatrix(TMatrixF* matrix, bool logXValues, bool normalize);
+    TSpline5* getSplinedEnergyModelFromMatrix2(TMatrixF* matrix, bool logXValues, bool normalize);
 
     TSpline3* getSplinedDetectorEnergyModelFromFile(TString dname, int linesToSkip, bool logXValues, bool normalize);
 

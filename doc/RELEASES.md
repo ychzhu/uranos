@@ -1,6 +1,6 @@
 # URANOS Release Notes
 
-## URANOS version 1.07 (January 17, 2023)
+## URANOS version 1.07 (January 24, 2023)
 
 ## Changelog:
 - bugfixes for GUI and computation module

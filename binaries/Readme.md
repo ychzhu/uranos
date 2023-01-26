@@ -1,4 +1,8 @@
-- The Win32 package contains the URANOS binaries including the Qt DLLs. An installed version of ROOT 6.22.08 is required to run the program. 
-- The Ubuntu Linux package contains URANOS compiled for Ubuntu 20. An installed version of ROOT 6.22.08 and QT 5.12.8 is required to run the program.
-- The Ubuntu22 Linux package contains URANOS compiled for Ubuntu 22. An installed version of ROOT 6.26.10 and QT 5.15.3 is required to run the program.
-- The CentOS Linux package contains URANOS compiled for CentOS 7. An installed version of ROOT 6.22.08 and QT 5.9.7 is required to run the program.
+# Binaries
+
+| file                | OS              | requires                |
+|:------------------- |:--------------- |:----------------------- |
+| `URANOS-Win32-*`    | Windows         | ROOT 6.22.08            |
+| `URANOS-Ubuntu20-*` | Linux/Ubuntu 20 | ROOT 6.22.08, QT 5.12.8 |
+| `URANOS-Ubuntu22-*` | Linux/Ubuntu 22 | ROOT 6.26.10, QT 5.15.3 |
+| `URANOS-CentOS7-*`  | Linux/CentOS 7  | ROOT 6.22.08, QT 5.9.7  | 

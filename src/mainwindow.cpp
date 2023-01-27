@@ -2321,7 +2321,7 @@ bool MainWindow::importSettings()
     string fileName = "Uranos.cfg";
     int lineCounter = 0, tempInt = 0;
 
-    if ((noGUIMode) || (configFilePathConfigured)) fileName = configFilePath;
+    if  (configFilePathConfigured) fileName = configFilePath;
 
     ifstream input_stream(fileName, ios::in);
     while (curLine.ReadLine(input_stream))
@@ -5405,7 +5405,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         //generate Geometry
 
         // [x0,y0,xEnd,yEnd,z0,height,material,layernumber]
-        cout << "Overall layers: " << geometries.size() << endl;
+        cout << "No. of layers: " << geometries.size() << endl;
+        cout << "No. of neutrons: " << neutrons << endl;
 
         // ********************
         // Variables
@@ -5979,7 +5980,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         const double  rQuarz = 2.5, rGraphit = 2.2, rAl2O3 = 3.94, rFe = 7.87, rAlMg = 2.66, rEStahl = 8.03, rPb = 11.342, rTNT = 1.654;
         //Float_t rAsphalt = 1.0;
         //double rHDPE2;
-        double rWater = 0.99, rGd2O3 = 7.41, rMethane = 0.000656, rHDPE = 0.95, rPVC = 1.45 ; //rLuft = pressureFac*0.0012, rLuftWater = 1.*2.*0.0000177*relHumidityAir;
+        double rWater = 0.99, rGd2O3 = 7.41, rMethane = 0.000656, rHDPE = 0.95, rPVC = 1.45, rPVCc = 1.56 ; //rLuft = pressureFac*0.0012, rLuftWater = 1.*2.*0.0000177*relHumidityAir;
         double rHe3 = 0.000125, rBF3 = 0.00276, rDiesel = 0.83, rSaltWater = 1., rCellulose = 1.5, rKieferTr = 0.44, rBucheTr = 0.59, rGeneral = 1.;
 
 
@@ -6020,7 +6021,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         const Float_t wWater = 18.015;
         //const Float_t wCu = 63.5, wKapton = 382., wZirkon = 91.2, wBronze = 67.5, wPoly = 226.32, wArCO2 = 40.6, wLiF = 25.94, wBoronNat = 10.8, wB4CNat = 13.8, wB4C = 13.;
         const Float_t wQuarz = 60.1, wAl2O3 = 101.96, wNi = 58.7, wNa = 23., wCl = 35.45, wFe = 55.85, wCr52 = 52., wCr53 = 53., wMn55 = 55., wAr = 39.95, wSulfur = 32., wHe3 = 3., wBF3 = 67.82;
-        const Float_t wGd2O3 = 362.49, wMethane = 16.04, wSalt = 58.5, wGraphit = 12., wDiesel = 167., wPb = 207.2, wPb206 = 206., wPb207 = 207., wPb208 = 208., wTi = 47.867, wTi48 = 48., wKalium = 39.1, wTNT = 11.03, wPVC = 62.5, wCellulose = 162.14;
+        const Float_t wGd2O3 = 362.49, wMethane = 16.04, wSalt = 58.5, wGraphit = 12., wDiesel = 167., wPb = 207.2, wPb206 = 206., wPb207 = 207., wPb208 = 208., wTi = 47.867, wTi48 = 48., wKalium = 39.1, wTNT = 11.03, wPVC = 62.5, wPVCc = 367.15, wCellulose = 162.14;
 
         //rCelluloseFrac = 0.333;
         //rCelluloseWaterFrac = 0*0.25;
@@ -6176,7 +6177,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         //that (b) is the (n,p) reaction n+N -> C+p MT103
         static TMatrixF absorbNb = readSigmaEnergy(endfFolder, "absorbN14b.txt");           //if (varyCrosssections) modifyCSmatrix(&absorbNb, sigmaAbsorbFactor*0.05,sigmaAbsorbFactor*0.10);
         static TMatrixF absorbO = readSigmaEnergy(endfFolder, "absorbO16.txt");             //if (varyCrosssections) modifyCSmatrix(&absorbO, sigmaAbsorbFactor*0.10,sigmaAbsorbFactor*0.10);
-        static TMatrixF absorbH = readSigmaEnergy(endfFolder, "absorbH1.txt");              //if (varyCrosssections) modifyCSmatrix(&absorbH, sigmaAbsorbFactor*0.026,sigmaAbsorbFactor*0.25);
+        static TMatrixF absorbH = readSigmaEnergy(endfFolder, "absorbH1mod.txt");              //if (varyCrosssections) modifyCSmatrix(&absorbH, sigmaAbsorbFactor*0.026,sigmaAbsorbFactor*0.25);
         static TMatrixF absorbAl = readSigmaEnergy(endfFolder, "absorbAl27.txt");           //if (varyCrosssections) modifyCSmatrix(&absorbAl, sigmaAbsorbFactor*0.017,sigmaAbsorbFactor*0.60);
         static TMatrixF absorbC = readSigmaEnergy(endfFolder, "absorbC12.txt");             //if (varyCrosssections) modifyCSmatrix(&absorbC, sigmaAbsorbFactor*0.03,sigmaAbsorbFactor*0.20);
         static TMatrixF absorbAr = readSigmaEnergy(endfFolder, "absorbAr40.txt");
@@ -8012,6 +8013,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 case 232: material = 32; break; //Steel 304L
                                 case 233: material = 33; break; //Methane
                                 case 234: material = 34; break; //Diesel
+                                case 235: material = 35; break; //PVC-c
                                 case 236: material = 36; break; //Graphite
                                 case 237: material = 37; break; //Lead
                                 case 238: material = 38; break; //TNT
@@ -8312,6 +8314,11 @@ bool cosmicNSimulator(MainWindow* uiM)
                         //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);
                         cs = 23. * csH + 12. * csC;
                         break;
+                    case 35: csH = sigmaHSpline->Eval(energy1e6Log);  csC = sigmaCSpline->Eval(energy1e6Log);  csCl = sigmaClSpline->Eval(energy1e6Log);
+                        if (csH < 0) csH = 0; if (csC < 0) csC = 0; if (csCl < 0) csCl = 0;
+                        //csH = calcMeanCS(sigmaH, energy * 1e6); csC = calcMeanCS(sigmaC, energy * 1e6);  csCl = calcMeanCS(sigmaCl35, energy * 1e6);
+                        cs = 11. * csH + 9. * csC + 7. * csCl;
+                        break;
                     case 36:  csC = sigmaCSpline->Eval(energy1e6Log);
                         if (csC < 0) csC = 0;
                         //csC = calcMeanCS(sigmaC, energy * 1e6);
@@ -8601,6 +8608,15 @@ bool cosmicNSimulator(MainWindow* uiM)
                         //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
                         //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
                         asAll = 23. * asH + 12. * asC;
+                        break;
+                    case 35: asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
+                        if (energy1e6 < 1e6) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
+                        if (energy1e6 < 1e6) {asCl = absorbCl35Spline->Eval(energy1e6Log) + absorbMt103Cl35Spline->Eval(energy1e6Log) + absorbMt107Cl35Spline->Eval(energy1e6Log); } else {asCl = calcMeanCS(absorbCl35, energy1e6);} if (energy1e6 > 2e7) {asCl += calcMeanCS(absorbMt5Cl35, energy1e6);}
+                        if (asH < 0) asH = 0;  if (asC < 0) asC = 0; if (asCl < 0) asCl = 0;
+                        //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
+                        //asC = calcMeanCS(absorbC, energy * 1e6) + calcMeanCS(absorbMt5C, energy * 1e6) + calcMeanCS(absorbMt103C, energy * 1e6) + calcMeanCS(absorbMt107C, energy * 1e6) + 3. * calcMeanCS(absorbMt209C, energy * 1e6);
+                        //asCl = calcMeanCS(absorbCl35, energy * 1e6) + calcMeanCS(absorbMt5Cl35, energy * 1e6) + calcMeanCS(absorbMt103Cl35, energy * 1e6) + calcMeanCS(absorbMt107Cl35, energy * 1e6);
+                        asAll = 11. * asH + 9. * asC + 7. * asCl;
                         break;
                     case 36: if (energy1e6 < 1e6) {asC = absorbCSpline->Eval(energy1e6Log);} else {asC = calcMeanCS(absorbC, energy1e6);} if (energy1e6 > 6e6) {asC += calcMeanCS(absorbMt5C, energy1e6) + calcMeanCS(absorbMt103C, energy1e6) + calcMeanCS(absorbMt107C, energy1e6) + 3. * calcMeanCS(absorbMt209C, energy1e6);}
                         if (asC < 0) asC = 0;
@@ -8932,6 +8948,18 @@ bool cosmicNSimulator(MainWindow* uiM)
                         allAbsorptionMaterials.at(0) = allAbsorptionMaterials.at(0) / asAll;
                         for (int k = 1; k < allAbsorptionMaterials.size(); k++) { allAbsorptionMaterials.at(k) = allAbsorptionMaterials.at(k - 1) + allAbsorptionMaterials.at(k) / asAll; }
                     }
+                    if (material == 35)
+                    {
+                        allMaterials.push_back(11. * csH); allMaterials.push_back(9. * csC);  allMaterials.push_back(7. * csCl);
+                        allMaterialsElements.push_back(1); allMaterialsElements.push_back(12); allMaterialsElements.push_back(35);
+                        allMaterials.at(0) = allMaterials.at(0) / cs;
+                        for (int k = 1; k < allMaterials.size(); k++) { allMaterials.at(k) = allMaterials.at(k - 1) + allMaterials.at(k) / cs; }
+
+                        allAbsorptionMaterials.push_back(11. * asH); allAbsorptionMaterials.push_back(9. * asC);  allAbsorptionMaterials.push_back(7. * asCl);
+                        allAbsorptionMaterialsElements.push_back(1); allAbsorptionMaterialsElements.push_back(12); allAbsorptionMaterialsElements.push_back(35);
+                        allAbsorptionMaterials.at(0) = allAbsorptionMaterials.at(0) / asAll;
+                        for (int k = 1; k < allAbsorptionMaterials.size(); k++) { allAbsorptionMaterials.at(k) = allAbsorptionMaterials.at(k - 1) + allAbsorptionMaterials.at(k) / asAll; }
+                    }
                     if (material == 36)
                     {
                         allMaterials.push_back(csC);
@@ -9060,8 +9088,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                         case 30: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                                 for (int k = 0; k < sigmaInB10Vec.size(); k++) { allInelastics.push_back(0.02 * (0.2 * calcMeanCS(*(sigmaInB10Vec.at(k)), energy * 1e6))); allInelasticAngulars.push_back(&(sigmaInB10AngularVec.at(k))); allInelasticElements.push_back(10); inelasticEnergyLossVec.push_back(inelasticEnergyLossB10.at(k)); }
                                 for (int k = 0; k < sigmaInB11Vec.size(); k++) { allInelastics.push_back(0.02 * (0.8 * calcMeanCS(*(sigmaInB11Vec.at(k)), energy * 1e6))); allInelasticAngulars.push_back(&(sigmaInB11AngularVec.at(k))); allInelasticElements.push_back(11); inelasticEnergyLossVec.push_back(inelasticEnergyLossB11.at(k)); }  break;
-                        case 31: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  ;
-                                for (int k = 0; k < sigmaInCl35Vec.size(); k++) { allInelastics.push_back(nSalt * calcMeanCS(*(sigmaInCl35Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCl35AngularVec.at(k))); allInelasticElements.push_back(35); inelasticEnergyLossVec.push_back(inelasticEnergyLossCl35.at(k)); } break;
+                        case 31: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(2. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  ;
+                                for (int k = 0; k < sigmaInCl35Vec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCl35Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCl35AngularVec.at(k))); allInelasticElements.push_back(35); inelasticEnergyLossVec.push_back(inelasticEnergyLossCl35.at(k)); } break;
                         case 32: for (int k = 0; k < sigmaInFeVec.size(); k++) { allInelastics.push_back(0.68 * calcMeanCS(*(sigmaInFeVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInFeAngularVec.at(k))); allInelasticElements.push_back(56); inelasticEnergyLossVec.push_back(inelasticEnergyLossFe.at(k)); };
                                for (int k = 0; k < sigmaInNi58Vec.size(); k++) { allInelastics.push_back(0.09 * calcMeanCS(*(sigmaInNi58Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInNi58AngularVec.at(k))); allInelasticElements.push_back(58); inelasticEnergyLossVec.push_back(inelasticEnergyLossNi58.at(k)); };
                                for (int k = 0; k < sigmaInCr52Vec.size(); k++) { allInelastics.push_back(0.19 * 0.86 * calcMeanCS(*(sigmaInCr52Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCr52AngularVec.at(k))); allInelasticElements.push_back(52); inelasticEnergyLossVec.push_back(inelasticEnergyLossCr52.at(k)); };
@@ -9070,6 +9098,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                                for (int k = 0; k < sigmaInMn55Vec.size(); k++) { allInelastics.push_back(0.02 * calcMeanCS(*(sigmaInMn55Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInMn55AngularVec.at(k))); allInelasticElements.push_back(55); inelasticEnergyLossVec.push_back(inelasticEnergyLossMn55.at(k)); } break;
                         case 33: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                         case 34: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
+                        case 35: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(9. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  ;
+                                for (int k = 0; k < sigmaInCl35Vec.size(); k++) { allInelastics.push_back(7. * calcMeanCS(*(sigmaInCl35Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCl35AngularVec.at(k))); allInelasticElements.push_back(35); inelasticEnergyLossVec.push_back(inelasticEnergyLossCl35.at(k)); } break;
                         case 36: for (int k = 0; k < sigmaInCVec.size(); k++) { allInelastics.push_back(1. * calcMeanCS(*(sigmaInCVec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInCAngularVec.at(k))); allInelasticElements.push_back(12); inelasticEnergyLossVec.push_back(inelasticEnergyLossC.at(k)); }  break;
                         case 37: for (int k = 0; k < sigmaInPb206Vec.size(); k++) { allInelastics.push_back(0.241 * calcMeanCS(*(sigmaInPb206Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInPb206AngularVec.at(k))); allInelasticElements.push_back(206); inelasticEnergyLossVec.push_back(inelasticEnergyLossPb206.at(k)); };
                                for (int k = 0; k < sigmaInPb207Vec.size(); k++) { allInelastics.push_back(0.221 * calcMeanCS(*(sigmaInPb207Vec.at(k)), energy * 1e6)); allInelasticAngulars.push_back(&(sigmaInPb207AngularVec.at(k))); allInelasticElements.push_back(207); inelasticEnergyLossVec.push_back(inelasticEnergyLossPb207.at(k)); };
@@ -9148,6 +9178,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 32: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rEStahl, wEStahl, sumCs, 0);   break;
                     case 33: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rMethane, wMethane, sumCs, 0);   break;
                     case 34: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rDiesel, wDiesel, sumCs, 0);   break;
+                    case 35: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rPVCc, wPVCc, sumCs, 0);   break;
                     case 36: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rGraphit, wGraphit, sumCs, 0);   break;
                     case 37: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rPb, wPb, sumCs, 0);   break;
                     case 38: wwRange = -TMath::Log(r.Rndm()) / getWWProb(rTNT, wTNT, sumCs, 0);   break;
@@ -9182,6 +9213,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     case 32:  weightThermal = wEStahl;   break;
                     case 33:  weightThermal = wMethane;   break;
                     case 34:  weightThermal = wHDPE;   break; //that is Diesel
+                    case 35:  weightThermal = wPVC;   break;
                     case 36:  weightThermal = wGraphit;  break;
                     case 37:  weightThermal = wPb;  break;
                     case 38:  weightThermal = wTNT;  break;
@@ -13251,7 +13283,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.07 (23.01.2023)<br> ";
+    messageString+=        "v1.07b (27.01.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13400,7 +13432,7 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
     noGUIMode = true;
     configFilePath = pathtoConfigFile;
 
-    if (pathtoConfigFile.length() > 1)
+    if (pathtoConfigFile.length() > 2)
     {
         configFilePathConfigured = true;
         cout << "Using Config File " << pathtoConfigFile << endl;
@@ -13413,7 +13445,12 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
             on_checkBox_useImage_clicked();
         }
     }
-    else  on_pushButton_ReadGeometry_clicked();
+    else
+    {
+        importSettings();
+        //on_pushButton_ReadGeometry_clicked();
+        on_pushButton_LoadGeometry_clicked();
+    }
 
     setupGeometry();
 

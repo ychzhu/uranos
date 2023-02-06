@@ -278,6 +278,7 @@ bool logScaleR = false;             // GUI
 bool logScaleD = false;
 bool logScaleRS = false;
 bool pausehere = false;
+bool stopMode = false;
 
 bool islandSetup = false;           // activates the presets of the GUI
 bool riverSetup = false;
@@ -401,7 +402,7 @@ int nDetectedNeutrons = 0;
 float paramMin = 0;                   // parameter counters for the batch mode
 float paramMax = 121;                 //40 for detector energy analysis
 
-const int maxLayersAllowed = 323;     // maximum amount of layers, GUI can display only ca 22
+const int maxLayersAllowed = 300;     // maximum amount of layers, GUI can display only ca 22
 
 QPalette* paletteR = new QPalette();  // GUI
 QPalette* paletteB = new QPalette();
@@ -418,17 +419,21 @@ int inputMatrixPixels = 1;            // size of the matrix for the matrix layer
 //int inputMatrixMaxPixels = 5000;    //deprecated
 
 // inputPicVector stores material definitions inputPicVector2 stores denstity multiplicators and inputPicVector3 porosity definitions
-int inputPics[maxLayersAllowed] = { 0 }; //{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int inputPics[maxLayersAllowed] = { 0 };
 int inputPics2[maxLayersAllowed] = { 0 };
 int inputPics3[maxLayersAllowed] = { 0 };
-int inputPicSizes[maxLayersAllowed] = { 0 };// {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int inputPicSizes[maxLayersAllowed] = { 0 };
 vector<TMatrixF> inputPicVector;
 vector<TMatrixF> inputPicVector2;
 vector<TMatrixF> inputPicVector3;
 
-int inputMaterials[maxLayersAllowed] = { 0 };// {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+int inputMaterials[maxLayersAllowed] = { 0 };
 vector< vector<float> > materialVector;
 
+// stores the positions of further detector layers
+int additionalDetectorLayers[maxLayersAllowed] = { 0 };
+int totalAdditionalDetectorLayers = 0;
+vector< TH2F* > addDetLayerVec;
 
 int matrixX, matrixY;               // x,y position in meters
 double  matrixStartX = -50, matrixStartY = -50; //x,y position in meters of the frame of the matrix
@@ -530,12 +535,16 @@ MainWindow::MainWindow(QWidget* parent) :
 
     setupGraph(0);
     ui->groupBox_Evaporation->setHidden(true);
-    ui->checkBoxThermalData->setHidden(true);
-    ui->checkBoxThermalMap->setHidden(true);
-    ui->radioButton_mapThermal->setHidden(true);
-    ui->radioButton_mapTrackThermal->setHidden(true);
+    //ui->checkBoxThermalData->setHidden(true);
+    //ui->checkBoxThermalMap->setHidden(true);
+    //ui->radioButton_mapThermal->setHidden(true);
+    //ui->radioButton_mapTrackThermal->setHidden(true);
 
-    if (doSkyEvaporation)     ui->groupBox_Evaporation->setHidden(false);
+    if (doSkyEvaporation)
+    {
+        ui->groupBox_Evaporation->setHidden(false);
+        on_radioButton_fission_clicked();
+    }
     if (!noThermalRegime)
     {
     }
@@ -551,17 +560,11 @@ void MainWindow::setGeometry()
     geometries.clear();
 
     geometries.push_back(airUp);
-
     geometries.push_back(air0);
-
     geometries.push_back(air1);
-
     geometries.push_back(air2);
-
     geometries.push_back(air3);
-
     geometries.push_back(ground);
-
 }
 
 /**
@@ -807,7 +810,6 @@ void MainWindow::setupImport()
 }
 
 
-
 /**
  * Sets up the graphs in the main window and prepares the geometry.
  *
@@ -924,8 +926,6 @@ double rangeFunctionCombined(double* x, double* par)
 }
 
 
-
-
 /**
  * Set up the footprint function plot.
  *
@@ -999,7 +999,6 @@ void MainWindow::setupRunSpectraGraph(QCustomPlot* customPlot)
     customPlot->graph(2)->setName("Backscattered Spectrum");
 
     customPlot->graph(0)->setData(::x, ::y); //allDisplayData.push_back(&::x); allDisplayData.push_back(&::y);
-
 
     customPlot->graph(0)->setPen(QPen(lightBlue));
     customPlot->graph(1)->setBrush(QBrush(QColor(215, 237, 255, 90)));
@@ -1186,6 +1185,7 @@ void MainWindow::setupRunBirdsEyeViewGraph(QCustomPlot* customPlot)
             colorMap->data()->setCell(x, y, r.Rndm() * TMath::Abs((x - 125) * (y - 125)));
         }
     }
+
     colorMap->setGradient(QCPColorGradient::gpJet);
     colorMap->rescaleDataRange(true);
     QCPRange dataR = colorMap->dataRange(); dataR *= 2;
@@ -1221,6 +1221,7 @@ void MainWindow::setupRunOrginOfNGraph(QCustomPlot* customPlot)
         //::x2[i] = i/50.0 - 1;
         //::y2[i] = i/50.0 - 1;
     }
+
     QCPColorMap* colorMap = new QCPColorMap(customPlot->xAxis, customPlot->yAxis);
     customPlot->axisRect()->setupFullAxesBox(true);
     customPlot->xAxis->setLabel("x [m]");
@@ -1471,7 +1472,6 @@ void setupLiveTHs()
     delete densityTrackMapSideThermal;
     delete densityEnergyTrackMap;
 
-
     domainLowEdge = -squareDim * 0.5 / 1000.;
     domainUpperEdge = squareDim * 0.5 / 1000.;
 
@@ -1522,7 +1522,6 @@ void setupLiveTHs()
     detectorLayerDistance = new TH1F("detectorLayerDistance", "Distance Distribution for Detector Layer", 4000, -100, domainUpperEdge * 1000.);
     detectorLayerDistanceBackscattered = new TH1F("detectorLayerDistanceBackscattered", "Albedo Distance Distribution for Detector Layer", 4000, -100, domainUpperEdge * 1000.);
 
-
     //domainZLowEdge = -(geometries.at(geometries.size()-1)[4]+geometries.at(geometries.size()-1)[5])/1000.;
     domainZLowEdge = -(geometries.at(geometries.size() - 1)[4] + 0 * geometries.at(geometries.size() - 1)[5]) / 1000.;
     //domainZUpperEdge = -(geometries.at(startingLayer)[4]+geometries.at(startingLayer)[5])/1000.;
@@ -1532,6 +1531,19 @@ void setupLiveTHs()
     densityTrackMapSideAlbedo = new TH2F("densityTrackMapSideAlbedo", "Side Neutron Albedo Track Density", 2000, domainLowEdge, domainUpperEdge, 2000, domainZLowEdge, domainZUpperEdge);
     densityTrackMapSideDetector = new TH2F("densityTrackMapSideDetector", "Side Neutron Detector Track Density", 2000, domainLowEdge, domainUpperEdge, 2000, domainZLowEdge, domainZUpperEdge);
     densityTrackMapSideThermal = new TH2F("densityTrackMapSideThermal", "Side Neutron Thermal Track Density", 2000, domainLowEdge, domainUpperEdge, 2000, domainZLowEdge, domainZUpperEdge);
+
+    for(int i = 0; i < addDetLayerVec.size(); i++)
+    {
+       delete  addDetLayerVec.at(i);
+    }
+
+    addDetLayerVec.clear();
+
+    for(int i = 0; i < totalAdditionalDetectorLayers; i++)
+    {
+        TString addLayerName = "densityMapAlbedo_"+castIntToString(i);
+        addDetLayerVec.push_back(new TH2F(addLayerName, "Detector Layer Neutron Density", 500, domainLowEdge, domainUpperEdge, 500, domainLowEdge, domainUpperEdge));
+    }
 
     liveTHs.clear();
 
@@ -2748,6 +2760,34 @@ void MainWindow::exportToSave()
                 *stream_out << endl;
             }
             stream_out->close();
+        }
+
+        if (totalAdditionalDetectorLayers > 0)
+        {
+            for (int k = 0; k < maxLayersAllowed; k++)
+            {
+                int vecPos = additionalDetectorLayers[k];
+                int tp = k + 1;
+
+                if (vecPos < 0) continue;
+
+                stream_out = new ofstream(outputFolder + folderMod + "densityMapSelected_L"+castIntToString(tp)+"_" + datString + ".csv", ofstream::out);
+
+                nX = addDetLayerVec.at(vecPos)->GetNbinsX();
+                nY = addDetLayerVec.at(vecPos)->GetNbinsY();
+
+                for (Int_t i = 1; i < nY; i++)
+                {
+                    for (Int_t j = 1; j < nX; j++)
+                    {
+                        *stream_out << castDoubleToString(addDetLayerVec.at(vecPos)->GetBinContent(j, i)) << "\t";
+                    }
+                    *stream_out << endl;
+                }
+
+                stream_out->close();
+            }
+
         }
     }
 
@@ -4007,7 +4047,7 @@ void declareNewData()
 /**
  * Clear up the liveView data histograms.
  *
- * @param vectorTH .
+ * @param vectorTH
  */
 void histoLiveClearUp(vector< TH1* >* vectorTH)
 {
@@ -4046,7 +4086,7 @@ double rLuftWater = 0, rLuft = 0;
 
 /**
  *  Formula: ps = exp(-6094.4642/T + 21.1249952 - 0.027245552*T + 1.6853396*10-5*T^2 + 2.4575506*ln(T))
- *  with T in K , ps in Pa and temperature in K
+ *  with T in K, ps in Pa and temperature in K
  *
  * @param temperature temperature of the water body.
  * @return steam density in g/cm^3.
@@ -4057,7 +4097,7 @@ double getRLuftWasser(float temperature)
     {
         double psVap = exp(-6094.4642 / temperature + 21.1249952 - 0.027245552 * temperature + 1.6853396 * 1e-5 * temperature * temperature + 2.4575506 * log(temperature)); //Saetttigungsdampfdruck
 
-        rLuftWaterDensity = psVap / (461.5 * temperature) / 1e6;
+        rLuftWaterDensity = psVap / (461.5 * temperature) * 1e-6;
 
         oldTemperature = temperature;
     }
@@ -5405,7 +5445,8 @@ bool cosmicNSimulator(MainWindow* uiM)
         //generate Geometry
 
         // [x0,y0,xEnd,yEnd,z0,height,material,layernumber]
-        cout << "Overall layers: " << geometries.size() << endl;
+        cout << "No. of layers: " << geometries.size() << endl;
+        cout << "No. of neutrons: " << neutrons << endl;
 
         // ********************
         // Variables
@@ -5979,7 +6020,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         const double  rQuarz = 2.5, rGraphit = 2.2, rAl2O3 = 3.94, rFe = 7.87, rAlMg = 2.66, rEStahl = 8.03, rPb = 11.342, rTNT = 1.654;
         //Float_t rAsphalt = 1.0;
         //double rHDPE2;
-        double rWater = 0.99, rGd2O3 = 7.41, rMethane = 0.000656, rHDPE = 0.95, rPVC = 1.45 ; //rLuft = pressureFac*0.0012, rLuftWater = 1.*2.*0.0000177*relHumidityAir;
+        double rWater = 0.99, rGd2O3 = 7.41, rMethane = 0.000656, rHDPE = 0.95, rPVC = 1.45, rPVCc = 1.56 ; //rLuft = pressureFac*0.0012, rLuftWater = 1.*2.*0.0000177*relHumidityAir;
         double rHe3 = 0.000125, rBF3 = 0.00276, rDiesel = 0.83, rSaltWater = 1., rCellulose = 1.5, rKieferTr = 0.44, rBucheTr = 0.59, rGeneral = 1.;
 
 
@@ -6020,7 +6061,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         const Float_t wWater = 18.015;
         //const Float_t wCu = 63.5, wKapton = 382., wZirkon = 91.2, wBronze = 67.5, wPoly = 226.32, wArCO2 = 40.6, wLiF = 25.94, wBoronNat = 10.8, wB4CNat = 13.8, wB4C = 13.;
         const Float_t wQuarz = 60.1, wAl2O3 = 101.96, wNi = 58.7, wNa = 23., wCl = 35.45, wFe = 55.85, wCr52 = 52., wCr53 = 53., wMn55 = 55., wAr = 39.95, wSulfur = 32., wHe3 = 3., wBF3 = 67.82;
-        const Float_t wGd2O3 = 362.49, wMethane = 16.04, wSalt = 58.5, wGraphit = 12., wDiesel = 167., wPb = 207.2, wPb206 = 206., wPb207 = 207., wPb208 = 208., wTi = 47.867, wTi48 = 48., wKalium = 39.1, wTNT = 11.03, wPVC = 62.5, wCellulose = 162.14;
+        const Float_t wGd2O3 = 362.49, wMethane = 16.04, wSalt = 58.5, wGraphit = 12., wDiesel = 167., wPb = 207.2, wPb206 = 206., wPb207 = 207., wPb208 = 208., wTi = 47.867, wTi48 = 48., wKalium = 39.1, wTNT = 11.03, wPVC = 62.5, wPVCc = 367.15, wCellulose = 162.14;
 
         //rCelluloseFrac = 0.333;
         //rCelluloseWaterFrac = 0*0.25;
@@ -7721,26 +7762,26 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if (glayerCounter > 30000) { cout << "-!"; break; }
 
-                    if ((pausehere) && (!godzillaMode))
+                    if (pausehere)
                     {
                         time(&pause1);
                         //uiM->redrawTopView();
                         //uiM->redrawNeutronMap(-1);
-                        while ((pausehere) && (!godzillaMode))  delay(50);
+                        while ((pausehere) && (!godzillaMode))  delay(20);
+                        while ((pausehere) && (godzillaMode))  delay(2);
                         time(&pause2);
                         pauseTime += difftime(pause2, pause1);
-                    }
+                    }                  
 
-
-                    // defining the detector layer
+                    // getting the actual layer
                     currentlayer = geometries.at(g)[7];
 
                     tanTheta = tan(theta);
                     cosTheta = cos(theta);
                     cosPhi = cos(phi);
                     sinPhi = sin(phi);
-                    // temporal coordinates for the actual layer
 
+                    // temporal coordinates for the actual layer
                     tempz = geometries.at(g)[4];
                     xt = cosPhi * fabs(tanTheta * (tempz - z0)) + x;
                     yt = sinPhi * fabs(tanTheta * (tempz - z0)) + y;
@@ -7761,7 +7802,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     thetaOld = theta;
                     phiOld = phi;
 
-                    if ((g == groundLayer - 1) && (isEvaporationNeutron) && (hasBeenInSoil) && (scatterings == 0)) { scatteredSurfaceSpectrumHelp->Fill(energy); }
+                    if ((g == (groundLayer - 1)) && (isEvaporationNeutron) && (hasBeenInSoil) && (scatterings == 0)) {scatteredSurfaceSpectrumHelp->Fill(energy); }
 
                     if ((z0 < tempzEnd) && (z0 > tempz) && (!scatteredThisLayer) && (!continuedThisLayer)) scatteredThisLayer = true;
 
@@ -9204,7 +9245,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if ((useRealisticModelDetector) || (useRealisticModelLayer)) useRealisticModel = true; else useRealisticModel = false;
 
-                    if ((useRealisticModel) && ((g == detectorLayer) || ((detectorLayerOverride) || (detectorOverride))))
+                    if ((useRealisticModel) && ((g == detectorLayer) || ((detectorLayerOverride) || (detectorOverride)) || (additionalDetectorLayers[g] > 0)))
                     {
                         //transform the angle of 0....pi to 0...pi/2.
                         if (!useAdditionalDetectorModel)
@@ -9267,7 +9308,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         {
                             if ((theta > downwardScotomaAngle) && (theta < downwardAcceptanceAngle))
                             {
-                                if ((energy < 2e-7) && (energy > 1e-9)) { if (scatteredThisLayer) densityMapThermal->Fill(x * 0.001, y * 0.001); else { if (!reverseDir) densityMapThermal->Fill(xt * 0.001, yt * 0.001); else densityMapThermal->Fill(xtEnd * 0.001, yt * 0.001); } }
+                                if ((energy < 2e-7) && (energy > 1e-9)) {if (scatteredThisLayer) densityMapThermal->Fill(x * 0.001, y * 0.001); else {if (!reverseDir) densityMapThermal->Fill(xt * 0.001, yt * 0.001); else densityMapThermal->Fill(xtEnd * 0.001, yt * 0.001); } }
 
                                 if ((energy < 0.001) && (energy > 0.000001))
                                 {
@@ -9285,11 +9326,19 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
+                    if (totalAdditionalDetectorLayers > 0)
+                    {
+                        if (((additionalDetectorLayers[g] >= 0) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) )
+                        {
+                            if (((energy < energyhighTHL) && (energy > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) { if (scatteredThisLayer) addDetLayerVec.at(additionalDetectorLayers[g])->Fill(x * 0.001, y * 0.001);  else { if (!reverseDir) addDetLayerVec.at(additionalDetectorLayers[g])->Fill(xt * 0.001, yt * 0.001);  else addDetLayerVec.at(additionalDetectorLayers[g])->Fill(xtEnd * 0.001, yt * 0.001); } }
+                        }
+                    }
+
                     if (((g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride))
                     {
                         if (((useDetectorSensitiveMaterial) && (material == detectorSensitiveMaterial)) || (!useDetectorSensitiveMaterial))
                         {
-                            if ((((energy < energyhighTHL) && (energy > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) && (theta > downwardScotomaAngle) && (theta < downwardAcceptanceAngle)) detectorSpectrumNear->Fill(energy);
+                            //if ((((energy < energyhighTHL) && (energy > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) && (theta > downwardScotomaAngle) && (theta < downwardAcceptanceAngle)) detectorSpectrumNear->Fill(energy);
                         }
                     }
 
@@ -11199,7 +11248,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                     if (((energyTr < energyhighTHL) && (energyTr > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) densityAlbedoTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
                                                     if ((energyTr < 100000) && (energyTr > 20)) densityHighEnergyTrackMapHighRes15x->Fill(xTrack * 0.001, yTrack * 0.001);
 
-                                                    //densityEnergyTrackMapHighRes->SetBinContent(densityEnergyTrackMapHighRes->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
+                                                    densityEnergyTrackMapHighRes15x->SetBinContent(densityEnergyTrackMapHighRes15x->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes15x->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
                                                 }
                                             }
                                         }
@@ -11800,11 +11849,35 @@ void MainWindow::on_pushButton_Simulate_clicked()
         }
     }
 
+    for (int i = 0; i < maxLayersAllowed; i++)
+    {
+       additionalDetectorLayers[i] = -1;
+    }
+
+    totalAdditionalDetectorLayers = 0;
+
+    // checking whether additional detector layers were defined
     for (int i = 0; i < geometries.size() - 1; i++)
     {
         mat = (int)geometries.at(i)[6];
+
+        if ((mat > 500) && (mat < 600))
+        {
+            additionalDetectorLayers[i] = totalAdditionalDetectorLayers;
+
+            totalAdditionalDetectorLayers++;
+
+            mat = mat - 500;
+            geometries.at(i)[6] = mat;
+        }
+    }
+
+    for (int i = 0; i < geometries.size() - 1; i++)
+    {
+        mat = (int)geometries.at(i)[6];
+
         tp1 = i + 1;
-        if ((mat < 7)||(mat > 41)) // here the materials are hardcoded... could be improved
+        if ((mat < 5) || (mat > 50)) // here the materials are hardcoded... could be improved
         {
             string error2 = "At Layer "+(string)castIntToString(tp1);
             setStatus(1, "Error: Wrong Material");
@@ -12069,11 +12142,13 @@ void MainWindow::on_pushButton_Pause_clicked()
         {
             ui->pushButton_Pause->setChecked(false); ui->pushButton_Pause->setDown(false); setStatus(1, "");
             pausehere = false;
+            stopMode = false;
         }
         else
         {
             ui->pushButton_Pause->setChecked(true);  ui->pushButton_Pause->setDown(true); setStatus(1, "Paused");
             pausehere = true;
+            stopMode = true;
         }
     }
 }
@@ -12395,6 +12470,7 @@ bool MainWindow::eventFilter(QObject* target, QEvent* event)
         {
             godzillaMode = true;
         }
+        if ((pausehere) && (stopMode)) pausehere = false;
     }
 
     if (target == ui->customPlot2 && event->type() == QEvent::MouseMove)
@@ -12416,6 +12492,7 @@ bool MainWindow::eventFilter(QObject* target, QEvent* event)
         {
             godzillaMode = false;
         }
+        if (stopMode)  pausehere = true;
     }
 
     return false;
@@ -13250,8 +13327,8 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "<br> <br>";
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
-    messageString += "Preliminary Citation: M. Köhli et al., WRR 51 (7), 2015, 5772-5790 <br><br>";
-    messageString+=        "v1.07 (23.01.2023)<br> ";
+    messageString += "Citation: M. Köhli et al., Geosci. Model. Dev., 16, 449-477, 2023 <br><br>";
+    messageString+=        "v1.08 (05.02.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13413,7 +13490,12 @@ void MainWindow::disabledGUIRun(string pathtoConfigFile)
             on_checkBox_useImage_clicked();
         }
     }
-    else  on_pushButton_ReadGeometry_clicked();
+    else
+    {
+        importSettings();
+        //on_pushButton_ReadGeometry_clicked();
+        on_pushButton_LoadGeometry_clicked();
+    }
 
     setupGeometry();
 
@@ -15499,7 +15581,10 @@ void MainWindow::on_pushButton_SaveConfig_clicked()
     if (!noGUIMode) setStatus(1, "Uranos.cfg written");
 }
 
-
+/**
+ * Opens the second enlarged visualization window
+ *
+ */
 void MainWindow::on_pushButton_Enlarge2_clicked()
 {
     delete visualization2;
@@ -15512,4 +15597,24 @@ void MainWindow::on_pushButton_Enlarge2_clicked()
         redrawEnlargedView2();
     }
 }
+
+/**
+ * Activates the individual source placement on mouse event
+ * @param checked
+ */
+void MainWindow::setGodzillaMode(bool var)
+{
+   godzillaMode = var;
+}
+
+/**
+ * Activates the individual source placement on mouse event
+ * @param xc, yc
+ */
+void MainWindow::setSourcePos(float xc, float yc)
+{
+   xCustomPos = xc;
+   yCustomPos = yc;
+}
+
 

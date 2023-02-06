@@ -2,7 +2,7 @@
 **                                                                        **
 **  URANOS - Ultra RApid Neutron-Only Simulation                          **
 **  designed for Environmental Research                                   **
-**  Copyright (C) 2015-2022 Markus Koehli,                                **
+**  Copyright (C) 2015-2023 Markus Koehli,                                **
 **  Physikalisches Institut, Heidelberg University, Germany               **
 **                                                                        **
 ****************************************************************************/
@@ -109,6 +109,7 @@ void VisualizationEnlarge2::plotGraph2(TH2F* data, int size, float squareDimSize
     {
         if(qobject_cast<QCPLayoutGrid*>(ui->customPlotEnlarge2->plotLayout()->elementAt(i)))  ui->customPlotEnlarge2->plotLayout()->removeAt(i);
     }
+
     ui->customPlotEnlarge2->plotLayout()->simplify();
 
     QCPColorMap *colorMap = new QCPColorMap( ui->customPlotEnlarge2->xAxis,  ui->customPlotEnlarge2->yAxis);
@@ -330,13 +331,6 @@ void VisualizationEnlarge2::setupRunGraph2(QCustomPlot *customPlot)
 
     customPlot->replot();
 }
-
-/*
-void VisualizationEnlarge2::on_pushButtonPNG_toggled(bool checked)
-{
-    //originalPixmap.save(QString::fromStdString(workFolderV)+fileName, format.toAscii());}
-
-*/
 
 void VisualizationEnlarge2::on_pushButtonPNG2_clicked()
 {

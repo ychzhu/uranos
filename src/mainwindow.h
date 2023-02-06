@@ -127,6 +127,10 @@ public:
 
     bool isFinished() const { return isFinishedVar; }
 
+    void setGodzillaMode(bool var);
+
+    void setSourcePos(float xc, float yc);
+
 private slots:
     void on_pushButton_clicked();
 

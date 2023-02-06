@@ -34,6 +34,7 @@ VisualizationEnlarge::VisualizationEnlarge(QWidget *parent) :
 {
     ui->setupUi(this);
     setupRunGraph(ui->customPlot);
+
 }
 
 VisualizationEnlarge::~VisualizationEnlarge()
@@ -55,7 +56,6 @@ void VisualizationEnlarge::sethorizontalSliderColorZeroValue(int value)
 {
     horizontalSliderColorZeroValue = value;
 }
-
 
 void VisualizationEnlarge::setmanualColorZero(int value)
 {

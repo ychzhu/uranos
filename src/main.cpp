@@ -27,7 +27,7 @@
 #include "Toolkit.h"
 
 #include "mainwindow.h"
-#include "customSplashScreen.h"
+//#include "customSplashScreen.h"
 #include <QApplication>
 #include <QPixmap>
 #include <QSplashScreen>
@@ -36,7 +36,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.07 (23.01.2023)";
+string versionString = "v1.08 (05.02.2023)";
 
 class I : public QThread
 {

@@ -1,5 +1,13 @@
 # URANOS Release Notes
 
+## URANOS version 1.07 (February 8, 2023)
+
+## Changelog:
+- use command line parameter "tnw" to activate the custom source configuration panel
+- (hidden option, prototype) Additional detector layers: use material code to 500 + material code to declare the respective layer also as detector layer
+- (hidden option, tnw mode): in the enlarged view ("+" symbol) the source can be place by right clicking into the view area 
+
+
 ## URANOS version 1.07 (January 24, 2023)
 
 ## Changelog:

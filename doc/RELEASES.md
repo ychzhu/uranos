@@ -1,6 +1,6 @@
 # URANOS Release Notes
 
-## URANOS version 1.07 (February 8, 2023)
+## URANOS version 1.08 (February 8, 2023)
 
 ## Changelog:
 - use command line parameter "tnw" to activate the custom source configuration panel

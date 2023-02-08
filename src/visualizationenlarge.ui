@@ -60,4 +60,8 @@ Export</string>
  </customwidgets>
  <resources/>
  <connections/>
+ <slots>
+  <signal>cursorX(float)</signal>
+  <signal>on_VisualizationEnlarge_cursorX(float)</signal>
+ </slots>
 </ui>

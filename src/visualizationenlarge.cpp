@@ -26,6 +26,8 @@ bool plotTopViewLogV = false;
 bool silderColorMovedV = false;
 bool useManualColor = false;
 
+float xCustomPosV, yCustomPosV;
+
 string workFolderV;
 
 VisualizationEnlarge::VisualizationEnlarge(QWidget *parent) :
@@ -35,12 +37,66 @@ VisualizationEnlarge::VisualizationEnlarge(QWidget *parent) :
     ui->setupUi(this);
     setupRunGraph(ui->customPlot);
 
+    ui->customPlot->installEventFilter(this);
 }
 
 VisualizationEnlarge::~VisualizationEnlarge()
 {
     delete ui;
 }
+
+bool VisualizationEnlarge::eventFilter(QObject* target, QEvent* event)
+{
+    float x;
+    float y;
+
+    if (target == ui->customPlot && event->type() == QEvent::MouseButtonPress)
+    {
+        QMouseEvent* _mouseEvent = static_cast<QMouseEvent*>(event);
+
+        if (_mouseEvent->button() == Qt::RightButton)
+        {
+            x = ui->customPlot->xAxis->pixelToCoord(_mouseEvent->pos().x());
+            y = ui->customPlot->yAxis->pixelToCoord(_mouseEvent->pos().y());
+
+            setCursorPos(x * 1000., y * 1000.);
+
+            emit on_VisualizationEnlargeCursorX(x * 1000.);
+            emit on_VisualizationEnlargeCursorY(y * 1000.);
+            emit on_VisualizationEnlargePressed(true);
+        }
+    }
+
+    if (target == ui->customPlot && event->type() == QEvent::MouseMove)
+    {
+        QMouseEvent* _mouseEvent = static_cast<QMouseEvent*>(event);
+
+        x = ui->customPlot->xAxis->pixelToCoord(_mouseEvent->pos().x());
+        y = ui->customPlot->yAxis->pixelToCoord(_mouseEvent->pos().y());
+
+        //xCustomPosV = x * 1000.;
+        //yCustomPosV = y * 1000.;
+
+        setCursorPos(x * 1000., y * 1000.);
+
+        emit on_VisualizationEnlargeCursorX(x * 1000.);
+        emit on_VisualizationEnlargeCursorY(y * 1000.);
+    }
+
+    if (target == ui->customPlot && event->type() == QEvent::MouseButtonRelease)
+    {
+        QMouseEvent* _mouseEvent = static_cast<QMouseEvent*>(event);
+
+        if (_mouseEvent->button() == Qt::RightButton)
+        {
+            emit on_VisualizationEnlargeReleased(true);
+            emit on_VisualizationEnlargeState(false);
+        }
+    }
+
+    return false;
+}
+
 
 void VisualizationEnlarge::setSquareDimSize(float squareDimSize)
 {
@@ -319,7 +375,6 @@ void VisualizationEnlarge::setupRunGraph(QCustomPlot *customPlot)
     customPlot->replot();
 }
 
-
 void VisualizationEnlarge::on_pushButtonPNG_toggled(bool checked)
 {
     //originalPixmap.save(QString::fromStdString(workFolderV)+fileName, format.toAscii());
@@ -341,3 +396,20 @@ void VisualizationEnlarge::on_pushButtonPNG_clicked()
     }
     screenshotcounter++;
 }
+
+/**
+ * cursor placement on mouse event
+ * @param xc, yc
+ */
+void VisualizationEnlarge::setCursorPos(float x, float y)
+{
+   xCustomPosV = x;
+   yCustomPosV = y;
+}
+
+/*
+void VisualizationEnlarge::on_VisualizationEnlarge_cursorX(float x)
+{
+    xCustomPosV = x;
+}
+*/

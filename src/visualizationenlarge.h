@@ -56,7 +56,24 @@ public:
 
     //void setFocus(MainWindow* wF);
 
-private slots:
+signals:
+
+  void setCursorPos(float xc, float yc);
+
+  void on_VisualizationEnlargeCursorX(float x);
+
+  void on_VisualizationEnlargeCursorY(float y);
+
+  void on_VisualizationEnlargePressed(bool var);
+
+  void on_VisualizationEnlargeReleased(bool var);
+
+  void on_VisualizationEnlargeState(bool var);
+
+private slots:    
+
+    bool eventFilter(QObject *target, QEvent *event);
+
     void on_pushButtonPNG_toggled(bool checked);
 
     void on_pushButtonPNG_clicked();

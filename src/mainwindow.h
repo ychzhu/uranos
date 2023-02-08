@@ -92,6 +92,8 @@ public:
 
     void beSilent();
 
+    void setConnectionsEnlarge();
+
     void setGeometry();
 
     void setStatus(int numberLabel, string msg);
@@ -127,11 +129,24 @@ public:
 
     bool isFinished() const { return isFinishedVar; }
 
-    void setGodzillaMode(bool var);
 
-    void setSourcePos(float xc, float yc);
+
+
 
 private slots:
+
+    void setSourcePosX(float xc);
+
+    void setSourcePosY(float yc);
+
+    void setGodzillaMode(bool var);
+
+    void setPause(bool var);
+
+    void setContinue(bool var);
+
+    void setStopMode(bool var);
+
     void on_pushButton_clicked();
 
     void on_pushButton_2_clicked();
@@ -240,6 +255,8 @@ private slots:
     bool eventFilter(QObject *target, QEvent *event);
 
     void setFocus(const QModelIndex &idx);
+
+    void setSourcePos(float xc, float yc);
 
     QPushButton* typebutton(QModelIndex idx);
 
@@ -427,8 +444,6 @@ private slots:
 
     void on_radioButton_mapTrackEnergy_clicked();
 
-
-
     void on_checkBoxTrackingData_clicked(bool checked);
 
     void on_checkBoxHighResTrackingData_clicked(bool checked);
@@ -478,6 +493,8 @@ private slots:
     void on_pushButton_SaveConfig_clicked();
 
     void on_pushButton_Enlarge2_clicked();
+
+
 
 private:
     Ui::MainWindow *ui;

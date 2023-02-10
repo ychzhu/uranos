@@ -1,5 +1,5 @@
 # URANOS - Ultra Rapid Neutron-Only Simulation
-[![URANOS at Zenodo](https://img.shields.io/static/v1?label=Code&message=10.5281/zenodo.6578668&color=blue)](https://doi.org/10.5281/zenodo.6578668) [![URANOS at the Geoscientific Model Development](https://img.shields.io/static/v1?label=Manuscript&message=10.5194/gmd-16-449-2023&color=yellow)](https://doi.org/10.5194/gmd-16-449-2023)
+[![URANOS at Zenodo](https://img.shields.io/static/v1?label=Code&message=10.5281/zenodo.6578668&color=blue)](https://doi.org/10.5281/zenodo.6578668) [![URANOS at the Geoscientific Model Development](https://img.shields.io/static/v1?label=Publication&message=10.5194/gmd-16-449-2023&color=yellow)](https://doi.org/10.5194/gmd-16-449-2023)
 
 ![splashScreenUranos](https://user-images.githubusercontent.com/106179070/170102368-93e66f49-12ab-44a9-860a-2bd1977f715c.jpg)
 

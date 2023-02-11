@@ -471,6 +471,9 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
           <height>22</height>
          </rect>
         </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
        </widget>
        <widget class="QLabel" name="label_28">
         <property name="geometry">
@@ -507,6 +510,9 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
           <height>22</height>
          </rect>
         </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
        </widget>
        <widget class="QLabel" name="label_27">
         <property name="geometry">
@@ -529,6 +535,9 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
           <width>42</width>
           <height>22</height>
          </rect>
+        </property>
+        <property name="minimum">
+         <number>1</number>
         </property>
        </widget>
        <widget class="QLabel" name="label_71">

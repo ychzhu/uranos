@@ -24,7 +24,6 @@
     #define stricmp strcasecmp
 #endif
 
-
 #include "Toolkit.h"
 
 #include "mainwindow.h"
@@ -37,7 +36,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.08 (08.02.2023)";
+string versionString = "v1.09 (11.02.2023)";
 
 class I : public QThread
 {

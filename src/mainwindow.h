@@ -256,6 +256,8 @@ private slots:
 
     void setFocus(const QModelIndex &idx);
 
+    void setRow(int rowNumber);
+
     void setSourcePos(float xc, float yc);
 
     QPushButton* typebutton(QModelIndex idx);

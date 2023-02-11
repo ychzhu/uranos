@@ -630,6 +630,7 @@ public:
         spinBox_GroundLayer = new QSpinBox(groupBox_12);
         spinBox_GroundLayer->setObjectName(QString::fromUtf8("spinBox_GroundLayer"));
         spinBox_GroundLayer->setGeometry(QRect(100, 170, 42, 22));
+        spinBox_GroundLayer->setMinimum(1);
         label_28 = new QLabel(groupBox_12);
         label_28->setObjectName(QString::fromUtf8("label_28"));
         label_28->setGeometry(QRect(10, 110, 91, 20));
@@ -639,12 +640,14 @@ public:
         spinBox_StartingLayer = new QSpinBox(groupBox_12);
         spinBox_StartingLayer->setObjectName(QString::fromUtf8("spinBox_StartingLayer"));
         spinBox_StartingLayer->setGeometry(QRect(100, 110, 42, 22));
+        spinBox_StartingLayer->setMinimum(1);
         label_27 = new QLabel(groupBox_12);
         label_27->setObjectName(QString::fromUtf8("label_27"));
         label_27->setGeometry(QRect(10, 140, 91, 20));
         spinBox_DetectorLayer = new QSpinBox(groupBox_12);
         spinBox_DetectorLayer->setObjectName(QString::fromUtf8("spinBox_DetectorLayer"));
         spinBox_DetectorLayer->setGeometry(QRect(100, 140, 42, 22));
+        spinBox_DetectorLayer->setMinimum(1);
         label_71 = new QLabel(groupBox_12);
         label_71->setObjectName(QString::fromUtf8("label_71"));
         label_71->setGeometry(QRect(65, 30, 81, 31));

@@ -3,9 +3,9 @@
 ## URANOS version 1.09 (February 11, 2023)
 
 ## Changelog:
-- bugixes for layer control and high res track output
+- bugfixes for layer control and high res track output
 - fixed issues #9, #10, #11
-- 
+
 
 ## URANOS version 1.08 (February 8, 2023)
 

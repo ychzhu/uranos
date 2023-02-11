@@ -14,7 +14,7 @@
 #include "Toolkit.h"
 
 #include "TRandom3.h"
-//#include "time.h"
+#include "time.h"
 
 
 #include <vector>
@@ -38,8 +38,6 @@
 #pragma warning (disable: 4018 4100 4101 4189 4305)
 #elif __linux_
 #endif
-
-#define PNG_sRGB_PROFILE_CHECKS -1
 
 //Initialization of Objects for data transfer
 //not yet in order
@@ -73,16 +71,16 @@ QVector<double> plotGUIyBinsFootprFuncLine(4);
 
 QVector<double> x2(501), y2(501);
 
-vector<TH1*> liveTHs;               // list of only visible graphs
+vector<TH1*> liveTHs; // list of only visible graphs
 
-bool setSize = true;                // large or small labels in the ROOT output
-float squareDim = 100000;           //length of the simulated area (square) [mm]
+bool setSize = true;    // large or small labels in the ROOT output
+float squareDim = 100000;      //length of the simulated area (square) [mm]
 float beamRadius = squareDim * 0.49; //expansion of the beam/source
 
-bool domainCutoff = false;          //cut neutrons outside the domain: factor
-bool domainCutoff2 = false;         //cut neutrons outside the domain: meters
-int domainCutoffMeters = 500;       //cut neutrons outside the domain: meter value
-double domainCutoffFactor = 1.5;    //cut neutrons outside the domain: factor VALUE
+bool domainCutoff = false;               //cut  neutrons outside the domain: factor
+bool domainCutoff2 = false;              //cut  neutrons outside the domain: meters
+int domainCutoffMeters = 500;
+double domainCutoffFactor = 1.5;
 
 // all ROOT histograms used in the simulation
 // energy categories:
@@ -147,13 +145,19 @@ TH1F* scatDepth = new TH1F("scatDepth", "Scattered Depth", 2501, -.5, 2500.5);
 TH1F* scatteredSurfaceDepth = new TH1F("scatteredSurfaceDepth", "Scattered Depth Neutron on Surface", 2501, -.5, 2500.5);
 TH1F* scatteredSurfaceMaxDepth = new TH1F("scatteredSurfaceMaxDepth", "Scattered Maximum Depth Neutron on Surface", 2501, -.5, 2500.5);
 
-TString outputFolder = "";          // output path for the results
-TString workFolder = "";            // input path for the settings
-string configFilePath = "";         // input path for the uranos.cfg
+TString outputFolder = "";
+
+TString workFolder = "";
+
+string configFilePath = "";
 bool configFilePathConfigured = false;
-TString inputSpectrumFile = "";     // path for the input spectrum file
-TString detectorResponseFunctionFile = "", detectorResponseFunctionFile2 = "";  // path for the detector response function, function 2 is used if the detector has different/top bottom functions
-TString endfFolder = "";            // folder for cross sections and angular distributions
+
+TString inputSpectrumFile = "";
+
+TString detectorResponseFunctionFile = "", detectorResponseFunctionFile2 = "";
+
+// folder for cross sections and angular distributions
+TString endfFolder = "";
 
 bool simulationRunning = false;     // GUI
 bool silderColorMoved = false;      // GUI
@@ -167,8 +171,8 @@ bool plotTopViewLog = false;        // GUI
 bool noGUIMode = false;             // deactivates the GUI for command line run
 bool silentMode = false;            // deactivates the message output
 bool layerMapsImport = false;       // GUI
-bool highResCalc = false;           // extra resolution mode
-bool highResCalc15x = false;        // extra resolution mode
+bool highResCalc = false;           // track resolution mode with 1000 px
+bool highhighResCalc = false;       // extra resolution mode with 1500 px
 
 float densitySideTrackingEnergyCutoff = 20000.; //upper cutoff for sideways tracking... not so important any more
 
@@ -183,12 +187,12 @@ bool doSkyEvaporation = false;      // configures for manual source placement in
 bool noThermalRegime = true;        // thermal cutoff
 bool noMultipleScatteringRecording = false;
 bool doBatchRun = false;            // batch run with parameters set later
-bool doBatchRunDensity = false;     // batch run for soil moisture and density variation
-bool doBatchRun2D = false;          // batch run for sm and hum
+bool doBatchRunDensity = false;      // batch run for soil moisture and density variation
+bool doBatchRun2D = false;           // batch run for sm and hum
 bool doDetectorBatchRun = false;    // batch run for detector analysis with parameters set later
-bool doDetectorBatchRun2 = false;   // batch run for detector analysis with parameters set later
+bool doDetectorBatchRun2 = false;    // batch run for detector analysis with parameters set later
 bool doDetectorAngleBatchRun = false;    // batch run for detector analysis with parameters set later
-bool regionalthermalcutoff = false; // kills thermal neutrons which scattered more far away from 0,0 than the radius given
+bool regionalthermalcutoff = false;  // kills thermal neutrons which scattered more far away from 0,0 than the radius given
 double regionalthermalcutoffradius = 50e3;
 bool useExtraCounter = false;       // activates the counter in the live view to display extra counts of for example absorbed thermal neutrons
 bool recordSubsurfaceScatterings = true;  // records all scatterings inside the ground
@@ -201,7 +205,7 @@ bool doThermalSource = false;       // thermal spectrum
 bool doNoSource = false;            // cosmic spectrum
 bool doModeratedCf = false;         // Cf Spectrum from Heidelberg source
 
-bool useCylindricalDetector = false;// detector shape for the specific detectors
+bool useCylindricalDetector = false; // detector shape for the specific detectors
 bool useSphericalDetector = true;
 bool useySheetDetector = false;
 bool usexSheetDetector = false;
@@ -217,10 +221,10 @@ bool godzillaMode = false;          // allows positioning of the source by the m
 bool warnUndefinedMaterial = false; // warns if the material code is not found
 bool calcNeutronTime = true;        // adds the (non-relativistic) neutron travel time calculation
 
-bool outputCSfilenames = false;     // command line output of cs files
+bool outputCSfilenames = false;      // command line output of cs files
 
 TH1D* cutView = new TH1D();
-vector< TObject* > allTHs;          // these are the containers for all the histograms which are used allTHs is for the ones in the GUI, allTHs2 are the internal ones
+vector< TObject* > allTHs;         // these are the containers for all the histograms which are used allTHs is for the ones in the GUI, allTHs2 are the internal ones
 vector< TObject* > allTHs2;
 
 float trackMetricFactorModifier = 0.6;  // modifiy the step width of the resolution for different material checks for the voxels
@@ -301,7 +305,7 @@ bool showDensityMapThermal = false;
 
 bool showDetectorOriginMap = true;
 bool updateEnlargedView = false;    // GUI
-bool updateEnlargedView2 = false;   // GUI
+bool updateEnlargedView2 = false;    // GUI
 
 //activates sideways projection (slows down)
 bool showDensityTrackMapSide = false;   // activates sideways tracking (computationally expensive)
@@ -405,6 +409,7 @@ QPalette* paletteR = new QPalette();  // GUI
 QPalette* paletteB = new QPalette();
 QPalette* paletteGray = new QPalette();
 
+
 vector< float* > neutronCoordinates;  // neutron coordinate vector
 vector< double* > geometries;         // vector which stores all the geometry layers
 
@@ -430,7 +435,6 @@ vector< vector<float> > materialVector;
 int additionalDetectorLayers[maxLayersAllowed] = { 0 };
 int totalAdditionalDetectorLayers = 0;
 vector< TH2F* > addDetLayerVec;
-vector< TH2F* > addDetLayerTrackVec;
 
 int matrixX, matrixY;               // x,y position in meters
 double  matrixStartX = -50, matrixStartY = -50; //x,y position in meters of the frame of the matrix
@@ -797,7 +801,7 @@ void MainWindow::setupImport()
         if (exportTrackData) { ui->checkBoxTrackingData->setChecked(true); }
         else { ui->checkBoxTrackingData->setChecked(false); }
         if (exportHighResTrackData) { ui->checkBoxHighResTrackingData->setChecked(true); highResCalc = true;}
-        else { ui->checkBoxHighResTrackingData->setChecked(false); }
+        else { ui->checkBoxHighResTrackingData->setChecked(false);  highResCalc = false; }
 
         if (domainCutoff) ui->checkBox_DomainCutoff->setChecked(true); else ui->checkBox_DomainCutoff->setChecked(false);
         if (domainCutoff2) ui->checkBox_DomainCutoffMeters->setChecked(true); else ui->checkBox_DomainCutoffMeters->setChecked(false);
@@ -1374,7 +1378,16 @@ void MainWindow::setFocus(const QModelIndex& idx)
 }
 
 /**
- * Set up the geometry table
+ * Set Focus of the mouse for the setupTable function (field which is clicked)
+ * @param idx
+ */
+void MainWindow::setRow(int rowNumber)
+{
+    row = rowNumber;
+}
+
+/**
+ * Set up the geometry table for the layer configuration
  * @param table
  */
 void MainWindow::setupTable(QTableView* table)
@@ -1403,6 +1416,8 @@ void MainWindow::setupTable(QTableView* table)
     id = model->index(0, 0, QModelIndex());
 
     connect(table, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setFocus(const QModelIndex&)));
+    connect(table, SIGNAL(currentChanged(const QModelIndex&)), this, SLOT(setFocus(const QModelIndex&)));
+    connect(verticalHeader, SIGNAL(sectionClicked(int)), this, SLOT(setRow(int)));
 
     QSortFilterProxyModel* proxy1 = new QSortFilterProxyModel();
     proxy1->setSourceModel(model);
@@ -1548,20 +1563,13 @@ void setupLiveTHs()
     {
        delete  addDetLayerVec.at(i);
     }
-    for(int i = 0; i < addDetLayerTrackVec.size(); i++)
-    {
-       delete  addDetLayerTrackVec.at(i);
-    }
 
     addDetLayerVec.clear();
-    addDetLayerTrackVec.clear();
 
     for(int i = 0; i < totalAdditionalDetectorLayers; i++)
     {
         TString addLayerName = "densityMapAlbedo_"+castIntToString(i);
         addDetLayerVec.push_back(new TH2F(addLayerName, "Detector Layer Neutron Density", 500, domainLowEdge, domainUpperEdge, 500, domainLowEdge, domainUpperEdge));
-        TString addLayerName2 = "densityAlbedoTrackMap_"+castIntToString(i);
-        addDetLayerTrackVec.push_back(new TH2F(addLayerName2, "Detector Layer Neutron Track Density", 1000, domainLowEdge, domainUpperEdge, 1000, domainLowEdge, domainUpperEdge));
     }
 
     liveTHs.clear();
@@ -2454,7 +2462,7 @@ bool MainWindow::importSettings()
 
         if (lineCounter == 68) { stream >> tempInt; if (tempInt == 1) setAutoRefreshRateClearing = true; else setAutoRefreshRateClearing = false; }
         if (lineCounter == 69) { stream >> tempInt; if (tempInt == 1) exportTrackData = true; else exportTrackData = false; }
-        if (lineCounter == 70) { stream >> tempInt; if (tempInt == 1) {exportHighResTrackData = true; highResCalc = true; } else exportHighResTrackData = false; }
+        if (lineCounter == 70) { stream >> tempInt; if (tempInt == 1) exportHighResTrackData = true; else exportHighResTrackData = false; }
         if (lineCounter == 71) { stream >> tempInt; if (tempInt == 1) { useySheetDetector = true; useCylindricalDetector = false; useSphericalDetector = false; usexSheetDetector = false; } }
         if (lineCounter == 72) { stream >> tempInt; if (tempInt == 1) { usexSheetDetector = true; useCylindricalDetector = false; useySheetDetector = false; useSphericalDetector = false; } }
         if (lineCounter == 73) stream >> detLength;
@@ -2783,7 +2791,6 @@ void MainWindow::exportToSave()
 
         if (totalAdditionalDetectorLayers > 0)
         {
-            cout<<"MM"<<endl;
             for (int k = 0; k < maxLayersAllowed; k++)
             {
                 int vecPos = additionalDetectorLayers[k];
@@ -2805,26 +2812,9 @@ void MainWindow::exportToSave()
                     *stream_out << endl;
                 }
 
-                stream_out->close();            
-
-                if (exportHighResTrackData)
-                {
-                    stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapSelectedHighRes_L"+castIntToString(tp)+"_" + datString + ".csv", ofstream::out);
-
-                    nX = addDetLayerTrackVec.at(vecPos)->GetNbinsX();
-                    nY = addDetLayerTrackVec.at(vecPos)->GetNbinsY();
-
-                    for (Int_t i = 1; i < nY; i++)
-                    {
-                        for (Int_t j = 1; j < nX; j++)
-                        {
-                            *stream_out << castDoubleToString(addDetLayerTrackVec.at(vecPos)->GetBinContent(j, i)) << "\t";
-                        }
-                        *stream_out << endl;
-                    }
-                    stream_out->close();
-                }
+                stream_out->close();
             }
+
         }
     }
 
@@ -9279,7 +9269,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if ((useRealisticModelDetector) || (useRealisticModelLayer)) useRealisticModel = true; else useRealisticModel = false;
 
-                    if ((useRealisticModel) && ((g == detectorLayer) || ((detectorLayerOverride) || (detectorOverride)) || (additionalDetectorLayers[g] >= 0)))
+                    if ((useRealisticModel) && ((g == detectorLayer) || ((detectorLayerOverride) || (detectorOverride)) || (additionalDetectorLayers[g] > 0)))
                     {
                         //transform the angle of 0....pi to 0...pi/2.
                         if (!useAdditionalDetectorModel)
@@ -9362,15 +9352,9 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if (totalAdditionalDetectorLayers > 0)
                     {
-                        if ((additionalDetectorLayers[g] >= 0) && (!continuedThisLayer))
+                        if (((additionalDetectorLayers[g] >= 0) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) )
                         {
-                            if ((theta > downwardScotomaAngle) && (theta < downwardAcceptanceAngle))
-                            {
-                                if (((energy < energyhighTHL) && (energy > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted))
-                                {
-                                    if (scatteredThisLayer) addDetLayerVec.at(additionalDetectorLayers[g])->Fill(x * 0.001, y * 0.001);  else { if (!reverseDir) addDetLayerVec.at(additionalDetectorLayers[g])->Fill(xt * 0.001, yt * 0.001);  else addDetLayerVec.at(additionalDetectorLayers[g])->Fill(xtEnd * 0.001, yt * 0.001); }
-                                }
-                            }
+                            if (((energy < energyhighTHL) && (energy > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) { if (scatteredThisLayer) addDetLayerVec.at(additionalDetectorLayers[g])->Fill(x * 0.001, y * 0.001);  else { if (!reverseDir) addDetLayerVec.at(additionalDetectorLayers[g])->Fill(xt * 0.001, yt * 0.001);  else addDetLayerVec.at(additionalDetectorLayers[g])->Fill(xtEnd * 0.001, yt * 0.001); } }
                         }
                     }
 
@@ -9439,7 +9423,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-                    //this one is the new solution for the virtual detector
+                    //this one is the new solution
                     if (((g == detectorLayer) || (detectorOverride)) && (doSingleDetector) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer)))
                     {
                         if (detectorOverride)
@@ -9534,6 +9518,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                                 if (detHitted)  detectorID = lCounter;
                             }
                         }
+
 
                         // xySqrt calculation for xSheet and ySheet detector misssing!
 
@@ -9649,19 +9634,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         if (detFileOutput)
                         {
                             if (doBatchRun2D) detOutputFile.open(outputFolder + "detectorNeutronHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
-                            else
-                            {
-                                if (totalAdditionalDetectorLayers > 0) // incomplete
-                                {
-                                    if (additionalDetectorLayers[g] >= 0)
-                                    {
-                                        int tp = g + 1;
-                                        detOutputFile.open(outputFolder + "detectorNeutronHitData_L"+castIntToString(tp)+".dat", ios::out | ios::app);
-                                    }
-                                    else  detOutputFile.open(outputFolder + "detectorNeutronHitData.dat", ios::out | ios::app);
-                                }
-                                else  detOutputFile.open(outputFolder + "detectorNeutronHitData.dat", ios::out | ios::app);
-                            }
+                            else detOutputFile.open(outputFolder + "detectorNeutronHitData.dat", ios::out | ios::app);
 
                             detOutputFile << detectorID << "\t" << n << "\t" << scatterings << "\t" << xLastScattered * 0.001 << "\t" << yLastScattered * 0.001 << "\t" << zLastScattered * 0.001 << "\t" << theta << "\t" << phi << "\t" << energy << "\t" << energyAtInterface << "\t" << xySqrt * 0.001 << "\t" << xAtInterface * 0.001 << "\t" << yAtInterface * 0.001 << "\t" << zAtInterface * 0.001 << "\t" << previousSoilX * 0.001 << "\t" << previousSoilY * 0.001 << "\t" << previousSoilZ0 * 0.001 << "\t" << thermalizedX * 0.001 << "\t" << thermalizedY * 0.001 << "\t" << thermalizedZ0 * 0.001 << "\t" << z0max * 0.001 << "\t" << subsurfaceScatteringMean * 0.001 << "\t" << timeNtr << "\t" << moistureAtInterface << "\t" << detectorRealisticallyHitted << "\t" << hasPassedSurface << "\n";
 
@@ -9701,22 +9674,10 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if (detLayerFileOutput)
                     {
-                        if (((g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride) || (additionalDetectorLayers[g] >= 0))
+                        if (((g == detectorLayer) && (!continuedThisLayer) && ((!noMultipleScatteringRecording) || (!scatteredThisLayer))) || (detectorLayerOverride))
                         {
                             if (doBatchRun2D) detLayerOutputFile.open(outputFolder + "detectorLayerNeutronHitData_" + castIntToString(paramInt) + ".dat", ios::out | ios::app);
-                            else
-                            {
-                                if (totalAdditionalDetectorLayers > 0)
-                                {
-                                    if (additionalDetectorLayers[g] >= 0)
-                                    {
-                                        int tp = g + 1;
-                                        detLayerOutputFile.open(outputFolder + "detectorLayerNeutronHitData_L"+castIntToString(tp)+".dat", ios::out | ios::app);
-                                    }
-                                    else detLayerOutputFile.open(outputFolder + "detectorLayerNeutronHitData.dat", ios::out | ios::app);
-                                }
-                                else  detLayerOutputFile.open(outputFolder + "detectorLayerNeutronHitData.dat", ios::out | ios::app);
-                            }
+                            else detLayerOutputFile.open(outputFolder + "detectorLayerNeutronHitData.dat", ios::out | ios::app);
 
                             detLayerOutputFile << n << "\t" << scatterings << "\t";
 
@@ -11076,7 +11037,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         if (!foundSomething) { leaveLayer = true; }
                     }
 
-                    if ((g == (groundLayer - 1)) && (!scatteredThisLayer) && (!continuedThisLayer))
+                    if ((g == groundLayer - 1) && (!scatteredThisLayer) && (!continuedThisLayer))
                     {
                         scatteredSurfaceSpectrum->Fill(energy);
 
@@ -11103,8 +11064,10 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-                    if ((g == (groundLayer - 1)) && (!scatteredThisLayer) && (reverseDir) && (!continuedThisLayer))
+                    if ((g == groundLayer - 1) && (!scatteredThisLayer) && (reverseDir) && (!continuedThisLayer))
                     {
+
+
                         xySqrt = sqrt(TMath::Power(xAtInterface - xt, 2) + TMath::Power(yAtInterface - yt, 2));
 
                         if (hasPassedSurface)
@@ -11145,7 +11108,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         }
                     }
 
-                    if (((((g == detectorLayer) || (detectorLayerOverride)) || (trackAllLayers) || (additionalDetectorLayers[g] >= 0)) && ((leaveLayer) || (absorbBreak)) && ((drawDensityMap) && (!noTrackRecording))))
+                    if (((((g == detectorLayer) || (detectorLayerOverride)) || (trackAllLayers)) && ((leaveLayer) || (absorbBreak)) && ((drawDensityMap) && (!noTrackRecording))))
                     {
                         if (((useDetectorSensitiveMaterial) && (material == detectorSensitiveMaterial)) || (!useDetectorSensitiveMaterial))
                         {
@@ -11191,7 +11154,8 @@ bool cosmicNSimulator(MainWindow* uiM)
                             }
 
                             try
-                            {                               
+                            {
+                                //#pragma omp for
                                 for (int nt = 0; nt < (neutronTrackCoordinates.size() - 9); nt += 9)
                                 {
                                     thetaTr = neutronTrackCoordinates.at(3 + nt);
@@ -11250,7 +11214,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                                             densityEnergyTrackMap->SetBinContent(densityEnergyTrackMap->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMap->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
 
-                                            if ((!noGUIMode) && (highResCalc))
+                                            if (highResCalc)
                                             {
                                                 const short hrmax = 2; // oversampling ratio
                                                 for (int hr = 0; hr < hrmax; hr++)
@@ -11278,15 +11242,10 @@ bool cosmicNSimulator(MainWindow* uiM)
                                                     if ((energyTr < 100000) && (energyTr > 20)) densityHighEnergyTrackMapHighRes->Fill(xTrack * 0.001, yTrack * 0.001);
 
                                                     densityEnergyTrackMapHighRes->SetBinContent(densityEnergyTrackMapHighRes->GetXaxis()->FindBin(xTrack * 0.001), densityEnergyTrackMapHighRes->GetYaxis()->FindBin(yTrack * 0.001), log(energyTr) + 20.);
-
-                                                    if ((totalAdditionalDetectorLayers > 0) && (additionalDetectorLayers[g] >= 0))
-                                                    {
-                                                        if (((energyTr < energyhighTHL) && (energyTr > energylowTHL) && (!useRealisticModelLayer)) || (layerRealisticallyHitted)) addDetLayerTrackVec.at(additionalDetectorLayers[g])->Fill(xTrack * 0.001, yTrack * 0.001);
-                                                    }
                                                 }
                                             }
 
-                                            if ((!noGUIMode) && (highResCalc15x))
+                                            if ((!noGUIMode) && (highhighResCalc))
                                             {
                                                 const short hrmax2 = 6;
                                                 for (int hr = 0; hr < hrmax2; hr++)
@@ -11850,7 +11809,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
     if (TMath::Abs(((geometries.at(startingLayer)[4]) / 1000.) - ((geometries.at(groundLayer)[4]) / 1000.)) > 799)
     {
         setStatus(1, "Error: Layer Config");
-        setStatus(2, "Starting Layer Elevation too high");
+        setStatus(2, "Source Layer Elevation too high");
         return;
     }
 
@@ -11863,8 +11822,30 @@ void MainWindow::on_pushButton_Simulate_clicked()
 
     if (((geometries.at(startingLayer)[5]) / 1000.) > 250.)
     {
-        setStatus(1, "Error: Starting Layer Config");
-        setStatus(2, "Starting Layer too thick");
+        setStatus(1, "Error: Source Layer Config");
+        setStatus(2, "Source Layer too thick");
+        return;
+    }
+
+    if (startingLayer < 1)
+    {
+        setStatus(1, "Error: Source Layer Config");
+        setStatus(2, "Source Layer declaration");
+        return;
+    }
+
+
+    if (detectorLayer < 1)
+    {
+        setStatus(1, "Error: Source Layer Config");
+        setStatus(2, "Detector Layer declaration");
+        return;
+    }
+
+    if (groundLayer < 1)
+    {
+        setStatus(1, "Error: Source Layer Config");
+        setStatus(2, "Ground Layer declaration");
         return;
     }
 
@@ -11933,14 +11914,8 @@ void MainWindow::on_pushButton_Simulate_clicked()
             totalAdditionalDetectorLayers++;
 
             mat = mat - 500;
-            geometries.at(i)[6] = mat;            
+            geometries.at(i)[6] = mat;
         }
-    }
-    if (totalAdditionalDetectorLayers > 0)
-    {
-        trackAllLayers = true;
-        highResCalc = true;
-        ui->checkBox_TrackAllLayers->setChecked(true);
     }
 
     for (int i = 0; i < geometries.size() - 1; i++)
@@ -13399,7 +13374,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Citation: M. Köhli et al., Geosci. Model. Dev., 16, 449-477, 2023 <br><br>";
-    messageString+=        "v1.08 (08.02.2023)<br> ";
+    messageString+=        "v1.09 (11.02.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13592,6 +13567,7 @@ void MainWindow::activateThermalSkyEvaporation()
     noThermalRegime = false;
     doSkyEvaporation = true;
     highResCalc = true;
+    highhighResCalc = true;
 
     maxScatterings = 1500; // maximum number of scatterings of a neutron until killed
 
@@ -13782,7 +13758,7 @@ void MainWindow::on_pushButton_LoadGeometry_clicked()
 
     ifstream input_stream(geometryPath, ios::in);
 
-    if (!(access(geometryPath.c_str(), 0) == 0))
+    if (!access(geometryPath.c_str(), 0) == 0)
     {
         if (!silentMode)
         {
@@ -14171,7 +14147,7 @@ void MainWindow::checkInputPics()
         string imageStrHere = (string)workFolder+(string)castIntToString(i)+".png";
 
         if (matrixImageHere.load(QString::fromStdString(imageStrHere)))
-        {            
+        {
             inputPics[i - 1] = 2; // this is a png material definition map
         }
 
@@ -15373,8 +15349,8 @@ void MainWindow::on_checkBoxTrackingData_clicked(bool checked)
  */
 void MainWindow::on_checkBoxHighResTrackingData_clicked(bool checked)
 {
-    highResCalc = true;
     exportHighResTrackData = checked;
+    highResCalc = checked;
 }
 
 /**
@@ -15664,8 +15640,6 @@ void MainWindow::on_pushButton_Enlarge2_clicked()
     visualization2 = new VisualizationEnlarge2(this);
     visualization2->show();
 
-    highResCalc15x = true;
-
     updateEnlargedView2 = true;
     if (alreadyStarted)
     {
@@ -15713,28 +15687,16 @@ void MainWindow::setSourcePosY(float yc)
    if (godzillaMode) yCustomPos = yc;
 }
 
-/**
- * Pauses the calculation routine
- * @param pause
- */
 void MainWindow::setPause(bool var)
 {
     pausehere = var;
 }
 
-/**
- * Continues the calculation routine
- * @param pause
- */
 void MainWindow::setContinue(bool var)
 {
     pausehere = !var;
 }
 
-/**
- * Sets the calculation routine into the mode where pause and continue can be activated
- * @param pause
- */
 void MainWindow::setStopMode(bool var)
 {
     stopMode = var;

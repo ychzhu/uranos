@@ -1416,7 +1416,7 @@ void MainWindow::setupTable(QTableView* table)
     id = model->index(0, 0, QModelIndex());
 
     connect(table, SIGNAL(clicked(const QModelIndex&)), this, SLOT(setFocus(const QModelIndex&)));
-    connect(table, SIGNAL(currentChanged(const QModelIndex&)), this, SLOT(setFocus(const QModelIndex&)));
+    //connect(table, SIGNAL(currentChanged(const QModelIndex&)), this, SLOT(setFocus(const QModelIndex&)));
     connect(verticalHeader, SIGNAL(sectionClicked(int)), this, SLOT(setRow(int)));
 
     QSortFilterProxyModel* proxy1 = new QSortFilterProxyModel();
@@ -11830,33 +11830,33 @@ void MainWindow::on_pushButton_Simulate_clicked()
         return;
     }
 
-    if (startingLayer < 1)
+    if (startingLayer < 0)
     {
         setStatus(1, "Error: Source Layer Config");
-        setStatus(2, "Source Layer declaration");
+        setStatus(2, "Layer declaration < 0");
         return;
     }
 
 
-    if (detectorLayer < 1)
+    if (detectorLayer < 0)
     {
-        setStatus(1, "Error: Source Layer Config");
-        setStatus(2, "Detector Layer declaration");
+        setStatus(1, "Error: Detector Layer Config");
+        setStatus(2, "Layer declaration < 0");
         return;
     }
 
-    if (groundLayer < 1)
+    if (groundLayer < 0)
     {
-        setStatus(1, "Error: Source Layer Config");
-        setStatus(2, "Ground Layer declaration");
+        setStatus(1, "Error: Ground Layer Config");
+        setStatus(2, "Layer declaration < 0");
         return;
     }
 
     for (int i = 0; i < geometries.size() - 1; i++)
     {
-        if ((geometries.at(i)[4] + geometries.at(i)[5] - 0.01) > geometries.at(i + 1)[4])
+        if ((geometries.at(i)[4] + geometries.at(i)[5] - 1) > geometries.at(i + 1)[4])
         {
-            if ((i + 1) == detectorLayer);
+            if ((i + 1) == detectorLayer) {}
             else
             {
                 tp1 = i + 1;

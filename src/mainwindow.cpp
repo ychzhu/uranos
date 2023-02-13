@@ -5596,6 +5596,7 @@ bool cosmicNSimulator(MainWindow* uiM)
         nDetectedNeutrons = 0;
         int timeRunRemainHours, timeRunRemainMinutes, timeRunRemainSeconds, nRunPerS;
         double nRPerS;
+        int nspers;
 
         attenuationLength = 148;                // for artificial source in the material
         killedThermal = 0;
@@ -7626,9 +7627,11 @@ bool cosmicNSimulator(MainWindow* uiM)
                         if (((nTotal <= 100000) && (n % 500 == 0)) || ((nTotal > 100000) && (n % 2000 == 0)))
                         {                            
                             nRPerS = double (difftime(diffmean, start) - pauseTime);
+
                             if (nRPerS > 0)
                             {
                                 nRunPerS = (nTotal * 1.) / (nRPerS);
+                                nspers = nRunPerS;
                                 timeRunRemainHours = ((neutrons - nTotal) / nRunPerS) / 3600;
                                 timeRunRemainMinutes = (((neutrons - nTotal) / nRunPerS) - timeRunRemainHours * 3600) / 60;
                                 timeRunRemainSeconds = ((neutrons - nTotal) / nRunPerS) - timeRunRemainHours * 3600 - timeRunRemainMinutes * 60;
@@ -7637,7 +7640,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                             cout << "\r" << castFloatToString(100. * (nTotal * 1.) / (neutrons * 1.), 6) << " % completed ";
                             if (nRPerS > 0)
                             {
-                                cout<< " (" << timeRunRemainHours << ":"; if (timeRunRemainMinutes < 10) cout<<"0"; cout<<timeRunRemainMinutes << ":"; if (timeRunRemainSeconds < 10) cout<<"0"; cout<<timeRunRemainSeconds <<")";
+                                cout<< " (" << timeRunRemainHours << ":"; if (timeRunRemainMinutes < 10) cout<<"0"; cout<<timeRunRemainMinutes << ":"; if (timeRunRemainSeconds < 10) cout<<"0"; cout<<timeRunRemainSeconds <<") ["<<(string)castIntToString(nspers)<< " n/s]" ;
                             }
                             cout.flush();
                         }
@@ -13374,7 +13377,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Citation: M. Köhli et al., Geosci. Model. Dev., 16, 449-477, 2023 <br><br>";
-    messageString+=        "v1.09 (11.02.2023)<br> ";
+    messageString+=        "v1.09 (13.02.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 

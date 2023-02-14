@@ -631,6 +631,31 @@ void MainWindow::setupGeometry()
         for (int k = 0; k < model->rowCount(); k++) { if (inputMatrixPixels < inputPicSizes[k]) inputMatrixPixels = inputPicSizes[k]; }
         matrixMetricFactor = squareDim / 1000. / (inputMatrixPixels * 1.); //meter per pixel
     }
+
+    int mat;
+
+    for (int i = 0; i < maxLayersAllowed; i++)
+    {
+        additionalDetectorLayers[i] = -1;
+    }
+
+    totalAdditionalDetectorLayers = 0;
+
+    // checking whether additional detector layers were defined
+    for (int i = 0; i < geometries.size() - 1; i++)
+    {
+        mat = (int)geometries.at(i)[6];
+
+        if ((mat > 500) && (mat < 600))
+        {
+            additionalDetectorLayers[i] = totalAdditionalDetectorLayers;
+
+            totalAdditionalDetectorLayers++;
+
+            mat = mat - 500;
+            geometries.at(i)[6] = mat;
+        }
+    }
 }
 
 // twodimensional functions which store the footprint paramaters according to Schroen 2017
@@ -9272,7 +9297,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
                     if ((useRealisticModelDetector) || (useRealisticModelLayer)) useRealisticModel = true; else useRealisticModel = false;
 
-                    if ((useRealisticModel) && ((g == detectorLayer) || ((detectorLayerOverride) || (detectorOverride)) || (additionalDetectorLayers[g] > 0)))
+                    if ((useRealisticModel) && ((g == detectorLayer) || ((detectorLayerOverride) || (detectorOverride)) || (additionalDetectorLayers[g] >= 0)))
                     {
                         //transform the angle of 0....pi to 0...pi/2.
                         if (!useAdditionalDetectorModel)
@@ -11801,6 +11826,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
     endfFolder = tmpStringSimulate; // ui->lineEdit_CrosssectionFolder->text().toStdString();
 
     setupGeometry();
+
     // checks if geometry is set correctly
     if (model->rowCount() < 2)
     {
@@ -11897,7 +11923,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
             }
         }
     }
-
+    /*
     for (int i = 0; i < maxLayersAllowed; i++)
     {
        additionalDetectorLayers[i] = -1;
@@ -11916,10 +11942,11 @@ void MainWindow::on_pushButton_Simulate_clicked()
 
             totalAdditionalDetectorLayers++;
 
-            mat = mat - 500;
+            mat = mat - 500;setupGeometry()
             geometries.at(i)[6] = mat;
         }
     }
+    */
 
     for (int i = 0; i < geometries.size() - 1; i++)
     {
@@ -11932,7 +11959,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
             setStatus(1, "Error: Wrong Material");
             return;
         }
-    }
+    }    
 
     if (!noGUIMode) {setStatus(1, "Reading Spectrum Parameter Files");    delay(5);}
 
@@ -13377,7 +13404,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Citation: M. Köhli et al., Geosci. Model. Dev., 16, 449-477, 2023 <br><br>";
-    messageString+=        "v1.09 (13.02.2023)<br> ";
+    messageString+=        "v1.09 (14.02.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13697,7 +13724,8 @@ void MainWindow::on_pushButton_SaveGeometry_clicked()
     {
         *stream_out << castDoubleToString((geometries.at(i)[4]) / 1000.);
         *stream_out << "\t" << (geometries.at(i)[5]) / 1000.;
-        *stream_out << "\t" << (geometries.at(i)[6]) << endl;
+        if (additionalDetectorLayers[i] >= 0) {*stream_out << "\t" << (geometries.at(i)[6] + 500) << endl;}
+        else {*stream_out << "\t" << (geometries.at(i)[6]) << endl;}
     }
 
     stream_out->close();

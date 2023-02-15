@@ -64,7 +64,9 @@ isEmpty(PREFIX) {
 }
 
 target.path = $$PREFIX/bin
-INSTALLS += target
+assets.path = $$PREFIX/share/uranos
+assets.files = data/ENDFdata data/IncomingSpectrum
+INSTALLS += target assets
 
 
 DEFINES += _CRT_SECURE_NO_WARNINGS

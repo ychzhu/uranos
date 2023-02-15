@@ -1,8 +1,11 @@
 .ipynb_checkpoints
 _garbage
 __pycache__
+UranosGUI.pro.user
+build
 *.o
 moc_*.cpp
 moc_*.h
 ui_*.h
 Makefile*
+.qmake.stash

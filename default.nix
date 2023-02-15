@@ -1,3 +1,3 @@
 let
   pkgs = import <nixpkgs> {};
-in libsForQt5.callPackage ./package.nix
+in pkgs.libsForQt5.callPackage ./package.nix

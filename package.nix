@@ -15,4 +15,11 @@ stdenv.mkDerivation rec {
   buildInputs = [ qtbase root tbb ];
   nativeBuildInputs = [ wrapQtAppsHook ];
 
+  buildPhase = ''
+    runHook preBuild
+    cd src
+    qmake
+    make
+    runHook postBuild
+  '';
 }

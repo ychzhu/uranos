@@ -8,8 +8,14 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
-TARGET = UranosGUI
+TARGET = uranos-gui
 TEMPLATE = app
+
+DESTDIR = build/
+OBJECTS_DIR = build/.obj
+MOC_DIR = build/.moc
+RCC_DIR = build/.rcc
+UI_DIR = build/.ui
 
 CONFIG += console
 
@@ -19,35 +25,46 @@ CONFIG += console
 
 #QMAKE_LFLAGS		= -static -enable-stdcall-fixup -Wl,-enable-auto-import -Wl,-enable-runtime-pseudo-reloc
 
-RC_FILE = urc.rc
+win32:RC_FILE = resources/urc.rc
 
-SOURCES += main.cpp\
-        mainwindow.cpp \#
-    qcustomplot.cpp \
-    Toolkit.cpp \
-    dialogshowpic.cpp \
-    customSplashScreen.cpp \
-    visualizationenlarge.cpp \
-    visualizationenlarge2.cpp
+INCLUDEPATH += src/
+
+SOURCES += src/main.cpp\
+    src/mainwindow.cpp \
+    src/qcustomplot.cpp \
+    src/Toolkit.cpp \
+    src/dialogshowpic.cpp \
+    src/customSplashScreen.cpp \
+    src/visualizationenlarge.cpp \
+    src/visualizationenlarge2.cpp
 
 
-HEADERS  += mainwindow.h \
-    qcustomplot.h \
-    Toolkit.h \
-    dialogshowpic.h \
-    customSplashScreen.h \
-    visualizationenlarge.h \
-    visualizationenlarge2.h
+HEADERS += src/mainwindow.h \
+    src/qcustomplot.h \
+    src/Toolkit.h \
+    src/dialogshowpic.h \
+    src/customSplashScreen.h \
+    src/visualizationenlarge.h \
+    src/visualizationenlarge2.h
 
-FORMS    += mainwindow.ui \
-    dialogshowpic.ui \
-    visualizationEnlarge2.ui \
-    visualizationenlarge.ui
+FORMS += ui/dialogshowpic.ui \
+    ui/mainwindow.ui \
+    ui/visualizationenlarge.ui \
+    ui/visualizationEnlarge2.ui
+
+resources.files = resources/about.png \
+	resources/splashScreen.png \
+	resources/uranos.ico \
+	resources/uranos-logo-smallx2.png
+resources.prefix = /
+
+RESOURCES = resources
+
 
 DEFINES += _CRT_SECURE_NO_WARNINGS
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0
 
-CONFIG += static
+# CONFIG += static
 
 win32:QMAKE_LFLAGS +=  /FORCE
 win32:QMAKE_LFLAGS += /INCREMENTAL:NO
@@ -72,32 +89,12 @@ win32: QMAKE_CXXFLAGS += -MP
 #LIBS += -fopenmp
 
 #LIBS += -LC:/Qt2/5.12.11/msvc2017/ -lQt5Core
-win32: LIBS += -L$$PWD/root/lib/ -llibMatrix
-win32: LIBS += -L$$PWD/root/lib/ -llibCore
-win32: LIBS += -L$$PWD/root/lib/ -llibMathCore
-win32: LIBS += -L$$PWD/root/lib/ -llibGui
-win32: LIBS += -L$$PWD/root/lib/ -llibHist
-win32: LIBS += -L$$PWD/root/lib/ -llibGraf
-win32: LIBS += -L$$PWD/root/lib/ -llibRIO
-win32: LIBS += -L$$PWD/root/lib/ -llibGPad
-
-unix: LIBS += -L$$PWD/root/lib/ -lMatrix
-unix: LIBS += -L$$PWD/root/lib/ -lCore
-unix: LIBS += -L$$PWD/root/lib/ -lMathCore
-unix: LIBS += -L$$PWD/root/lib/ -lGui
-unix: LIBS += -L$$PWD/root/lib/ -lHist
-unix: LIBS += -L$$PWD/root/lib/ -lGraf
-unix: LIBS += -L$$PWD/root/lib/ -lRIO
-unix: LIBS += -L$$PWD/root/lib/ -lGpad
-unix: LIBS += -L$$PWD/root/lib/ -lThread
-unix: LIBS += -L$$PWD/root/lib/ -lImt
-unix: LIBS += -L$$PWD/root/lib/ -ltbb
-
+LIBS += -L$$PWD/root/lib/
+win32: LIBS += -llibMatrix -llibCore -llibMathCore -llibGui -llibHist -llibGraf -llibRIO -llibGPad
+unix: LIBS += -lMatrix -lCore -lMathCore -lGui -lHist -lGraf -lRIO -lGpad -lThread -lImt -ltbb
 unix: LIBS += -W
 
-
 INCLUDEPATH += $$PWD/root/include
-
 DEPENDPATH += $$PWD/root/include
 
 

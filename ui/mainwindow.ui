@@ -4815,7 +4815,7 @@ background-color: transparent;</string>
     </property>
     <property name="icon">
      <iconset>
-      <normaloff>uranos-logo-smallx2.png</normaloff>uranos-logo-smallx2.png</iconset>
+	     <normaloff>:/resources/uranos-logo-smallx2.png</normaloff>:/resources/uranos-logo-smallx2.png</iconset>
     </property>
     <property name="iconSize">
      <size>

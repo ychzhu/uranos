@@ -1,3 +1,7 @@
 .ipynb_checkpoints
 _garbage
 __pycache__
+*.o
+moc_*.cpp
+moc_*.h
+Makefile

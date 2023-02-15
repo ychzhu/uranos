@@ -58,7 +58,7 @@ public:
 
 signals:
 
-  void setCursorPos(float xc, float yc);
+  //void setCursorPos(float xc, float yc);
 
   void on_VisualizationEnlargeCursorX(float x);
 

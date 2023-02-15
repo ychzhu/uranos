@@ -59,7 +59,7 @@ bool VisualizationEnlarge::eventFilter(QObject* target, QEvent* event)
             x = ui->customPlot->xAxis->pixelToCoord(_mouseEvent->pos().x());
             y = ui->customPlot->yAxis->pixelToCoord(_mouseEvent->pos().y());
 
-            setCursorPos(x * 1000., y * 1000.);
+            //setCursorPos(x * 1000., y * 1000.);
 
             emit on_VisualizationEnlargeCursorX(x * 1000.);
             emit on_VisualizationEnlargeCursorY(y * 1000.);
@@ -77,7 +77,7 @@ bool VisualizationEnlarge::eventFilter(QObject* target, QEvent* event)
         //xCustomPosV = x * 1000.;
         //yCustomPosV = y * 1000.;
 
-        setCursorPos(x * 1000., y * 1000.);
+        //setCursorPos(x * 1000., y * 1000.);
 
         emit on_VisualizationEnlargeCursorX(x * 1000.);
         emit on_VisualizationEnlargeCursorY(y * 1000.);
@@ -397,15 +397,17 @@ void VisualizationEnlarge::on_pushButtonPNG_clicked()
     screenshotcounter++;
 }
 
+/*
 /**
  * cursor placement on mouse event
  * @param xc, yc
- */
+
 void VisualizationEnlarge::setCursorPos(float x, float y)
 {
    xCustomPosV = x;
    yCustomPosV = y;
 }
+*/
 
 /*
 void VisualizationEnlarge::on_VisualizationEnlarge_cursorX(float x)

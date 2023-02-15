@@ -9,7 +9,13 @@ $ cd uranos
 ```
 
 ### Building with Nix
-Currently, the easiest way to build URANOS from scratch is via the provided Nix derivations. If you already have Nix installed, run:
+Currently, the easiest way to build URANOS from scratch is via the provided Nix derivations. Nix can be installed on almost any Linux distribution with the following command:
+```console
+$ sh <(curl -L https://nixos.org/nix/install) --daemon
+```
+For more information on Nix, see [https://nixos.org](https://nixos.org).
+
+Once you have Nix installed, run:
 ```console
 $ nix-build
 ```
@@ -20,12 +26,6 @@ To install URANOS on your machine, run:
 $ nix-env --install -f default.nix
 ```
 
-
-Nix can be installed on your machine on almost any Linux distribution with the following command:
-```console
-$ sh <(curl -L https://nixos.org/nix/install) --daemon
-```
-For more information on Nix, see [https://nixos.org](https://nixos.org).
 
 ### Without Nix
 If you do not want to use Nix, you will need to manually install the following dependencies:
@@ -39,6 +39,7 @@ To build URANOS, run the following commands inside the URANOS source tree:
 $ qmake
 $ make
 ```
+The resulting programm will be at `build/uranos-gui`.
 
 To install URANOS, run:
 ```console

@@ -57,8 +57,14 @@ resources.files = resources/about.png \
 	resources/uranos.ico \
 	resources/uranos-logo-smallx2.png
 resources.prefix = /
-
 RESOURCES = resources
+
+isEmpty(PREFIX) {
+	PREFIX = /usr
+}
+
+target.path = $$PREFIX/bin
+INSTALLS += target
 
 
 DEFINES += _CRT_SECURE_NO_WARNINGS

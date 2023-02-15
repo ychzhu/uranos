@@ -1,6 +1,8 @@
 { stdenv
 , lib
 , qtbase
+, root
+, tbb
 , wrapQtAppsHook
 }:
 
@@ -10,7 +12,7 @@ stdenv.mkDerivation rec {
 
   src = ./.;
 
-  buildInputs = [ qtbase ];
+  buildInputs = [ qtbase root tbb ];
   nativeBuildInputs = [ wrapQtAppsHook ];
 
 }

@@ -4,4 +4,5 @@ __pycache__
 *.o
 moc_*.cpp
 moc_*.h
-Makefile
+ui_*.h
+Makefile*

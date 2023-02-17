@@ -8,7 +8,8 @@ QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
-TARGET = uranos-gui
+win32:TARGET = UranosGUI
+unix:TARGET = uranos
 TEMPLATE = app
 
 DESTDIR = build/

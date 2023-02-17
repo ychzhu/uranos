@@ -1,0 +1,36 @@
+#LIBRARY    JENDL-4.0/HE
+#REACTION   NI-58(N,P)CO-58,SIG
+#NUCLEUS    Ni-58
+#MF         3
+#MT         103
+#EN-MIN     500000
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 500000      0            Lin-Lin
+ 1E+06       0.000530913  Lin-Lin
+ 1.5E+06     0.00546822   Lin-Lin
+ 2E+06       0.0353247    Lin-Lin
+ 3E+06       0.212148     Lin-Lin
+ 4E+06       0.359925     Lin-Lin
+ 5E+06       0.466991     Lin-Lin
+ 6E+06       0.533154     Lin-Lin
+ 7E+06       0.564219     Lin-Lin
+ 8E+06       0.586008     Lin-Lin
+ 9E+06       0.610846     Lin-Lin
+ 9.5E+06     0.623906     Lin-Lin
+ 1E+07       0.634914     Lin-Lin
+ 1.05E+07    0.641775     Lin-Lin
+ 1.1E+07     0.640594     Lin-Lin
+ 1.15E+07    0.622492     Lin-Lin
+ 1.2E+07     0.582855     Lin-Lin
+ 1.25E+07    0.525803     Lin-Lin
+ 1.35E+07    0.391907     Lin-Lin
+ 1.4E+07     0.329787     Lin-Lin
+ 1.45E+07    0.275679     Lin-Lin
+ 1.5E+07     0.230533     Lin-Lin
+ 1.6E+07     0.163199     Lin-Lin
+ 1.7E+07     0.119622     Lin-Lin
+ 1.8E+07     0.0924693    Lin-Lin
+ 1.9E+07     0.0762556    Lin-Lin
+ 2E+07       0.065854     Lin-Lin
+ 2E+07       0            Lin-Lin

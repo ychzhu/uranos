@@ -1,0 +1,35 @@
+#LIBRARY    FENDL-3.0
+#REACTION   S-32(N,D)P-31,SIG
+#NUCLEUS    S-32
+#MF         3
+#MT         104
+#EN-MIN     7e+06
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 7E+06       0            Lin-Lin
+ 7.2E+06     3.4532E-11   Lin-Lin
+ 7.4E+06     1.10542E-08  Lin-Lin
+ 7.6E+06     3.92322E-07  Lin-Lin
+ 7.8E+06     4.47537E-06  Lin-Lin
+ 8E+06       2.57596E-05  Lin-Lin
+ 8.5E+06     0.000328773  Lin-Lin
+ 9E+06       0.00138474   Lin-Lin
+ 9.5E+06     0.00304743   Lin-Lin
+ 1E+07       0.00535392   Lin-Lin
+ 1.05E+07    0.00757646   Lin-Lin
+ 1.1E+07     0.010139     Lin-Lin
+ 1.15E+07    0.0129422    Lin-Lin
+ 1.2E+07     0.0148553    Lin-Lin
+ 1.25E+07    0.0175455    Lin-Lin
+ 1.3E+07     0.0206529    Lin-Lin
+ 1.35E+07    0.0238511    Lin-Lin
+ 1.4E+07     0.0267435    Lin-Lin
+ 1.45E+07    0.0292834    Lin-Lin
+ 1.5E+07     0.0315086    Lin-Lin
+ 1.6E+07     0.035687     Lin-Lin
+ 1.7E+07     0.0391433    Lin-Lin
+ 1.8E+07     0.0417152    Lin-Lin
+ 1.9E+07     0.0430323    Lin-Lin
+ 2E+07       0.043142     Lin-Lin
+ 2E+07       0            Lin-Lin
+ 2E+08       0            Lin-Lin

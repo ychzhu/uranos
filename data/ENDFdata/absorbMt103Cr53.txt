@@ -1,0 +1,33 @@
+#LIBRARY    ENDF/B-VII.1
+#REACTION   CR-53(N,P)V-53,SIG
+#NUCLEUS    Cr-53
+#MF         3
+#MT         103
+#EN-MIN     2.6903e+06
+#EN-MAX     1.5e+08
+#E,eV        Sig,b        Interpolation
+ 2.6903E+06  0            Lin-Lin
+ 3.5E+06     1.7949E-07   Lin-Lin
+ 4E+06       2.8869E-05   Lin-Lin
+ 4.5E+06     0.00039129   Lin-Lin
+ 5E+06       0.0017401    Lin-Lin
+ 5.5E+06     0.00315      Lin-Lin
+ 6E+06       0.0048       Lin-Lin
+ 6.5E+06     0.0073       Lin-Lin
+ 7E+06       0.0092       Lin-Lin
+ 7.5E+06     0.0112       Lin-Lin
+ 8E+06       0.01325      Lin-Lin
+ 8.5E+06     0.0151       Lin-Lin
+ 9E+06       0.0167       Lin-Lin
+ 9.5E+06     0.01795      Lin-Lin
+ 1E+07       0.0196       Lin-Lin
+ 1.1E+07     0.023763     Lin-Lin
+ 1.2E+07     0.029575     Lin-Lin
+ 1.3E+07     0.036527     Lin-Lin
+ 1.45E+07    0.04489      Lin-Lin
+ 1.5E+07     0.045821     Lin-Lin
+ 1.55E+07    0.045655     Lin-Lin
+ 1.6E+07     0.044872     Lin-Lin
+ 1.75E+07    0.040155     Lin-Lin
+ 2E+07       0.034148     Lin-Lin
+ 2E+07       0            Lin-Lin

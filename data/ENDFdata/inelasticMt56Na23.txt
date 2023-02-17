@@ -1,0 +1,29 @@
+#LIBRARY    JENDL-4.0/HE
+#REACTION   NA-23(N,N`)NA-23-L6,SIG
+#NUCLEUS    Na-23
+#MF         3
+#MT         56
+#EN-MIN     3.11283e+06
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 3.11283E+06 0            Lin-Lin
+ 3.5E+06     0.0569727    Lin-Lin
+ 4E+06       0.0942886    Lin-Lin
+ 4.5E+06     0.102428     Lin-Lin
+ 5E+06       0.102483     Lin-Lin
+ 5.5E+06     0.099365     Lin-Lin
+ 6E+06       0.0953168    Lin-Lin
+ 6.5E+06     0.0874047    Lin-Lin
+ 7E+06       0.07893      Lin-Lin
+ 8.1E+06     0.0626882    Lin-Lin
+ 9E+06       0.0520902    Lin-Lin
+ 1E+07       0.0434365    Lin-Lin
+ 1.1E+07     0.0367042    Lin-Lin
+ 1.2E+07     0.0317923    Lin-Lin
+ 1.3E+07     0.0284802    Lin-Lin
+ 1.4E+07     0.0263667    Lin-Lin
+ 1.45E+07    0.0256216    Lin-Lin
+ 1.5E+07     0.0250191    Lin-Lin
+ 1.6E+07     0.0240924    Lin-Lin
+ 2E+07       0.0210986    Lin-Lin
+ 2E+07       0            Lin-Lin

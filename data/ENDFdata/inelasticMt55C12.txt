@@ -1,0 +1,31 @@
+#LIBRARY    JENDL/HE-2007
+#REACTION   C-12(N,N`)C-12-L5(3A),SIG
+#NUCLEUS    C-12
+#MF         3
+#MT         55
+#EN-MIN     9.21447e+06
+#EN-MAX     3e+09
+#E,eV        Sig,b        Interpolation
+ 9.21447E+06 0            Lin-Lin
+ 1.075E+07   0.000385349  Lin-Lin
+ 1.1E+07     0.000780295  Lin-Lin
+ 1.15E+07    0.00299958   Lin-Lin
+ 1.2E+07     0.00300897   Lin-Lin
+ 1.25E+07    0.00216977   Lin-Lin
+ 1.29E+07    0.00188802   Lin-Lin
+ 1.3E+07     0.00185584   Lin-Lin
+ 1.331E+07   0.00180229   Lin-Lin
+ 1.34963E+07 0.00207266   Lin-Lin
+ 1.40993E+07 0.00270829   Lin-Lin
+ 1.4329E+07  0.0029455    Lin-Lin
+ 1.49248E+07 0.00331864   Lin-Lin
+ 1.55206E+07 0.00342226   Lin-Lin
+ 1.58938E+07 0.00335905   Lin-Lin
+ 1.61164E+07 0.00333881   Lin-Lin
+ 1.67122E+07 0.00315945   Lin-Lin
+ 1.76884E+07 0.00274463   Lin-Lin
+ 1.79038E+07 0.00266441   Lin-Lin
+ 1.85857E+07 0.00238959   Lin-Lin
+ 1.90954E+07 0.00219151   Lin-Lin
+ 2E+07       0.00190448   Lin-Lin
+ 6E+07       0            Lin-Lin

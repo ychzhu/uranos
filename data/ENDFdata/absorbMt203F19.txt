@@ -1,0 +1,61 @@
+#LIBRARY    JENDL-4.0/HE
+#REACTION   F-19(N,XP),SIG
+#NUCLEUS    F-19
+#MF         3
+#MT         203
+#EN-MIN     4.2506e+06
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 4.2506E+06  0            Lin-Lin
+ 4.95E+06    0.00218      Lin-Lin
+ 5.03E+06    0.008        Lin-Lin
+ 5.11E+06    0.00356      Lin-Lin
+ 5.18E+06    0.0105       Lin-Lin
+ 5.26E+06    0.0024       Lin-Lin
+ 5.33E+06    0.00213      Lin-Lin
+ 5.41E+06    0.00256      Lin-Lin
+ 5.61E+06    0.00663      Lin-Lin
+ 5.88E+06    0.0226       Lin-Lin
+ 5.99E+06    0.0169       Lin-Lin
+ 6.17E+06    0.0342       Lin-Lin
+ 6.31E+06    0.0232       Lin-Lin
+ 6.52E+06    0.0286       Lin-Lin
+ 6.59E+06    0.0367       Lin-Lin
+ 6.84E+06    0.021        Lin-Lin
+ 6.94E+06    0.0306       Lin-Lin
+ 7.19E+06    0.0434       Lin-Lin
+ 7.37E+06    0.0326       Lin-Lin
+ 7.69E+06    0.0458       Lin-Lin
+ 7.79E+06    0.0442       Lin-Lin
+ 7.97E+06    0.0324       Lin-Lin
+ 8.23E+06    0.0361       Lin-Lin
+ 8.35E+06    0.0421       Lin-Lin
+ 8.41718E+06 0.038002     Lin-Lin
+ 8.45E+06    0.0360008    Lin-Lin
+ 8.53E+06    0.0360026    Lin-Lin
+ 8.675E+06   0.0427059    Lin-Lin
+ 8.75E+06    0.0393076    Lin-Lin
+ 8.875E+06   0.0456105    Lin-Lin
+ 8.975E+06   0.0425128    Lin-Lin
+ 9E+06       0.0377334    Lin-Lin
+ 9.5E+06     0.0371539    Lin-Lin
+ 1E+07       0.0352045    Lin-Lin
+ 1.05E+07    0.0333936    Lin-Lin
+ 1.1E+07     0.0311626    Lin-Lin
+ 1.15E+07    0.0321815    Lin-Lin
+ 1.2E+07     0.0340403    Lin-Lin
+ 1.25E+07    0.0392211    Lin-Lin
+ 1.3E+07     0.044942     Lin-Lin
+ 1.35E+07    0.0510628    Lin-Lin
+ 1.4E+07     0.0574736    Lin-Lin
+ 1.45E+07    0.0635848    Lin-Lin
+ 1.5E+07     0.0698461    Lin-Lin
+ 1.55E+07    0.0756766    Lin-Lin
+ 1.6E+07     0.0815872    Lin-Lin
+ 1.65E+07    0.0856752    Lin-Lin
+ 1.7E+07     0.0898032    Lin-Lin
+ 1.75E+07    0.0931436    Lin-Lin
+ 1.8E+07     0.0965191    Lin-Lin
+ 1.85E+07    0.0991152    Lin-Lin
+ 2E+07       0.107008     Lin-Lin
+ 2E+07       0            Lin-Lin

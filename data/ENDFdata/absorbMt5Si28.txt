@@ -1,0 +1,42 @@
+#LIBRARY    JENDL/HE-2007
+#REACTION   SI-28(N,X),SIG
+#NUCLEUS    Si-28
+#MF         3
+#MT         5
+#EN-MIN     2e+07
+#EN-MAX     3e+09
+#E,eV        Sig,b        Interpolation
+ 2E+07       0            Lin-Lin
+ 2E+07       0.93862      Lin-Lin
+ 2.2E+07     0.90408      Lin-Lin
+ 2.4E+07     0.87303      Lin-Lin
+ 2.6E+07     0.84518      Lin-Lin
+ 2.8E+07     0.81976      Lin-Lin
+ 3E+07       0.79636      Lin-Lin
+ 3.5E+07     0.74514      Lin-Lin
+ 4E+07       0.70337      Lin-Lin
+ 4.5E+07     0.66875      Lin-Lin
+ 5E+07       0.63964      Lin-Lin
+ 5.5E+07     0.61477      Lin-Lin
+ 6E+07       0.59331      Lin-Lin
+ 6.5E+07     0.57478      Lin-Lin
+ 7E+07       0.55833      Lin-Lin
+ 7.5E+07     0.54386      Lin-Lin
+ 8E+07       0.53077      Lin-Lin
+ 9E+07       0.50839      Lin-Lin
+ 1E+08       0.48972      Lin-Lin
+ 1.1E+08     0.47382      Lin-Lin
+ 1.2E+08     0.46003      Lin-Lin
+ 1.3E+08     0.44794      Lin-Lin
+ 1.4E+08     0.43709      Lin-Lin
+ 1.5E+08     0.42752      Lin-Lin
+ 2E+08       0.400102     Lin-Lin
+ 2.5E+08     0.405573     Lin-Lin
+ 3.5E+08     0.423048     Lin-Lin
+ 5E+08       0.443691     Lin-Lin
+ 6E+08       0.452085     Lin-Lin
+ 7E+08       0.457434     Lin-Lin
+ 8E+08       0.460771     Lin-Lin
+ 1E+09       0.464087     Lin-Lin
+ 1.5E+09     0.465876     Lin-Lin
+ 3E+09       0.466034     Lin-Lin

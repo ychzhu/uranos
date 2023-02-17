@@ -1,0 +1,32 @@
+#LIBRARY    JENDL/HE-2007
+#REACTION   MN-55(N,A)V-52,SIG
+#NUCLEUS    Mn-55
+#MF         3
+#MT         107
+#EN-MIN     635762
+#EN-MAX     3e+09
+#E,eV        Sig,b        Interpolation
+ 635762      0            Lin-Lin
+ 4E+06       3.5873E-07   Lin-Lin
+ 4.5E+06     5.0483E-06   Lin-Lin
+ 5E+06       3.4864E-05   Lin-Lin
+ 5.5E+06     0.00015846   Lin-Lin
+ 6E+06       0.00052727   Lin-Lin
+ 6.5E+06     0.0013689    Lin-Lin
+ 7E+06       0.0028079    Lin-Lin
+ 7.5E+06     0.0047885    Lin-Lin
+ 8E+06       0.0069207    Lin-Lin
+ 8.5E+06     0.0088987    Lin-Lin
+ 9E+06       0.010716     Lin-Lin
+ 9.5E+06     0.012359     Lin-Lin
+ 1.1E+07     0.016723     Lin-Lin
+ 1.2E+07     0.01997      Lin-Lin
+ 1.4E+07     0.027685     Lin-Lin
+ 1.45E+07    0.02892      Lin-Lin
+ 1.5E+07     0.029097     Lin-Lin
+ 1.6E+07     0.026822     Lin-Lin
+ 1.7E+07     0.022176     Lin-Lin
+ 1.8E+07     0.017617     Lin-Lin
+ 1.9E+07     0.013694     Lin-Lin
+ 2E+07       0.010751     Lin-Lin
+ 2E+07       0            Lin-Lin

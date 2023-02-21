@@ -13404,7 +13404,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Citation: M. Köhli et al., Geosci. Model. Dev., 16, 449-477, 2023 <br><br>";
-    messageString+=        "v1.09 (14.02.2023)<br> ";
+    messageString+=        "v1.09b (21.02.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13609,6 +13609,9 @@ void MainWindow::activateThermalSkyEvaporation()
     ui->radioButton_mapTrackThermal->setHidden(false);
     ui->checkBoxThermalMap->setHidden(false);
     ui->checkBoxThermalData->setHidden(false);
+
+    exportHighResTrackData = true;
+    ui->checkBoxHighResTrackingData->setChecked(true);
 }
 
 /**
@@ -13633,6 +13636,8 @@ void MainWindow::on_pushButton_AddLayer_clicked()
     ui->spinBox_StartingLayer->setMaximum(ui->spinBox_StartingLayer->maximum() + 1);
     ui->spinBox_DetectorLayer->setMaximum(ui->spinBox_DetectorLayer->maximum() + 1);
     ui->spinBox_GroundLayer->setMaximum(ui->spinBox_GroundLayer->maximum() + 1);
+
+    if (ui->checkBox_useImage->isChecked()) on_checkBox_useImage_clicked();
 }
 
 /**
@@ -13644,6 +13649,8 @@ void MainWindow::on_pushButton_RemoveLayer_clicked()
 {
     if (row > 0)   model->removeRow(row, QModelIndex());
     else   model->removeRow(0, QModelIndex());
+
+    if (ui->checkBox_useImage->isChecked()) on_checkBox_useImage_clicked();
 }
 
 /**
@@ -13722,8 +13729,11 @@ void MainWindow::on_pushButton_SaveGeometry_clicked()
 
     for (int i = 0; i < geometries.size(); i++)
     {
-        *stream_out << castDoubleToString((geometries.at(i)[4]) / 1000.);
-        *stream_out << "\t" << (geometries.at(i)[5]) / 1000.;
+        if (geometries.at(i)[4] > 10000) {*stream_out <<  setprecision(6) << ((geometries.at(i)[4]) * 0.001);  *stream_out << setprecision(10);}
+        else {*stream_out << ((geometries.at(i)[4]) * 0.001);}
+        *stream_out << "\t";
+        if (geometries.at(i)[5] > 10000) {*stream_out << setprecision(6) << ((geometries.at(i)[5]) * 0.001);  *stream_out << setprecision(10);}
+        else { *stream_out << (geometries.at(i)[5]) * 0.001;}
         if (additionalDetectorLayers[i] >= 0) {*stream_out << "\t" << (geometries.at(i)[6] + 500) << endl;}
         else {*stream_out << "\t" << (geometries.at(i)[6]) << endl;}
     }
@@ -14716,7 +14726,7 @@ void MainWindow::on_checkBoxGradient2_clicked()
 }
 
 /**
- * Function to be called on  clicking the check box
+ * Function to be called on clicking the check box
  * Selected Energy Data in spatial distributions in the export tab.
  *
  */

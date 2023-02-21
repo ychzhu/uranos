@@ -1,6 +1,6 @@
-# Publications using URANOS (24)
+# Publications using URANOS (25)
 
-Citations: **468** (based on [CrossRef.org](https://www.crossref.org/))
+Citations: **469** (based on [CrossRef.org](https://www.crossref.org/))
 
 *Figure. Left: Publications and their total citations (bar width). Right: Cumulative publications over the years. (Spiral package credits: [G. Skok, 2022](https://doi.org/10.3390/app12136609))*
 ![Publications and citations per year](pubplot.png)
@@ -18,6 +18,9 @@ Citations: **468** (based on [CrossRef.org](https://www.crossref.org/))
 - `2022` Rasche, Weimar, Schrön, Köhli, Morgner, Güntner, Blume  
 **"A change in perspective: Downhole cosmic-ray neutron sensing for the estimation of soil moisture"**  
 — *[preprint]*, doi:[10.5194/hess-2022-364](http://dx.doi.org/10.5194/hess-2022-364), Citations: **0**  
+- `2022` Köhli, Schmoldt  
+**"Feasibility of UXO detection via pulsed neutron–neutron logging"**  
+— *Applied Radiation and Isotopes*, doi:[10.1016/j.apradiso.2022.110403](http://dx.doi.org/10.1016/j.apradiso.2022.110403), Citations: **1**  
 - `2022` Schrön, Köhli, Zacharias  
 **"Signal contribution of distant areas to cosmic-ray neutron sensors – implications on footprint and sensitivity"**  
 — *[preprint]*, doi:[10.5194/egusphere-2022-219](http://dx.doi.org/10.5194/egusphere-2022-219), Citations: **0**  

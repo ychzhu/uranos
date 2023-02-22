@@ -1,4 +1,4 @@
-# Publications using URANOS (25)
+# Publications using URANOS (24)
 
 Citations: **478** (based on [CrossRef.org](https://www.crossref.org/))
 
@@ -21,9 +21,6 @@ Citations: **478** (based on [CrossRef.org](https://www.crossref.org/))
 - `2022` Köhli, Schmoldt  
 **"Feasibility of UXO detection via pulsed neutron–neutron logging"**  
 — *Applied Radiation and Isotopes*, doi:[10.1016/j.apradiso.2022.110403](http://dx.doi.org/10.1016/j.apradiso.2022.110403), Citations: **1**  
-- `2022` Schrön, Köhli, Zacharias  
-**"Signal contribution of distant areas to cosmic-ray neutron sensors – implications on footprint and sensitivity"**  
-— *[preprint]*, doi:[10.5194/egusphere-2022-219](http://dx.doi.org/10.5194/egusphere-2022-219), Citations: **0**  
 - `2022` Kasner, Zacharias, Schrön  
 **"On soil bulk density and its influence to soil moisture estimation with cosmic-ray neutrons"**  
 — *[preprint]*, doi:[10.5194/hess-2022-123](http://dx.doi.org/10.5194/hess-2022-123), Citations: **0**  

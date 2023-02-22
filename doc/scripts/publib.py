@@ -22,9 +22,14 @@ CrossRef columns
 
 class CRPub:
     def __init__(self, CRitem, me='Einstein'):
-        self.data = CRitem['message']
+        if CRitem:
+            self.data = CRitem['message']
+        else:
+            self.data = None
         
     def get_date(self):
+        if not self.data:
+            return(None)
         date_items = self.data['published']['date-parts'][0]
         if len(date_items) < 3 and 'published-online' in self.data:
             date_items = self.data['published-online']['date-parts'][0]
@@ -33,34 +38,48 @@ class CRPub:
         return(date(*date_items))
 
     def get_year(self):
+        if not self.data:
+            return(None)
         date_items = self.data['published']['date-parts'][0]
         year = int(date_items[0])
         return(year)
 
     def get_title(self):
+        if not self.data:
+            return(None)
         title = self.data['title']
         if isinstance(title, list):
             title = title[0]
         return(title)
         
     def get_authors(self):
+        if not self.data:
+            return(None)
         author_dict_list = self.data['author']
         authors = ['%s' % author['family'] for author in author_dict_list]
         return(authors)
 
     def get_cites(self):
+        if not self.data:
+            return(None)
         cites = counts.citation_count(doi=self.get_doi())
         return(cites)
 
     def get_doi(self):
+        if not self.data:
+            return(None)
         doi = self.data['DOI']
         return(doi)
 
     def get_url(self):
+        if not self.data:
+            return(None)
         url = self.data['URL']
         return(url)
         
     def get_journal(self):
+        if not self.data:
+            return(None)
         if 'subtype' in self.data and self.data['subtype']=='preprint':
             journal='[preprint]'
         else:
@@ -81,15 +100,17 @@ class PubList:
         
     def import_csv(self, file):
         self.data = pandas.read_csv(file, skipinitialspace=True)
-        self._CRdata = self.CR.works(ids=self.data.doi.values)
-        self.Pubs = [CRPub(CRitem, me=self.me) for CRitem in self._CRdata]
+        self.data['crossref'] = self.CR.works(ids=self.data.doi.values, warn=True)
+        self.data = self.data.dropna(subset=['crossref'])
+        self.data = self.data.reset_index(drop=True)
+        self.Pubs = [CRPub(CRitem, me=self.me) for CRitem in self.data['crossref']]
         self.data['date']    = [pub.get_date()    for pub in self.Pubs]
         self.data['title']   = [pub.get_title()   for pub in self.Pubs]
         self.data['authors'] = [pub.get_authors() for pub in self.Pubs]
         self.data['year']    = [pub.get_year()    for pub in self.Pubs]
         self.data['doi']     = [pub.get_doi()     for pub in self.Pubs]
         self.data['url']     = [pub.get_url()     for pub in self.Pubs]
-        self.data['journal'] = [pub.get_journal()   for pub in self.Pubs]
+        self.data['journal'] = [pub.get_journal() for pub in self.Pubs]
         if 'team_num' in self.data:
             self.data['team_num']      = self.data['team_num'].fillna(0)
         if 'team_notes' in self.data:
@@ -98,8 +119,8 @@ class PubList:
             self.data['corresponding'] = self.data['corresponding'].fillna('')
         
         self.total_pubs    = len(self.data)
-        self.date_earliest = self.data.date.min() #.strftime('%Y %b')
-        self.date_latest   = self.data.date.max() #.strftime('%Y %b')
+        self.date_earliest = self.data.date.dropna().min() #.strftime('%Y %b')
+        self.date_latest   = self.data.date.dropna().max() #.strftime('%Y %b')
         return(self)
         
     def update_citations(self):

@@ -1,4 +1,4 @@
-# Publications using URANOS (24)
+# Publications using URANOS (25)
 
 Citations: **478** (based on [CrossRef.org](https://www.crossref.org/))
 
@@ -6,6 +6,9 @@ Citations: **478** (based on [CrossRef.org](https://www.crossref.org/))
 ![Publications and citations per year](pubplot.png)
 
 ## Details 
+- `2023` Brogi, Pisinaras, Köhli, Dombrowski, Hendricks Franssen, Babakos, Chatzi, Panagopoulos, Bogena  
+**"Monitoring Irrigation in Small Orchards with Cosmic-Ray Neutron Sensors"**  
+— *Sensors*, doi:[10.3390/s23052378](http://dx.doi.org/10.3390/s23052378), Citations: **0**  
 - `2023` Schrön, Köhli, Zacharias  
 **"Signal contribution of distant areas to cosmic-ray neutron sensors – implications for footprint and sensitivity"**  
 — *Hydrol. Earth Syst. Sci.*, doi:[10.5194/hess-27-723-2023](http://dx.doi.org/10.5194/hess-27-723-2023), Citations: **0**  

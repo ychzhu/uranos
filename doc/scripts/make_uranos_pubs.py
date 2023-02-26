@@ -13,6 +13,7 @@ import compress_pickle as pickle
 Download publication data and metadata content, cache as pickle.
 Skip this when no database updates are required or CrossRef has timeout issues.
 """
+print('Importing from Crossref...')
 P = PubList()
 P.import_csv('publications-uranos.csv').update_citations().sort('date')
 
@@ -30,6 +31,8 @@ with open('pubdata-cache.bz2', 'rb') as file:
 """
 Make a markdown document and save it
 """
+print('Writing Markdown...')
+
 filename_markdown = '../PUBLICATIONS.md'
 
 content = """
@@ -56,10 +59,12 @@ with open(filename_markdown, 'w', encoding="utf-8") as fh:
 """
 Create a dataframe and make labels
 """
+print('Preparing plots...')
+
 import numpy as np
 from pandas import DataFrame, to_datetime
 
-plotdata = P.data[['year','date','authors','cites']]
+plotdata = P.data[['year','date','authors','cites']].copy()
 plotdata['firstauthor'] = [x[0] for x in plotdata.authors]
 plotdata['label'] = ['{1}\n{0} et al.'.format(x[0], y) for x,y in zip(plotdata.authors, plotdata.year)]
 plotdata = plotdata[::-1]

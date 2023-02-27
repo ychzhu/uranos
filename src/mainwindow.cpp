@@ -2652,11 +2652,13 @@ void MainWindow::exportSettings(string str)
     *stream_out << detTrackFileOutput << "\t Detector Neutron Track File Output [bool]" << endl;
     *stream_out << allTrackFileOutput << "\t All Neutron Track File Output [bool]" << endl;
     *stream_out << densityMapButtonID << "\t Energy Display Range for Birds-Eye View [int]" << endl;
-    *stream_out<<(rPlants*1000.)<<"\t"<<rCelluloseFrac*1.5<<"\t"<<rCelluloseWaterFrac<<"\t Plant Gas Density Multiplicator [kg/m3]\t Plant dry density [g/cm3] \t Plant water density [g/cm3] [float]"<<endl;
+    *stream_out << (rPlants*1000.)<<"\t"<<rCelluloseFrac*1.5<<"\t"<<rCelluloseWaterFrac<<"\t Plant Gas Density Multiplicator [kg/m3]\t Plant dry density [g/cm3] \t Plant water density [g/cm3] [float]"<<endl;
     *stream_out << reflectiveBoundaries << "\t Reflective Boundary Conditions [bool]" << endl;
     *stream_out << periodicBoundaries << "\t Periodic Boundary Conditions [bool]" << endl;
     //*stream_out<<rBoronInSoil<<"\t Boron Density in Soil #19 [1e-6 g/cm3]"<<endl;
     *stream_out << rBoronInSoil << "\t" << rCInSoil << "\t" << rNInSoil << "\t" << rNaInSoil << "\t" << rKInSoil << "\t" << rTiInSoil << "\t" << rMnInSoil << "\t" << rFeInSoil << "\t" << rGdInSoil << " Element Density in Soil #19 [1e-6 g/cm3]" << endl;
+
+    stream_out->close();
 }
 
 
@@ -3819,7 +3821,7 @@ TSpline3* MainWindow::getSplinedEnergyModelFromMatrix(TMatrixF* matrix, bool log
     }
 
     vector<double> xVal2, yVal2;
-    double xDiff = 0, yDiff = 0, yRel = 0;
+    double xDiff = 0, yRel = 0;
 
     xVal2.push_back(xVal[0]);
     yVal2.push_back(yVal[0]);

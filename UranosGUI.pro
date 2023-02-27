@@ -66,7 +66,7 @@ isEmpty(PREFIX) {
 
 target.path = $$PREFIX/bin
 assets.path = $$PREFIX/share/uranos
-assets.files = data/ENDFdata data/IncomingSpectrum
+assets.files = data/ENDFdata.zip data/IncomingSpectrum
 INSTALLS += target assets
 
 

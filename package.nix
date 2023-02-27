@@ -3,6 +3,7 @@
 , qtbase
 , root
 , tbb
+, unzip
 , wrapQtAppsHook
 }:
 
@@ -13,7 +14,7 @@ stdenv.mkDerivation rec {
   src = ./.;
 
   buildInputs = [ qtbase root tbb ];
-  nativeBuildInputs = [ wrapQtAppsHook ];
+  nativeBuildInputs = [ wrapQtAppsHook unzip ];
 
   qtWrapperArgs = [ "--unset LD_LIBRARY_PATH" ];
 
@@ -21,5 +22,11 @@ stdenv.mkDerivation rec {
     runHook preConfigure
     qmake PREFIX=$out
     runHook postConfigure
+  '';
+
+  postInstall = ''
+    cd $out/share/uranos
+    unzip ENDFdata.zip
+    rm ENDFdata.zip
   '';
 }

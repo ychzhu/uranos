@@ -15,6 +15,8 @@ stdenv.mkDerivation rec {
   buildInputs = [ qtbase root tbb ];
   nativeBuildInputs = [ wrapQtAppsHook ];
 
+  qtWrapperArgs = [ "--unset LD_LIBRARY_PATH" ];
+
   configurePhase = ''
     runHook preConfigure
     qmake PREFIX=$out

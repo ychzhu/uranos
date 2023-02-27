@@ -1,0 +1,29 @@
+#LIBRARY    JENDL-4.0/HE
+#REACTION   CR-52(N,X),SIG
+#NUCLEUS    Cr-52
+#MF         3
+#MT         5
+#EN-MIN     2e+07
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 2E+07       0            Lin-Lin
+ 2E+07       1.27685      Lin-Lin
+ 2.4E+07     1.23189      Lin-Lin
+ 3E+07       1.15598      Lin-Lin
+ 3.36768E+07 1.11452      Lin-Lin
+ 3.74166E+07 1.07688      Lin-Lin
+ 4.24264E+07 1.03177      Lin-Lin
+ 4.74342E+07 0.991802     Lin-Lin
+ 5.24404E+07 0.956543     Lin-Lin
+ 6E+07       0.910796     Lin-Lin
+ 6.74537E+07 0.872854     Lin-Lin
+ 7.5E+07     0.840145     Lin-Lin
+ 8.24621E+07 0.81236      Lin-Lin
+ 9.24662E+07 0.780584     Lin-Lin
+ 1E+08       0.759931     Lin-Lin
+ 1.1E+08     0.735971     Lin-Lin
+ 1.249E+08   0.705901     Lin-Lin
+ 1.4E+08     0.68046      Lin-Lin
+ 1.54919E+08 0.659135     Lin-Lin
+ 1.74929E+08 0.634896     Lin-Lin
+ 2E+08       0.609755     Lin-Lin

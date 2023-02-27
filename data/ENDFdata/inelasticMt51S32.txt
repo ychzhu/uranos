@@ -1,0 +1,43 @@
+#LIBRARY    ENDF/B-VII.1
+#REACTION   S-32(N,N`)S-32-L1,SIG
+#NUCLEUS    S-32
+#MF         3
+#MT         51
+#EN-MIN     2.30035e+06
+#EN-MAX     2e+07
+#E,eV        Sig,b        Interpolation
+ 2.30035E+06 0            Lin-Lin
+ 2.5E+06     0.194913     Lin-Lin
+ 2.6617E+06  0.219645     Lin-Lin
+ 2.85004E+06 0.246625     Lin-Lin
+ 3E+06       0.26686      Lin-Lin
+ 3.24037E+06 0.282773     Lin-Lin
+ 3.5E+06     0.298686     Lin-Lin
+ 3.75E+06    0.306592     Lin-Lin
+ 4E+06       0.306835     Lin-Lin
+ 4.5E+06     0.297936     Lin-Lin
+ 4.87002E+06 0.271752     Lin-Lin
+ 5E+06       0.263024     Lin-Lin
+ 5.41517E+06 0.242178     Lin-Lin
+ 5.79835E+06 0.22431      Lin-Lin
+ 6E+06       0.215376     Lin-Lin
+ 6.48074E+06 0.19827      Lin-Lin
+ 7E+06       0.181163     Lin-Lin
+ 7.48332E+06 0.169421     Lin-Lin
+ 8E+06       0.157679     Lin-Lin
+ 8.73885E+06 0.147535     Lin-Lin
+ 9.24021E+06 0.141304     Lin-Lin
+ 1E+07       0.132759     Lin-Lin
+ 1.0741E+07  0.12399      Lin-Lin
+ 1.1E+07     0.121067     Lin-Lin
+ 1.2E+07     0.111113     Lin-Lin
+ 1.3E+07     0.104061     Lin-Lin
+ 1.4E+07     0.0992664    Lin-Lin
+ 1.45E+07    0.0977552    Lin-Lin
+ 1.5E+07     0.0966026    Lin-Lin
+ 1.6E+07     0.0952661    Lin-Lin
+ 1.7E+07     0.0947832    Lin-Lin
+ 1.8E+07     0.0949058    Lin-Lin
+ 1.94936E+07 0.0954419    Lin-Lin
+ 2E+07       0.0955547    Lin-Lin
+ 6E+07       0            Lin-Lin

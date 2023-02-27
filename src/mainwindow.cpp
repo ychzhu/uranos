@@ -13416,7 +13416,7 @@ void MainWindow::on_pushButton_about_clicked()
     about_box.setWindowTitle("About URANOS");
     about_box.setTextInteractionFlags(Qt::TextSelectableByMouse);
     about_box.setText(messageString);
-    about_box.setIconPixmap(QPixmap("about.png"));
+    about_box.setIconPixmap(QPixmap(":/resources/about.png"));
     about_box.setParent(this);
 
     about_box.exec();

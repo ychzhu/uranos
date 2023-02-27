@@ -1,0 +1,29 @@
+#LIBRARY    JENDL-4.0
+#REACTION   K-39(N,P)AR-39,SIG
+#NUCLEUS    K-39
+#MF         3
+#MT         103
+#EN-MIN     1e+06
+#EN-MAX     2e+07
+#E,eV        Sig,b        Interpolation
+ 1E+06       0            Lin-Lin
+ 1E+06       0.00782209   Lin-Lin
+ 1.5E+06     0.0385682    Lin-Lin
+ 2E+06       0.106612     Lin-Lin
+ 2.3E+06     0.154483     Lin-Lin
+ 2.5E+06     0.187862     Lin-Lin
+ 2.75E+06    0.225633     Lin-Lin
+ 3E+06       0.258665     Lin-Lin
+ 3.25E+06    0.283311     Lin-Lin
+ 3.5E+06     0.286437     Lin-Lin
+ 3.75E+06    0.296088     Lin-Lin
+ 4E+06       0.30414      Lin-Lin
+ 5E+06       0.320064     Lin-Lin
+ 6E+06       0.334395     Lin-Lin
+ 7E+06       0.340764     Lin-Lin
+ 8E+06       0.355096     Lin-Lin
+ 9E+06       0.363057     Lin-Lin
+ 1.1E+07     0.375796     Lin-Lin
+ 1.4E+07     0.38535      Lin-Lin
+ 1.6E+07     0.388535     Lin-Lin
+ 2E+07       0.388535     Lin-Lin

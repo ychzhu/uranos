@@ -1,0 +1,63 @@
+#LIBRARY    JENDL-4.0/HE
+#REACTION   CR-52(N,N`)CR-52-L4,SIG
+#NUCLEUS    Cr-52
+#MF         3
+#MT         54
+#EN-MIN     2.82152e+06
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 2.82152E+06 0            Lin-Lin
+ 3E+06       0.0234245    Lin-Lin
+ 3.02236E+06 0.0255455    Lin-Lin
+ 3.17433E+06 0.0404748    Lin-Lin
+ 3.22314E+06 0.0454132    Lin-Lin
+ 3.48164E+06 0.0696508    Lin-Lin
+ 3.5E+06     0.0692998    Lin-Lin
+ 3.53968E+06 0.0724927    Lin-Lin
+ 3.68615E+06 0.0806682    Lin-Lin
+ 3.81222E+06 0.0871654    Lin-Lin
+ 3.84496E+06 0.0860346    Lin-Lin
+ 4E+06       0.088096     Lin-Lin
+ 4.02518E+06 0.0888003    Lin-Lin
+ 4.17962E+06 0.0867904    Lin-Lin
+ 4.5E+06     0.0829128    Lin-Lin
+ 4.55681E+06 0.0827215    Lin-Lin
+ 4.65161E+06 0.0793487    Lin-Lin
+ 4.70054E+06 0.0768181    Lin-Lin
+ 4.71718E+06 0.0765477    Lin-Lin
+ 4.79331E+06 0.0747872    Lin-Lin
+ 4.83439E+06 0.0727758    Lin-Lin
+ 4.84257E+06 0.0719741    Lin-Lin
+ 4.89952E+06 0.0705256    Lin-Lin
+ 5E+06       0.0690821    Lin-Lin
+ 5.5E+06     0.0575753    Lin-Lin
+ 6E+06       0.0465379    Lin-Lin
+ 6.5E+06     0.0374201    Lin-Lin
+ 7E+06       0.0300765    Lin-Lin
+ 7.5E+06     0.0241774    Lin-Lin
+ 8E+06       0.0194588    Lin-Lin
+ 8.5E+06     0.0159304    Lin-Lin
+ 9E+06       0.0128441    Lin-Lin
+ 9.5E+06     0.0103997    Lin-Lin
+ 1E+07       0.00846127   Lin-Lin
+ 1.05E+07    0.00692551   Lin-Lin
+ 1.1E+07     0.00571146   Lin-Lin
+ 1.15E+07    0.00475666   Lin-Lin
+ 1.2E+07     0.0039999    Lin-Lin
+ 1.25E+07    0.00340228   Lin-Lin
+ 1.3E+07     0.00292811   Lin-Lin
+ 1.35E+07    0.0025506    Lin-Lin
+ 1.4E+07     0.00224793   Lin-Lin
+ 1.45E+07    0.00200109   Lin-Lin
+ 1.5E+07     0.00179888   Lin-Lin
+ 1.55E+07    0.00163172   Lin-Lin
+ 1.6E+07     0.0014924    Lin-Lin
+ 1.65E+07    0.00137487   Lin-Lin
+ 1.7E+07     0.00127488   Lin-Lin
+ 1.75E+07    0.0011891    Lin-Lin
+ 1.8E+07     0.00111398   Lin-Lin
+ 1.85E+07    0.00104796   Lin-Lin
+ 1.9E+07     0.000989516  Lin-Lin
+ 1.95E+07    0.000937124  Lin-Lin
+ 2E+07       0.000889635  Lin-Lin
+ 2E+07       0            Lin-Lin

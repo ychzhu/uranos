@@ -1,0 +1,43 @@
+#LIBRARY    JENDL-4.0/HE
+#REACTION   N-14(N,D)C-13,SIG
+#NUCLEUS    N-14
+#MF         3
+#MT         104
+#EN-MIN     5.7097e+06
+#EN-MAX     2e+08
+#E,eV        Sig,b        Interpolation
+ 5.7097E+06  0            Lin-Lin
+ 6E+06       1.1369E-05   Lin-Lin
+ 6.906E+06   0.00797949   Lin-Lin
+ 6.906E+06   0.0132       Lin-Lin
+ 7.012E+06   0.0159       Lin-Lin
+ 7.091E+06   0.0192       Lin-Lin
+ 7.188E+06   0.0217       Lin-Lin
+ 7.278E+06   0.0274       Lin-Lin
+ 7.375E+06   0.0231       Lin-Lin
+ 7.464E+06   0.0295       Lin-Lin
+ 7.562E+06   0.0161       Lin-Lin
+ 7.65E+06    0.0211       Lin-Lin
+ 7.744E+06   0.0145       Lin-Lin
+ 7.837E+06   0.0177       Lin-Lin
+ 7.93E+06    0.016        Lin-Lin
+ 8.024E+06   0.0144       Lin-Lin
+ 8.121E+06   0.0156       Lin-Lin
+ 8.216E+06   0.0151       Lin-Lin
+ 8.309E+06   0.014        Lin-Lin
+ 8.402E+06   0.0159       Lin-Lin
+ 8.494E+06   0.0187       Lin-Lin
+ 8.587E+06   0.0179       Lin-Lin
+ 8.587E+06   0.0179251    Lin-Lin
+ 9E+06       0.0187313    Lin-Lin
+ 1E+07       0.0187814    Lin-Lin
+ 1.1E+07     0.025915     Lin-Lin
+ 1.2E+07     0.0334351    Lin-Lin
+ 1.3E+07     0.0344903    Lin-Lin
+ 1.4E+07     0.032664     Lin-Lin
+ 1.5E+07     0.0354909    Lin-Lin
+ 1.6E+07     0.0380507    Lin-Lin
+ 1.7E+07     0.038172     Lin-Lin
+ 1.8E+07     0.0369163    Lin-Lin
+ 2E+07       0.0340806    Lin-Lin
+ 2E+07       0            Lin-Lin

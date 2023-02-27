@@ -1,0 +1,50 @@
+#LIBRARY    ENDF/B-VII.1
+#REACTION   AL-27(N,N`)AL-27-L3,SIG
+#NUCLEUS    Al-27
+#MF         3
+#MT         53
+#EN-MIN     2.29376e+06
+#EN-MAX     1.5e+08
+#E,eV        Sig,b        Interpolation
+ 2.29376E+06 0            Lin-Lin
+ 2.5E+06     0.13737      Lin-Lin
+ 2.75E+06    0.213726     Lin-Lin
+ 3E+06       0.243686     Lin-Lin
+ 3.25E+06    0.229368     Lin-Lin
+ 3.5E+06     0.208769     Lin-Lin
+ 3.75E+06    0.198548     Lin-Lin
+ 4E+06       0.195024     Lin-Lin
+ 4.25E+06    0.192272     Lin-Lin
+ 4.5E+06     0.188492     Lin-Lin
+ 4.75122E+06 0.181643     Lin-Lin
+ 5E+06       0.167128     Lin-Lin
+ 5.25E+06    0.155771     Lin-Lin
+ 5.5E+06     0.147986     Lin-Lin
+ 5.7582E+06  0.139074     Lin-Lin
+ 6E+06       0.128268     Lin-Lin
+ 6.25E+06    0.119542     Lin-Lin
+ 6.52203E+06 0.112149     Lin-Lin
+ 6.75524E+06 0.106753     Lin-Lin
+ 7E+06       0.0996839    Lin-Lin
+ 7.25E+06    0.0890186    Lin-Lin
+ 7.5E+06     0.0829556    Lin-Lin
+ 7.75E+06    0.0777347    Lin-Lin
+ 8E+06       0.0738127    Lin-Lin
+ 8.25E+06    0.0702006    Lin-Lin
+ 8.5E+06     0.066383     Lin-Lin
+ 9E+06       0.0608847    Lin-Lin
+ 9.5E+06     0.0550897    Lin-Lin
+ 1E+07       0.0508844    Lin-Lin
+ 1.05E+07    0.0465468    Lin-Lin
+ 1.1E+07     0.0433625    Lin-Lin
+ 1.15E+07    0.0407251    Lin-Lin
+ 1.2E+07     0.0382495    Lin-Lin
+ 1.3E+07     0.0347159    Lin-Lin
+ 1.4E+07     0.0322415    Lin-Lin
+ 1.5E+07     0.0300924    Lin-Lin
+ 1.6E+07     0.0281457    Lin-Lin
+ 1.7E+07     0.0263421    Lin-Lin
+ 1.8E+07     0.0247005    Lin-Lin
+ 1.9E+07     0.0232184    Lin-Lin
+ 2E+07       0.0218471    Lin-Lin
+ 6E+07       0            Lin-Lin

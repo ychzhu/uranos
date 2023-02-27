@@ -1,0 +1,39 @@
+#LIBRARY    JENDL/HE-2007
+#REACTION   CR-53(N,X),SIG
+#NUCLEUS    Cr-53
+#MF         3
+#MT         5
+#EN-MIN     2e+07
+#EN-MAX     3e+09
+#E,eV        Sig,b        Interpolation
+ 2E+07       0            Lin-Lin
+ 2E+07       1.29742      Lin-Lin
+ 2.2E+07     1.2692       Lin-Lin
+ 2.8E+07     1.17271      Lin-Lin
+ 3E+07       1.14527      Lin-Lin
+ 3.2E+07     1.12205      Lin-Lin
+ 3.6E+07     1.08292      Lin-Lin
+ 4.2E+07     1.03199      Lin-Lin
+ 4.8E+07     0.988446     Lin-Lin
+ 5.6E+07     0.938318     Lin-Lin
+ 6.4E+07     0.895348     Lin-Lin
+ 7.2E+07     0.858949     Lin-Lin
+ 8E+07       0.828504     Lin-Lin
+ 8.8E+07     0.803299     Lin-Lin
+ 9.8E+07     0.778008     Lin-Lin
+ 1.08E+08    0.758338     Lin-Lin
+ 1.2E+08     0.740493     Lin-Lin
+ 1.34E+08    0.72561      Lin-Lin
+ 1.5E+08     0.714173     Lin-Lin
+ 1.7E+08     0.705504     Lin-Lin
+ 1.96E+08    0.70006      Lin-Lin
+ 2.3E+08     0.698335     Lin-Lin
+ 2.5E+08     0.698709     Lin-Lin
+ 3.5E+08     0.6675       Lin-Lin
+ 5E+08       0.70007      Lin-Lin
+ 6E+08       0.71331      Lin-Lin
+ 7E+08       0.72175      Lin-Lin
+ 8E+08       0.72702      Lin-Lin
+ 1E+09       0.73225      Lin-Lin
+ 1.5E+09     0.73507      Lin-Lin
+ 3E+09       0.73532      Lin-Lin

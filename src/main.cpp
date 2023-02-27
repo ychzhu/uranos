@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     bool silent = false;
     string configFilePath = "";
 
-    QPixmap splashImage("splashScreen.png");
+    QPixmap splashImage(":/resources/splashScreen.png");
 
     QSplashScreen splash(splashImage,Qt::WindowStaysOnTopHint);
 

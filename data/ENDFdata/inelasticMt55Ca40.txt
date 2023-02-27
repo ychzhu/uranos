@@ -1,0 +1,31 @@
+#LIBRARY    JENDL-4.0
+#REACTION   CA-40(N,N`)CA-40-L5,SIG
+#NUCLEUS    Ca-40
+#MF         3
+#MT         55
+#EN-MIN     5.34314e+06
+#EN-MAX     2e+07
+#E,eV        Sig,b        Interpolation
+ 5.34314E+06 0            Lin-Lin
+ 5.5E+06     0.0081982    Lin-Lin
+ 6E+06       0.0106566    Lin-Lin
+ 6.5E+06     0.0102643    Lin-Lin
+ 7E+06       0.0093667    Lin-Lin
+ 7.5E+06     0.0082601    Lin-Lin
+ 8E+06       0.0066618    Lin-Lin
+ 8.5E+06     0.0051807    Lin-Lin
+ 9E+06       0.0039895    Lin-Lin
+ 9.5E+06     0.0030975    Lin-Lin
+ 1E+07       0.002449     Lin-Lin
+ 1.1E+07     0.0016734    Lin-Lin
+ 1.2E+07     0.001272     Lin-Lin
+ 1.3E+07     0.001029     Lin-Lin
+ 1.4E+07     0.0008532    Lin-Lin
+ 1.45E+07    0.0007798    Lin-Lin
+ 1.5E+07     0.000715     Lin-Lin
+ 1.6E+07     0.0006073    Lin-Lin
+ 1.7E+07     0.0005255    Lin-Lin
+ 1.8E+07     0.0004636    Lin-Lin
+ 1.9E+07     0.0004165    Lin-Lin
+ 2E+07       0.0003788    Lin-Lin
+ 6E+07       0            Lin-Lin

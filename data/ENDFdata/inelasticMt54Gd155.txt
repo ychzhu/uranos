@@ -1,0 +1,71 @@
+#LIBRARY    ENDF/B-VII.1
+#REACTION   GD-155(N,N`)GD-155-L4,SIG
+#NUCLEUS    Gd-155
+#MF         3
+#MT         54
+#EN-MIN     108280
+#EN-MAX     2e+07
+#E,eV        Sig,b        Interpolation
+ 108280      0            Lin-Lin
+ 150000      0.00359361   Lin-Lin
+ 200000      0.00681365   Lin-Lin
+ 250000      0.0144411    Lin-Lin
+ 270000      0.0169206    Lin-Lin
+ 300000      0.0198926    Lin-Lin
+ 320000      0.0228203    Lin-Lin
+ 350000      0.0257572    Lin-Lin
+ 370000      0.0272635    Lin-Lin
+ 420000      0.0316124    Lin-Lin
+ 450000      0.0337879    Lin-Lin
+ 470000      0.0349709    Lin-Lin
+ 500000      0.0364161    Lin-Lin
+ 520000      0.037285     Lin-Lin
+ 550000      0.0386964    Lin-Lin
+ 600000      0.0404004    Lin-Lin
+ 620000      0.0412306    Lin-Lin
+ 650000      0.0420246    Lin-Lin
+ 670000      0.0405194    Lin-Lin
+ 700000      0.0412208    Lin-Lin
+ 800000      0.0392567    Lin-Lin
+ 900000      0.0360778    Lin-Lin
+ 1E+06       0.0323011    Lin-Lin
+ 1.1E+06     0.0284007    Lin-Lin
+ 1.2E+06     0.0246668    Lin-Lin
+ 1.3E+06     0.0233294    Lin-Lin
+ 1.4E+06     0.0198264    Lin-Lin
+ 1.5E+06     0.0167705    Lin-Lin
+ 1.6E+06     0.0141738    Lin-Lin
+ 1.7E+06     0.0119887    Lin-Lin
+ 1.8E+06     0.010159     Lin-Lin
+ 1.9E+06     0.0090076    Lin-Lin
+ 2E+06       0.00759602   Lin-Lin
+ 2.2E+06     0.00545265   Lin-Lin
+ 2.4E+06     0.00402531   Lin-Lin
+ 2.6E+06     0.00296385   Lin-Lin
+ 2.8E+06     0.0021578    Lin-Lin
+ 3E+06       0.00159318   Lin-Lin
+ 4E+06       0.000350873  Lin-Lin
+ 4.5E+06     0.000165418  Lin-Lin
+ 5E+06       7.8866E-05   Lin-Lin
+ 5.5E+06     3.45024E-05  Lin-Lin
+ 6E+06       1.67108E-05  Lin-Lin
+ 6.5E+06     8.06509E-06  Lin-Lin
+ 7E+06       3.64958E-06  Lin-Lin
+ 7.5E+06     1.66669E-06  Lin-Lin
+ 7.8E+06     1.06483E-06  Lin-Lin
+ 8E+06       7.87418E-07  Lin-Lin
+ 8.5E+06     3.79119E-07  Lin-Lin
+ 9E+06       1.8676E-07   Lin-Lin
+ 1E+07       4.85785E-08  Lin-Lin
+ 1.05E+07    2.54674E-08  Lin-Lin
+ 1.1E+07     1.37614E-08  Lin-Lin
+ 1.15E+07    7.54069E-09  Lin-Lin
+ 1.2E+07     4.19595E-09  Lin-Lin
+ 1.3E+07     1.36245E-09  Lin-Lin
+ 1.4E+07     4.69092E-10  Lin-Lin
+ 1.5E+07     1.68329E-10  Lin-Lin
+ 1.6E+07     6.36117E-11  Lin-Lin
+ 1.7E+07     2.51946E-11  Lin-Lin
+ 1.8E+07     1.04333E-11  Lin-Lin
+ 1.9E+07     4.5143E-12   Lin-Lin
+ 2E+07       2.02953E-12  Lin-Lin

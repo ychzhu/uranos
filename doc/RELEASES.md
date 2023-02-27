@@ -1,5 +1,12 @@
 # URANOS Release Notes
 
+## URANOS version 1.10 (February 27, 2023)
+
+## Changelog:
+- fixed porosity declaration in uranos.cfg
+- fixed issues #12, #13, #14
+
+
 ## URANOS version 1.09 (February 11, 2023)
 
 ## Changelog:

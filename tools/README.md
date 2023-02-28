@@ -1,6 +1,6 @@
-# URANOS Setup
+# URANOS Tools
 
-How to setup and run URANOS jobs with examples and helpful scripts.
+How to setup and run multiple URANOS jobs with examples and helpful scripts.
 
 ![grafik](https://user-images.githubusercontent.com/7942719/221894176-f12bdb56-5929-498f-a0ae-088d0ffd7a5f.png)
 

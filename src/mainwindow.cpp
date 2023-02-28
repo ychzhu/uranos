@@ -2066,7 +2066,7 @@ void  MainWindow::redrawNeutronMap(double difftime)
         if (updateEnlargedView2)
         {
             redrawEnlargedView2();
-        }    
+        }
 
         // spectrum plots
         ui->customPlot->graph(0)->data()->clear();
@@ -2326,7 +2326,7 @@ void  MainWindow::redrawNeutronMap(double difftime)
         ui->label_npers->setText(QString::fromStdString(numberofNperS));
 
         if (ui->checkBoxAutoRefreshRate->isChecked())
-        {           
+        {
             if (((refreshTime * npers) / refreshCycle > 1.1) || ((refreshTime * npers) / refreshCycle < 0.9))
             {
                 refreshCycle = refreshTime * npers; if (refreshCycle < 10) refreshCycle = 10;
@@ -2570,7 +2570,7 @@ void MainWindow::exportSettings(string str)
     *stream_out << soilWaterFracVar << "\t Soil Volumetric Water Fraction" << endl;
     //*stream_out<<relHumidityAir<<"\t Air Humidity [internal, relative to NTP]"<<endl;
     *stream_out << absHumidityAir << "\t Air Humidity [g/m3]" << endl;
-    *stream_out << soilSolidFracVar << "\t Soil Porosity" << endl;
+    *stream_out << soilSolidFracVar << "\t Soil Solidity (1-porosity)" << endl;
     *stream_out << atmDensity << "\t Atmospheric Depth [g/cm2]" << endl;
     *stream_out << rigidity << "\t Cutoff Rigidity [GeV]" << endl;
 
@@ -2652,11 +2652,13 @@ void MainWindow::exportSettings(string str)
     *stream_out << detTrackFileOutput << "\t Detector Neutron Track File Output [bool]" << endl;
     *stream_out << allTrackFileOutput << "\t All Neutron Track File Output [bool]" << endl;
     *stream_out << densityMapButtonID << "\t Energy Display Range for Birds-Eye View [int]" << endl;
-    *stream_out<<(rPlants*1000.)<<"\t"<<rCelluloseFrac*1.5<<"\t"<<rCelluloseWaterFrac<<"\t Plant Gas Density Multiplicator [kg/m3]\t Plant dry density [g/cm3] \t Plant water density [g/cm3] [float]"<<endl;
+    *stream_out << (rPlants*1000.)<<"\t"<<rCelluloseFrac*1.5<<"\t"<<rCelluloseWaterFrac<<"\t Plant Gas Density Multiplicator [kg/m3]\t Plant dry density [g/cm3] \t Plant water density [g/cm3] [float]"<<endl;
     *stream_out << reflectiveBoundaries << "\t Reflective Boundary Conditions [bool]" << endl;
     *stream_out << periodicBoundaries << "\t Periodic Boundary Conditions [bool]" << endl;
     //*stream_out<<rBoronInSoil<<"\t Boron Density in Soil #19 [1e-6 g/cm3]"<<endl;
     *stream_out << rBoronInSoil << "\t" << rCInSoil << "\t" << rNInSoil << "\t" << rNaInSoil << "\t" << rKInSoil << "\t" << rTiInSoil << "\t" << rMnInSoil << "\t" << rFeInSoil << "\t" << rGdInSoil << " Element Density in Soil #19 [1e-6 g/cm3]" << endl;
+
+    stream_out->close();
 }
 
 
@@ -2765,8 +2767,8 @@ void MainWindow::exportToSave()
     {
         stream_out = new ofstream(outputFolder + folderMod + "densityMapSelected_" + datString + ".csv", ofstream::out);
 
-        nX = densityMapAlbedo->GetNbinsX();
-        nY = densityMapAlbedo->GetNbinsY();
+        nX = densityMapAlbedo->GetNbinsX() + 1;
+        nY = densityMapAlbedo->GetNbinsY() + 1;
 
         for (Int_t i = 1; i < nY; i++)
         {
@@ -2782,8 +2784,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapSelected_" + datString + ".csv", ofstream::out);
 
-            nX = densityAlbedoTrackMap->GetNbinsX();
-            nY = densityAlbedoTrackMap->GetNbinsY();
+            nX = densityAlbedoTrackMap->GetNbinsX() + 1;
+            nY = densityAlbedoTrackMap->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2800,8 +2802,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapSelectedHighRes_" + datString + ".csv", ofstream::out);
 
-            nX = densityAlbedoTrackMapHighRes->GetNbinsX();
-            nY = densityAlbedoTrackMapHighRes->GetNbinsY();
+            nX = densityAlbedoTrackMapHighRes->GetNbinsX() + 1;
+            nY = densityAlbedoTrackMapHighRes->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2825,8 +2827,8 @@ void MainWindow::exportToSave()
 
                 stream_out = new ofstream(outputFolder + folderMod + "densityMapSelected_L"+castIntToString(tp)+"_" + datString + ".csv", ofstream::out);
 
-                nX = addDetLayerVec.at(vecPos)->GetNbinsX();
-                nY = addDetLayerVec.at(vecPos)->GetNbinsY();
+                nX = addDetLayerVec.at(vecPos)->GetNbinsX() + 1;
+                nY = addDetLayerVec.at(vecPos)->GetNbinsY() + 1;
 
                 for (Int_t i = 1; i < nY; i++)
                 {
@@ -2847,8 +2849,8 @@ void MainWindow::exportToSave()
     {
         stream_out = new ofstream(outputFolder + folderMod + "densityMapEpithermal_" + datString + ".csv", ofstream::out);
 
-        nX = densityMap->GetNbinsX();
-        nY = densityMap->GetNbinsY();
+        nX = densityMap->GetNbinsX() + 1;
+        nY = densityMap->GetNbinsY() + 1;
 
         for (Int_t i = 1; i < nY; i++)
         {
@@ -2864,8 +2866,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapEpithermal_" + datString + ".csv", ofstream::out);
 
-            nX = densityTrackMap->GetNbinsX();
-            nY = densityTrackMap->GetNbinsY();
+            nX = densityTrackMap->GetNbinsX() + 1;
+            nY = densityTrackMap->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2882,8 +2884,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapEpithermalHighRes_" + datString + ".csv", ofstream::out);
 
-            nX = densityTrackMapHighRes->GetNbinsX();
-            nY = densityTrackMapHighRes->GetNbinsY();
+            nX = densityTrackMapHighRes->GetNbinsX() + 1;
+            nY = densityTrackMapHighRes->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2901,8 +2903,8 @@ void MainWindow::exportToSave()
     {
         stream_out = new ofstream(outputFolder + folderMod + "densityMapIntermediateEnergy_" + datString + ".csv", ofstream::out);
 
-        nX = densityMapIntermediate->GetNbinsX();
-        nY = densityMapIntermediate->GetNbinsY();
+        nX = densityMapIntermediate->GetNbinsX() + 1;
+        nY = densityMapIntermediate->GetNbinsY() + 1;
 
         for (Int_t i = 1; i < nY; i++)
         {
@@ -2918,8 +2920,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapIntermediateEnergy_" + datString + ".csv", ofstream::out);
 
-            nX = densityIntermediateTrackMap->GetNbinsX();
-            nY = densityIntermediateTrackMap->GetNbinsY();
+            nX = densityIntermediateTrackMap->GetNbinsX() + 1;
+            nY = densityIntermediateTrackMap->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2936,8 +2938,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapIntermediateEnergyHighRes_" + datString + ".csv", ofstream::out);
 
-            nX = densityIntermediateTrackMapHighRes->GetNbinsX();
-            nY = densityIntermediateTrackMapHighRes->GetNbinsY();
+            nX = densityIntermediateTrackMapHighRes->GetNbinsX() + 1;
+            nY = densityIntermediateTrackMapHighRes->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2955,8 +2957,8 @@ void MainWindow::exportToSave()
     {
         stream_out = new ofstream(outputFolder + folderMod + "densityMapFastNeutron_" + datString + ".csv", ofstream::out);
 
-        nX = densityMapFast->GetNbinsX();
-        nY = densityMapFast->GetNbinsY();
+        nX = densityMapFast->GetNbinsX() + 1;
+        nY = densityMapFast->GetNbinsY() + 1;
 
         for (Int_t i = 1; i < nY; i++)
         {
@@ -2972,8 +2974,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapFastNeutron_" + datString + ".csv", ofstream::out);
 
-            nX = densityFastTrackMap->GetNbinsX();
-            nY = densityFastTrackMap->GetNbinsY();
+            nX = densityFastTrackMap->GetNbinsX() + 1;
+            nY = densityFastTrackMap->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -2990,8 +2992,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapFastNeutronHighRes_" + datString + ".csv", ofstream::out);
 
-            nX = densityFastTrackMapHighRes->GetNbinsX();
-            nY = densityFastTrackMapHighRes->GetNbinsY();
+            nX = densityFastTrackMapHighRes->GetNbinsX() + 1;
+            nY = densityFastTrackMapHighRes->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -3009,8 +3011,8 @@ void MainWindow::exportToSave()
     {
         stream_out = new ofstream(outputFolder + folderMod + "densityMapThermalNeutron_" + datString + ".csv", ofstream::out);
 
-        nX = densityMapThermal->GetNbinsX();
-        nY = densityMapThermal->GetNbinsY();
+        nX = densityMapThermal->GetNbinsX() + 1;
+        nY = densityMapThermal->GetNbinsY() + 1;
 
         for (Int_t i = 1; i < nY; i++)
         {
@@ -3026,8 +3028,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapThermalNeutron_" + datString + ".csv", ofstream::out);
 
-            nX = densityThermalTrackMap->GetNbinsX();
-            nY = densityThermalTrackMap->GetNbinsY();
+            nX = densityThermalTrackMap->GetNbinsX() + 1;
+            nY = densityThermalTrackMap->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -3044,8 +3046,8 @@ void MainWindow::exportToSave()
         {
             stream_out = new ofstream(outputFolder + folderMod + "densityTrackMapThermalNeutronHighRes_" + datString + ".csv", ofstream::out);
 
-            nX = densityThermalTrackMapHighRes->GetNbinsX();
-            nY = densityThermalTrackMapHighRes->GetNbinsY();
+            nX = densityThermalTrackMapHighRes->GetNbinsX() + 1;
+            nY = densityThermalTrackMapHighRes->GetNbinsY() + 1;
 
             for (Int_t i = 1; i < nY; i++)
             {
@@ -3064,8 +3066,8 @@ void MainWindow::exportToSave()
     {
         stream_out = new ofstream(outputFolder + folderMod + "detectorOrigins" + datString + ".csv", ofstream::out);
 
-        nX = detectorOriginMap->GetNbinsX();
-        nY = detectorOriginMap->GetNbinsY();
+        nX = detectorOriginMap->GetNbinsX() + 1;
+        nY = detectorOriginMap->GetNbinsY() + 1;
 
         for (Int_t i = 1; i < nY; i++)
         {
@@ -3819,7 +3821,7 @@ TSpline3* MainWindow::getSplinedEnergyModelFromMatrix(TMatrixF* matrix, bool log
     }
 
     vector<double> xVal2, yVal2;
-    double xDiff = 0, yDiff = 0, yRel = 0;
+    double xDiff = 0, yRel = 0;
 
     xVal2.push_back(xVal[0]);
     yVal2.push_back(yVal[0]);
@@ -4033,7 +4035,7 @@ TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname, int l
 
     while (curLine.ReadLine(input_stream))
     {
-        istrstream stream(curLine.Data());        
+        istrstream stream(curLine.Data());
 
         if (lineCounter >= linesToSkip)
         {
@@ -4043,7 +4045,7 @@ TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname, int l
             stream >> temp;
             yVal[lineCounter - linesToSkip] = temp;
             if (temp > ymax) ymax = temp;
-            if (temp < 0) { if (!noGUIMode) { setStatus(2, "Det. Energy File: Neg. y-Value"); delay(1500); } temp = 0; }           
+            if (temp < 0) { if (!noGUIMode) { setStatus(2, "Det. Energy File: Neg. y-Value"); delay(1500); } temp = 0; }
         }
 
         lineCounter++;
@@ -4065,7 +4067,7 @@ TSpline3* MainWindow::getSplinedDetectorEnergyModelFromFile(TString dname, int l
                 if ((ymax > 1) || (ymax < 0.01)) yVal[i] = yVal[i] / ymax;  //scale to 1 maximum value //only normalize if values are larger than 1
             }
         }
-    }    
+    }
 
     TGraph* graphEnergyFromFile = new TGraph(nData, xVal, yVal);
 
@@ -7262,7 +7264,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                             if (useHomogenousSpectrum) gotIt = true;
                             gotItCounter++;
                             if (gotItCounter > 1000) gotIt = true;
-                        }                        
+                        }
                     }
                     else
                     {
@@ -7471,7 +7473,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         xt = r.Rndm() * 2. - 1.;
                         yt = r.Rndm() * 2. - 1.;
                         if (useRectShape) check = false;
-                        else if ((TMath::Power(xt, 2) + TMath::Power(yt, 2)) < 1) check = false;                        
+                        else if ((TMath::Power(xt, 2) + TMath::Power(yt, 2)) < 1) check = false;
                     }
                     x = xt * beamRadius + beamX;
                     y = yt * beamRadius + beamY;
@@ -7650,7 +7652,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                     if (true)
                     {
                         if (((nTotal <= 100000) && (n % 500 == 0)) || ((nTotal > 100000) && (n % 2000 == 0)))
-                        {                            
+                        {
                             nRPerS = double (difftime(diffmean, start) - pauseTime);
 
                             if (nRPerS > 0)
@@ -7823,7 +7825,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         while ((pausehere) && (godzillaMode))  delay(2);
                         time(&pause2);
                         pauseTime += difftime(pause2, pause1);
-                    }                  
+                    }
 
                     // getting the actual layer
                     currentlayer = geometries.at(g)[7];
@@ -8450,7 +8452,7 @@ bool cosmicNSimulator(MainWindow* uiM)
                         break;
                     case 9:  asH = absorbHSpline->Eval(energy1e6Log); if (energy1e6 > 2e8) { asH += calcMeanCS(absorbMt5H, energy1e6) + 3. * calcMeanCS(absorbMt209H, energy1e6);}
                         if (energy1e6 < 1e6) {asO = absorbOSpline->Eval(energy1e6Log);} else {asO = calcMeanCS(absorbO, energy1e6);} if (energy1e6 > 2e6) { asO += calcMeanCS(absorbMt5O, energy1e6) + calcMeanCS(absorbMt103O, energy1e6) + calcMeanCS(absorbMt105O, energy1e6) + calcMeanCS(absorbMt107O, energy1e6) + 3. * calcMeanCS(absorbMt209O, energy1e6);}
-                        if (asH < 0) asH = 0; if (asO < 0) asO = 0;                        
+                        if (asH < 0) asH = 0; if (asO < 0) asO = 0;
                         //asH = calcMeanCS(absorbH, energy * 1e6) + calcMeanCS(absorbMt5H, energy * 1e6) + 3. * calcMeanCS(absorbMt209H, energy * 1e6);
                         //asO = calcMeanCS(absorbO, energy * 1e6) + calcMeanCS(absorbMt5O, energy * 1e6) + calcMeanCS(absorbMt103O, energy * 1e6) + calcMeanCS(absorbMt107O, energy * 1e6) + 3 * calcMeanCS(absorbMt209O, energy * 1e6);
                         asWater = 2. * asH + asO;
@@ -11648,7 +11650,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
         simulationRunning = false;
 
-        time(&end);  
+        time(&end);
 
         Double_t dif = difftime(end, start);
         cout << "\r" << castFloatToString(100., 6) << " % completed ";
@@ -11767,7 +11769,7 @@ bool cosmicNSimulator(MainWindow* uiM)
 
         delay(10);
         uiM->exportToSave();
-        delay(300);      
+        delay(300);
 
         if (detOutputFile) detOutputFile.close();
         if (detLayerOutputFile) detLayerOutputFile.close();
@@ -11959,7 +11961,7 @@ void MainWindow::on_pushButton_Simulate_clicked()
             setStatus(1, "Error: Wrong Material");
             return;
         }
-    }    
+    }
 
     if (!noGUIMode) {setStatus(1, "Reading Spectrum Parameter Files");    delay(5);}
 
@@ -13404,7 +13406,7 @@ void MainWindow::on_pushButton_about_clicked()
     messageString += "For technical support or questions contact<br>";
     messageString += "uranos@physi.uni-heidelberg.de <br> <br>";
     messageString += "Citation: M. Köhli et al., Geosci. Model. Dev., 16, 449-477, 2023 <br><br>";
-    messageString+=        "v1.09b (21.02.2023)<br> ";
+    messageString+=        "v1.10 (27.02.2023)<br> ";
     messageString+=        "<small>Based on QT 5.14.2, ROOT 6.22.08 and QCustomPlot 2.1.1 (MSVC 2017 32bit)</small> <br>";
     messageString += "<small>(see also attached information)</small> <br><br>";
 
@@ -13414,7 +13416,7 @@ void MainWindow::on_pushButton_about_clicked()
     about_box.setWindowTitle("About URANOS");
     about_box.setTextInteractionFlags(Qt::TextSelectableByMouse);
     about_box.setText(messageString);
-    about_box.setIconPixmap(QPixmap("about.png"));
+    about_box.setIconPixmap(QPixmap(":/resources/about.png"));
     about_box.setParent(this);
 
     about_box.exec();
@@ -15742,5 +15744,4 @@ void MainWindow::setStopMode(bool var)
 {
     stopMode = var;
 }
-
 

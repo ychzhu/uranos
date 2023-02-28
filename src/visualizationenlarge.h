@@ -13,7 +13,7 @@
 
 #include <QDialog>
 
-#include "qcustomplot.h"
+#include <qcustomplot.h>
 
 #include "Toolkit.h"
 

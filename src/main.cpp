@@ -36,7 +36,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.09 (14.02.2023)";
+string versionString = "v1.10 (27.02.2023)";
 
 class I : public QThread
 {
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     bool silent = false;
     string configFilePath = "";
 
-    QPixmap splashImage("splashScreen.png");
+    QPixmap splashImage(":/resources/splashScreen.png");
 
     QSplashScreen splash(splashImage,Qt::WindowStaysOnTopHint);
 

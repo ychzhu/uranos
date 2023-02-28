@@ -1,0 +1,28 @@
+#!/bin/bash
+# Submit URANOS jobs to a linux cluster system
+
+# 1. Specify project paths and job settings
+#SBATCH --job-name=URANOS
+#SBATCH --output=/work/%u/URANOS/log/%x-%A-%a.out
+#SBATCH --time=0-24:00:00
+#SBATCH --mem-per-cpu=1G
+
+# 2. Locate scenario list file
+scenario_list="/work/schroen/URANOS/my_project/scenarios.files"
+
+# Read current scenario from file
+this_scenario=$( awk "NR==$SLURM_ARRAY_TASK_ID" "$scenario_list")
+
+# 3. Specify URANOS-specific modules to be loaded here
+module load foss/2020b URANOS/1.07
+
+# Call 
+UranosGUI noGUI -platform offscreen $this_scenario
+
+# 4. Submit with: 
+# sbatch -a 1-XXX submit_scenarios.sub
+# where XXX is the number of scenarios (or lines in scenarios.files)
+
+# 5. Watch status with:
+# squeue
+

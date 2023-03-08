@@ -193,7 +193,7 @@ class URANOS:
         Convert a Root histogramm into a pandas DataFrame of coordinates
         Performance thanks to: Divakar <https://stackoverflow.com/a/41219731/2575273>
         """
-        data = self.Root[var].to_numpy()
+        data = self.Root[var].to_numpy(flow=True)
         # convert histogramm to data frame
         m,n = data[0].shape
         R,C = np.mgrid[:m,:n]

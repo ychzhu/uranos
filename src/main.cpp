@@ -36,7 +36,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.10 (27.02.2023)";
+string versionString = "v1.11 (08.03.2023)";
 
 class I : public QThread
 {
@@ -154,6 +154,12 @@ int main(int argc, char *argv[])
         if ((std::string(argv[1])=="--version") || ((std::string(argv[1])=="version")))
         {
             cout<<versionString<<endl;
+            return 0;
+        }
+
+        if ((std::string(argv[1])=="--buildversion") || ((std::string(argv[1])=="buildversion")))
+        {
+            cout<<QSysInfo::buildAbi().toStdString()<<endl;
             return 0;
         }
     }
@@ -367,10 +373,8 @@ int main(int argc, char *argv[])
         splash.finish(&w);
     }
 
-
     //w.close();
     //w.cosmicNSimulator(&w);
-
 
     return a.exec();
 }

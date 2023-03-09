@@ -2677,11 +2677,12 @@ void MainWindow::exportSettings(string str)
     QString system_output, getcpuname, getlinuxcpuname;
     QProcess process_system;
     string cpuinfo;
-    *stream_out <<"// (CPU ";
+
     string emptyString = "";
 
     if (QSysInfo::kernelType() == "winnt")
     {
+        *stream_out <<"// (CPU ";
         getcpuname = "wmic cpu get name";
         process_system.start(getcpuname);
         process_system.waitForFinished();
@@ -2693,22 +2694,23 @@ void MainWindow::exportSettings(string str)
         cpuinfo = std::regex_replace( cpuinfo, std::regex("Name"), emptyString);
         cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), emptyString);
         *stream_out << cpuinfo;
+        *stream_out <<")" << endl;
     }
 
-    if (QSysInfo::kernelType() == "linux")
+    if (QSysInfo::kernelType() == "linux") //seems to not work properly
     {
             getlinuxcpuname = "cat /proc/cpuinfo | grep 'model name' | uniq";
             process_system.start(getlinuxcpuname);
             process_system.waitForFinished();
             system_output = process_system.readAllStandardOutput();
             cpuinfo = system_output.toStdString();
-            cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), emptyString);
-            cpuinfo = std::regex_replace( cpuinfo, std::regex("model name"), emptyString);
-            cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), emptyString);
-            *stream_out << cpuinfo;
+            //cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), emptyString);
+            //cpuinfo = std::regex_replace( cpuinfo, std::regex("model name"), emptyString);
+            //cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), emptyString);
+            //*stream_out << cpuinfo;
     }
 
-    *stream_out <<")" << endl;
+
     stream_out->close();
 }
 

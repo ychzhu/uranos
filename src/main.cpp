@@ -24,6 +24,7 @@
     #define stricmp strcasecmp
 #endif
 
+
 #include "Toolkit.h"
 
 #include "mainwindow.h"
@@ -36,7 +37,7 @@
 #include <QThread>
 //#include <shellscalingapi.h>
 
-string versionString = "v1.11 (08.03.2023)";
+string versionStringMain = "v1.11 (09.03.2023)";
 
 class I : public QThread
 {
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
 
         if ((std::string(argv[1])=="--version") || ((std::string(argv[1])=="version")))
         {
-            cout<<versionString<<endl;
+            cout<<versionStringMain<<endl;
             return 0;
         }
 
@@ -298,7 +299,7 @@ int main(int argc, char *argv[])
 
     if (!silent)
     {
-        cout<<"Welcome to URANOS "<<versionString<<endl;
+        cout<<"Welcome to URANOS "<<versionStringMain<<endl;
     }
 
     // command line output logos

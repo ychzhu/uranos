@@ -25,7 +25,7 @@
 
 #include <algorithm>
 
-string versionString = "v1.11 (08.03.2023)";
+string versionString = "v1.11 (09.03.2023)";
 
 
 #ifdef _WIN32
@@ -2678,6 +2678,7 @@ void MainWindow::exportSettings(string str)
     QProcess process_system;
     string cpuinfo;
     *stream_out <<"// (CPU ";
+    string emptyString = "";
 
     if (QSysInfo::kernelType() == "winnt")
     {
@@ -2688,9 +2689,9 @@ void MainWindow::exportSettings(string str)
         cpuinfo = system_output.toStdString();
         //std::replace(cpuinfo.begin(), cpuinfo.end(), '\x0D', ' ');
         //std::replace(cpuinfo.begin(), cpuinfo.end(), '\x0A', ' ');
-        cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), "");
-        cpuinfo = std::regex_replace( cpuinfo, std::regex("Name"), "");
-        cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), "");
+        cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), emptyString);
+        cpuinfo = std::regex_replace( cpuinfo, std::regex("Name"), emptyString);
+        cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), emptyString);
         *stream_out << cpuinfo;
     }
 
@@ -2701,9 +2702,9 @@ void MainWindow::exportSettings(string str)
             process_system.waitForFinished();
             system_output = process_system.readAllStandardOutput();
             cpuinfo = system_output.toStdString();
-            cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), "");
-            cpuinfo = std::regex_replace( cpuinfo, std::regex("model name"), "");
-            cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), "");
+            cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), emptyString);
+            cpuinfo = std::regex_replace( cpuinfo, std::regex("model name"), emptyString);
+            cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), emptyString);
             *stream_out << cpuinfo;
     }
 

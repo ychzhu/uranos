@@ -21,7 +21,7 @@
 #include <vector>
 #include <QImage>
 #include <QMessageBox>
-#include <QDebug>
+//#include <QDebug>
 
 #include <algorithm>
 
@@ -35,10 +35,6 @@ string versionString = "v1.11 (09.03.2023)";
 #elif __linux_
 #endif
 
-#ifdef _WIN32
-#pragma warning (disable: 4018 4100 4101 4189 4305)
-#elif __linux_
-#endif
 
 //Initialization of Objects for data transfer
 //not yet in order
@@ -2690,12 +2686,15 @@ void MainWindow::exportSettings(string str)
         cpuinfo = system_output.toStdString();
         //std::replace(cpuinfo.begin(), cpuinfo.end(), '\x0D', ' ');
         //std::replace(cpuinfo.begin(), cpuinfo.end(), '\x0A', ' ');
-        cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), emptyString);
-        cpuinfo = std::regex_replace( cpuinfo, std::regex("Name"), emptyString);
+
+        //cpuinfo = std::regex_replace( cpuinfo, std::regex("^(.*)(\r?\n\1)+$"), emptyString); // in theory this should remove duplicate lines from having several CPUs
+        cpuinfo = std::regex_replace( cpuinfo, std::regex("\\r\\n|\\r|\\n"), emptyString); // deletes new lines
+        cpuinfo = std::regex_replace( cpuinfo, std::regex("Name"), emptyString); // removes the 'name' identifier
         cpuinfo = std::regex_replace( cpuinfo, std::regex("  "), emptyString);
         *stream_out << cpuinfo;
         *stream_out <<")" << endl;
     }
+
 
     if (QSysInfo::kernelType() == "linux") //seems to not work properly
     {
@@ -15797,4 +15796,3 @@ void MainWindow::setStopMode(bool var)
 {
     stopMode = var;
 }
-

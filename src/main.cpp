@@ -24,6 +24,12 @@
     #define stricmp strcasecmp
 #endif
 
+#ifdef _WIN32
+#pragma warning (disable: 4018 4100 4101 4189 4305)
+#elif __linux_
+#endif
+
+
 
 #include "Toolkit.h"
 

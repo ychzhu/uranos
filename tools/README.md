@@ -30,8 +30,8 @@ If you have an existing set of folders, and just want to change path names or Ur
 
 ## 4a. Run URANOS noGUI on Windows
 
-Assuming you have folder with subfolders for each scenario. You can now:
-- create batch files with a list of scenarios using `generate_batch_files.py`, or
+Assuming you have a folder with subfolders for each scenario. You can now:
+- create batch files with a list of scenarios using `generate_batch_files.py`, then double-click each batch file, or
 - create a list of files including a list of scenarios and run everything with python.
   1. Adapt and run `generate_scenario_list.py -s 100` to create 100 files including equal number of scenarios, e.g.,
      ```
@@ -40,7 +40,7 @@ Assuming you have folder with subfolders for each scenario. You can now:
      uranos_scenario_list-03.txt
      ...
      ```
-     The number of files should be chosen based on the number of available COU cores on your system.
+     The number of files should be chosen based on the number of available CPU cores on your system.
   2. Adapt and run `python run_scenarios.py` in a separate command line window for every scenario list, e.g.
      ```
      python run_scenarios.py -f uranos_scenario_list-01.txt

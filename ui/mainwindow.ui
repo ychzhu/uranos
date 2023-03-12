@@ -976,7 +976,7 @@ QSlider::sub-page { background: #00589C; border: 1px solid #DDDDDD; }
        </rect>
       </property>
       <property name="text">
-       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#5a5a5a;&quot;&gt;Layers are arranged in the vertical direction, representing different materials or 2D gridded patterns&lt;br/&gt;Position z denotes the depth below surface (z=0) in [m] and refers to the upper edge of the layer&lt;br/&gt;Layers override topological presets&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#5a5a5a;&quot;&gt;Layers are arranged in the vertical direction, representing different materials or 2D maps.&lt;br/&gt;Position z denotes the depth below surface (z=0) in [m] of the upper edge of the layer.&lt;br/&gt;Matrices/voxel definitions override topological presets.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
@@ -4814,8 +4814,8 @@ background-color: transparent;</string>
      <string/>
     </property>
     <property name="icon">
-     <iconset>
-	     <normaloff>:/resources/uranos-logo-smallx2.png</normaloff>:/resources/uranos-logo-smallx2.png</iconset>
+     <iconset resource="../build/.rcc/qmake_resources.qrc">
+      <normaloff>:/resources/uranos-logo-smallx2.png</normaloff>:/resources/uranos-logo-smallx2.png</iconset>
     </property>
     <property name="iconSize">
      <size>
@@ -6028,6 +6028,8 @@ text-align: right;</string>
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../build/.rcc/qmake_resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

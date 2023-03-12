@@ -1,5 +1,16 @@
 # URANOS Release Notes
 
+## URANOS version 1.11 (March 12, 2023)
+
+## Changelog:
+- code restructuring for URANOS builds and various cleanups
+- small GUI adjustments
+- added plattform information in uranos.cfg
+- fixed issue #15
+- ENDF data base updates
+- please also have a look at the toolset for running URANOS using batch jobs (on clusters for example): https://github.com/mkoehli/uranos/tree/main/tools
+
+
 ## URANOS version 1.10 (February 27, 2023)
 
 ## Changelog:
